@@ -1,0 +1,9 @@
+DROP TABLE units;
+DROP TABLE chats;
+DROP TABLE users;
+DROP TABLE chat_members;
+DROP TABLE rooms;
+DROP TABLE dialogs;
+DROP TABLE messages;
+DROP TABLE dialog_msg_pool;
+DROP TABLE room_msg_pool;

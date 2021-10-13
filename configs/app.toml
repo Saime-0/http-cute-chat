@@ -1,0 +1,10 @@
+[server]
+api_port = "8080"
+log_level = "debug"
+
+[database]
+host = "localhost"
+port = "5432"
+user = "postgres"
+dbname = "chat_db"
+sslmode = "disable"
