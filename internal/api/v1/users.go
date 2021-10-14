@@ -24,27 +24,25 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	err = h.Services.Repos.Users.Create(*user)
+	user_id, err := h.Services.Repos.Users.Create(*user)
 	if err != nil {
 		panic(err)
 	}
+	user.ID = user_id
 	user_json, _ := json.MarshalIndent(user, "", "  ")
-	log.Printf("%s New user created:\n%s\n", log.Prefix(), string(user_json))
-	json.NewEncoder(w).Encode(user)
+	log.Printf("New user created:\n%s\n", string(user_json))
+	json.NewEncoder(w).Encode(user_id)
 }
 
 func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
 	// todo: проверка наличия дублирующей записи в бд
 	vars := mux.Vars(r)
 	w.Header().Set("Content-Type", "application/json")
-	user_domain := &models.UserDomain{
-		Domain: vars["user-domain"],
-	}
-	user, err := h.Services.Repos.Users.GetByDomain(user_domain)
+	user, err := h.Services.Repos.Users.GetByDomain(vars["user-domain"])
 	if err != nil {
 		panic(err)
 	}
 	user_json, _ := json.MarshalIndent(user, "", "  ")
-	log.Printf("%s New user created:\n%s\n", log.Prefix(), string(user_json))
+	log.Printf("Returning useer:\n%s\n", string(user_json))
 	json.NewEncoder(w).Encode(user)
 }

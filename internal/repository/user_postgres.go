@@ -2,8 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"encoding/json"
-	"log"
 
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
@@ -18,27 +16,39 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 	}
 }
 
-func (r *UsersRepo) Create(u models.User) error {
-	user_json, _ := json.MarshalIndent(u, "", "  ")
-	log.Println(string(user_json))
-	err := r.db.QueryRow(
-		"WITH u AS (INSERT INTO units (domain, name) VALUES ($1, $2) RETURNING id) INSERT INTO users (id, app_settings) SELECT u.id, $3 FROM u",
+func (r *UsersRepo) Create(u models.User) (id int, err error) {
+	err = r.db.QueryRow(
+		`WITH u AS (
+			INSERT INTO units (domain, name) 
+			VALUES ($1, $2) 
+			RETURNING id
+			) 
+		INSERT INTO users (id, app_settings) 
+		SELECT u.id, $3 FROM u 
+		RETURNING id`,
 		u.Domain,
 		u.Name,
 		u.AppSettings,
-	).Err()
+	).Scan(&id)
 	if err != nil {
-		return err
+		return
 	}
-	return nil
+	return
 }
 
-func (r *UsersRepo) GetByDomain(u *models.UserDomain) (user models.User, err error) {
-	// ? select * from units inner join users on units.id = users.id where units.domain = '$1';
+func (r *UsersRepo) GetByDomain(domain string) (user models.User, err error) {
 	err = r.db.QueryRow(
-		"select units.id,units.domain,units.name,users.app_settings from units inner join users on units.id = users.id where units.domain = '$1'",
-		u.Domain,
-	).Scan(&user)
+		`SELECT units.id,units.domain,units.name,users.app_settings 
+		FROM units INNER JOIN users 
+		ON units.id = users.id 
+		WHERE units.domain = $1`,
+		domain,
+	).Scan(
+		&user.ID,
+		&user.Domain,
+		&user.Name,
+		&user.AppSettings,
+	)
 	if err != nil {
 		return // user, err
 	}
