@@ -12,32 +12,51 @@ type Units interface {
 }
 
 type Users interface {
-	CreateUser(u models.User) error
-	GetUserByDomain(domain string) (user models.User, err error)
-	GetUserByID(id int) (user models.User, err error)
-	GetUserSettings(id int) error
-	UpdateUserInfo(inp models.UpdateUserInput) error
-	UpdateUserSettings(inp models.UpdateUserInput) error
+	CreateChat(u models.CreateUser) error
+	GetUserDataByID(id int) (user models.UserData, err error)
+	GetUserInfoByDomain(domain string) (user models.UserInfo, err error)
+	GetUserInfoByID(id int) (user models.UserInfo, err error)
+
+	GetUserSettings() (settings models.UserSettings, err error)
+	UpdateUserData(inp models.UpdateUserData) error
+	UpdateUserSettings(inp models.UpdateUserSettings) error
+
+	// todo: jwt serv methods, create Auth or Sessions interface
+
 }
 type Chats interface {
 	CreateChat(c models.Chat) error
-	GetChatByDomain(domain string) error
-	GetChatByID(id int) error
-	GetChatsByName(name string) error
-	GetMembersRelatingChatID(chat_id int) error
-	GetRoomsRelatingChatID(chat_id int) error
+	GetChatInfoByDomain(domain string) (chat models.ChatInfo, err error)
+	GetChatInfoByID(id int) (chat models.ChatInfo, err error)
+	GetCountChatMembers(chat_id int) (count int, err error)
+	GetListChatsByName(name string) (chats []models.ChatInfo, err error)
+	GetListChatMembers(chat_id int) (members []models.UserInfo, err error)
+	GetListChatRooms(chat_id int) (rooms []models.RoomInfo, err error)
+
+	GetChatDataByID(id int) (chat models.ChatData, err error)
+	UpdateChatData(inp models.UpdateUserData) error
 }
 type Rooms interface {
-	CreateRoom(chat_id int, r models.Room) (id int, err error)
-	CreateMessage(m models.Message) error
-	GetMessages(room_id int) error
+	CreateMessage(room_id, m models.CreateMessage) error
+	GetListMessages(room_id int) (messages []models.MessageInfo, err error)
+	// GetMessageInfo
+
+	CreateRoom(r models.Room) error
+	UpdateRoomData(inp models.UpdateUserData) error
 }
 type Dialogs interface {
-	CreateMessage(m models.Message) error
-	GetDialogIDBetweenUsers(user1_id int, user2_id int) error
-	GetUserDialogsIDs(user_id int) error
+	//
+	CreateMessage(dialog_id int, m models.CreateMessage) error
+	GetDialogIDWithUser(user_id int) (id int, err error)
+	GetUserDialogsIDs() error
 	GetMessagesFromDialog(dialog_id int) error
 }
+
+// type Auth interface {
+// 	SignIn(u models.CreateUser) error
+// 	SignUp(u models.CreateUser) error
+// 	RefreshToken(u models.RefreshToken) error
+// }
 
 type Repositories struct {
 	Users Users

@@ -9,9 +9,18 @@ type Room struct {
 	Desc       string `json:"desc"`
 }
 
-//  INTERNAL models
-
+// INTERNAL models
 // RECEIVED models
+type CreateRoom struct {
+	ChatID     int    `json:"chat_id"`
+	Name       string `json:"name"`
+	ParentRoom int    `json:"parent_room"`
+	Desc       string `json:"desc"`
+}
+type UpdateRoomData struct {
+	Name string `json:"name"`
+	Desc string `json:"desc"`
+}
 
 // RESPONSE models
 type RoomInfo struct {

@@ -8,20 +8,14 @@ type Chat struct {
 	Name    string `json:"name"`
 }
 
-//  INTERNAL models
-
+// INTERNAL models
 // RECEIVED models
-type CreateChatInput struct {
+type CreateChat struct {
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
 }
 
-type CreateRoomInput struct {
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
-}
-
-type UpdateChatInput struct {
+type UpdateChatData struct {
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
 }
@@ -32,11 +26,20 @@ type ChatInfo struct {
 	Domain      string `json:"domain"`
 	Name        string `json:"name"`
 }
-
-type ChatMembers struct {
-	Users []UserInfo
+type ChatData struct {
+	OwnerDomain int    `json:"owner_domain"`
+	Domain      string `json:"domain"`
+	Name        string `json:"name"`
 }
-
-type ChatRooms struct {
-	Rooms []RoomInfo
+type ChatMembersCount struct {
+	Count int `json:"count"`
+}
+type ListChatInfo struct {
+	Chats []ChatInfo `json:"chats"`
+}
+type ListChatMembers struct {
+	Members []UserInfo `json:"members"`
+}
+type ListChatRooms struct {
+	Rooms []RoomInfo `json:"rooms"`
 }

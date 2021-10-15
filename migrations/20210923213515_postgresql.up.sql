@@ -1,3 +1,6 @@
+-- Download extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE units (
 	id bigserial primary key,
 	domain varchar(32) not null unique,
@@ -41,4 +44,12 @@ CREATE TABLE dialog_msg_pool (
 CREATE TABLE room_msg_pool (
 	room_id bigint references rooms (id) not null,
 	message_id bigint references messages (id) not null
+);
+CREATE TABLE refresh_sessions (
+    id bigserial primary key,
+    user_id bigint references users (id) not null,
+    refresh_token uuid not null,
+    user_agent varchar(256) not null,
+    exp bigint not null,
+    created_at bigint not null
 );
