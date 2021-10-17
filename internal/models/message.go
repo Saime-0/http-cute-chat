@@ -9,7 +9,7 @@ type Message struct {
 	Type    int    `json:"type"`
 }
 
-//  INTERNAL models
+// INTERNAL models
 
 // RECEIVED models
 type CreateMessage struct {
@@ -26,4 +26,7 @@ type MessageInfo struct {
 	Author  int    `json:"author"`
 	Body    string `json:"body"`
 	Type    int    `json:"type"`
+}
+type MessagesList struct {
+	Messages []MessageInfo `json:"messages"`
 }

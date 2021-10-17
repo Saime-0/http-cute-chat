@@ -19,17 +19,23 @@ type UpdateChatData struct {
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
 }
+type ChatName struct {
+	Name string `json:"name"`
+}
 
 // RESPONSE models
 type ChatInfo struct {
-	OwnerDomain int    `json:"owner_domain"`
-	Domain      string `json:"domain"`
-	Name        string `json:"name"`
+	ID           int    `json:"id"`
+	OwnerID      int    `json:"owner_id"`
+	Domain       string `json:"domain"`
+	Name         string `json:"name"`
+	CountMembers int    `json:"count_members"`
 }
 type ChatData struct {
-	OwnerDomain int    `json:"owner_domain"`
-	Domain      string `json:"domain"`
-	Name        string `json:"name"`
+	ID      int    `json:"id"`
+	OwnerID int    `json:"owner_id"`
+	Domain  string `json:"domain"`
+	Name    string `json:"name"`
 }
 type ChatMembersCount struct {
 	Count int `json:"count"`

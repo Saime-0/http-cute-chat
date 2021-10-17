@@ -12,7 +12,9 @@ type Units interface {
 }
 
 type Users interface {
-	CreateChat(u models.CreateUser) error
+	// user is not exists
+
+	CreateUser(u models.CreateUser) error
 	GetUserDataByID(id int) (user models.UserData, err error)
 	GetUserInfoByDomain(domain string) (user models.UserInfo, err error)
 	GetUserInfoByID(id int) (user models.UserInfo, err error)
@@ -28,7 +30,7 @@ type Chats interface {
 	CreateChat(c models.Chat) error
 	GetChatInfoByDomain(domain string) (chat models.ChatInfo, err error)
 	GetChatInfoByID(id int) (chat models.ChatInfo, err error)
-	GetCountChatMembers(chat_id int) (count int, err error)
+	// GetCountChatMembers(chat_id int) (count int, err error)
 	GetListChatsByName(name string) (chats []models.ChatInfo, err error)
 	GetListChatMembers(chat_id int) (members []models.UserInfo, err error)
 	GetListChatRooms(chat_id int) (rooms []models.RoomInfo, err error)
@@ -44,12 +46,14 @@ type Rooms interface {
 	CreateRoom(r models.Room) error
 	UpdateRoomData(inp models.UpdateUserData) error
 }
+
+// ? revision
 type Dialogs interface {
 	//
 	CreateMessage(dialog_id int, m models.CreateMessage) error
-	GetDialogIDWithUser(user_id int) (id int, err error)
-	GetUserDialogsIDs() error
-	GetMessagesFromDialog(dialog_id int) error
+	GetDialogIDBetweenUsers(user_id int) (id int, err error) //IsDialogBetweenUsersAvailable
+	GetCompanionsIDs() (id []int, err error)
+	GetListMessages(dialog_id int) (messages []models.MessageInfo, err error)
 }
 
 // type Auth interface {

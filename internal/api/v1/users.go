@@ -11,10 +11,10 @@ import (
 
 func (h *Handler) initUsersRoutes(r *mux.Router) {
 	users := r.PathPrefix("/users/").Subrouter()
-
-	users.HandleFunc("/", h.CreateUser).Methods(http.MethodPost)
-	users.HandleFunc("/{user-domain}", h.GetUserByDomain).Methods(http.MethodGet)
-
+	{
+		users.HandleFunc("/", h.CreateUser).Methods(http.MethodPost)
+		users.HandleFunc("/{user-domain}", h.GetUserByDomain).Methods(http.MethodGet)
+	}
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -38,11 +38,11 @@ func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
 	// todo: проверка наличия дублирующей записи в бд
 	vars := mux.Vars(r)
 	w.Header().Set("Content-Type", "application/json")
-	user, err := h.Services.Repos.Users.GetByDomain(vars["user-domain"])
+	user, err := h.Services.Repos.Users.GetUserInfoByDomain(vars["user-domain"])
 	if err != nil {
 		panic(err)
 	}
 	user_json, _ := json.MarshalIndent(user, "", "  ")
-	log.Printf("Returning useer:\n%s\n", string(user_json))
+	log.Printf("Returning user:\n%s\n", string(user_json))
 	json.NewEncoder(w).Encode(user)
 }

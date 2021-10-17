@@ -24,7 +24,10 @@ type UpdateRoomData struct {
 
 // RESPONSE models
 type RoomInfo struct {
+	ID         int    `json:"id"`
 	ParentRoom int    `json:"parent_room"`
 	Name       string `json:"name"`
 	Desc       string `json:"desc"`
 }
+
+// todo: change parent room and clear parent room

@@ -33,8 +33,11 @@ type UpdateUserSettings struct {
 	AppSettings string `json:"app_settings"`
 }
 
-type RefreshToken struct {
-	AccessToken string `json:"access_token"`
+type TokenForRefreshPair struct {
+	RefreshToken string `json:"refresh_token"`
+}
+type UserName struct {
+	Name string `json:"name"`
 }
 
 // RESPONSE models
@@ -55,3 +58,9 @@ type FreshTokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
+type ListUsers struct {
+	Users []UserInfo `json:"users"`
+}
+
+// ? todo: search user by name
+// ? todo: get chats controlled by user
