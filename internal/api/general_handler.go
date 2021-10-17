@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/saime-0/http-cute-chat/internal/api/responder"
 	v1 "github.com/saime-0/http-cute-chat/internal/api/v1"
 	"github.com/saime-0/http-cute-chat/internal/service"
 )
@@ -39,19 +40,17 @@ func logRequest(next http.Handler) http.Handler {
 		log.Printf("started %s %s", r.Method, r.RequestURI)
 
 		start := time.Now()
-		rw := &responseWriter{w, http.StatusOK}
+		rw := &responder.Writer{
+			ResponseWriter: w,
+			Code:           http.StatusOK,
+		}
 		next.ServeHTTP(rw, r)
 
 		log.Printf(
 			"completed with %d %s in %v\n",
-			rw.code,
-			http.StatusText(rw.code),
+			rw.Code,
+			http.StatusText(rw.Code),
 			time.Since(start),
 		)
 	})
-}
-
-type responseWriter struct {
-	http.ResponseWriter
-	code int
 }

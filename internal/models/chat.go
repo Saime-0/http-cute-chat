@@ -49,3 +49,5 @@ type ListChatMembers struct {
 type ListChatRooms struct {
 	Rooms []RoomInfo `json:"rooms"`
 }
+
+// todo: user is chat admin

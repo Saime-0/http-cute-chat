@@ -18,4 +18,4 @@ type ListDialogs struct {
 	Dialogs []DialogInfo `json:"dialogs"`
 }
 
-// todo: messageinfo by id (implementation "message.reply_to")
+// ? todo: messageinfo by id (implementation "message.reply_to")

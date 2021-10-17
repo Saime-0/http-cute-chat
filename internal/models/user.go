@@ -21,6 +21,7 @@ type RefreshSession struct {
 
 // INTERNAL models
 // RECEIVED models
+// todo: input data to refresh_sessions
 type CreateUser struct {
 	Domain string `json:"domain"`
 	Name   string `json:"name"`

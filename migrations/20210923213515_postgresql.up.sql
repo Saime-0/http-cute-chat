@@ -15,6 +15,7 @@ CREATE TABLE chats (
 	owner_id bigint references users (id) not null
 );
 CREATE TABLE chat_members (
+	id bigserial primary key,
 	user_id bigint references users (id) not null,
 	chat_id bigint references chats (id) not null
 );

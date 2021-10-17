@@ -37,6 +37,8 @@ type Chats interface {
 
 	GetChatDataByID(id int) (chat models.ChatData, err error)
 	UpdateChatData(inp models.UpdateUserData) error
+
+	UserIsChatOwner(user_id int, chat_id int) (res bool, err error)
 }
 type Rooms interface {
 	CreateMessage(room_id, m models.CreateMessage) error
@@ -64,6 +66,9 @@ type Dialogs interface {
 
 type Repositories struct {
 	Users Users
+	// Chats   Chats
+	// Rooms   Rooms
+	// Dialogs Dialogs
 }
 
 func NewRepositories(db *sql.DB) *Repositories {

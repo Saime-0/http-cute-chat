@@ -12,8 +12,24 @@ import (
 func (h *Handler) initUsersRoutes(r *mux.Router) {
 	users := r.PathPrefix("/users/").Subrouter()
 	{
-		users.HandleFunc("/", h.CreateUser).Methods(http.MethodPost)
-		users.HandleFunc("/{user-domain}", h.GetUserByDomain).Methods(http.MethodGet)
+		// GET
+		users.HandleFunc("/d/{user-domain}/", h.GetUserByDomain).Methods(http.MethodGet)
+		users.HandleFunc("/{user-id}/", h.GetUserByID).Methods(http.MethodGet)
+		users.HandleFunc("/", h.GetUsersByName).Methods(http.MethodGet)
+
+		authenticated := users.PathPrefix("/").Subrouter()
+		authenticated.Use(h.checkAuth)
+		{
+			// GET
+			authenticated.HandleFunc("/data/", h.GetUserData).Methods(http.MethodGet)
+			authenticated.HandleFunc("/settings/", h.GetUserSettings).Methods(http.MethodGet)
+			authenticated.HandleFunc("/chats/owned/", h.GetUserOwnedChats).Methods(http.MethodGet)
+			authenticated.HandleFunc("/chats/", h.GetUserChats).Methods(http.MethodGet)
+			// PUT
+			authenticated.HandleFunc("/data/", h.SetUserData).Methods(http.MethodPut)
+			authenticated.HandleFunc("/settings/", h.SetUserSettings).Methods(http.MethodPut)
+
+		}
 	}
 }
 

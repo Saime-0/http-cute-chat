@@ -19,6 +19,7 @@ func (h *Handler) Init(r *mux.Router) {
 	v1 := r.PathPrefix("/v1/").Subrouter()
 	{
 		h.initUsersRoutes(v1)
+		h.initChatsRoutes(v1)
 		// h.initUsersRoutes(v1)
 		// h.initCoursesRoutes(v1)
 		// h.initStudentsRoutes(v1)
