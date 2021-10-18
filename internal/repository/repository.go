@@ -14,20 +14,23 @@ type Units interface {
 type Users interface {
 	// user is not exists
 
-	CreateUser(u models.CreateUser) error
+	CreateUser(u models.CreateUser) (id int, err error)
 	GetUserDataByID(id int) (user models.UserData, err error)
+	GetUserIdByInput(input models.UserInput) (id int, err error)
 	GetUserInfoByDomain(domain string) (user models.UserInfo, err error)
 	GetUserInfoByID(id int) (user models.UserInfo, err error)
-
+	IsUserExistsByInput(input models.UserInput) (exists bool) // new
+	// todo: get jwt: "id"
 	GetUserSettings() (settings models.UserSettings, err error)
 	UpdateUserData(inp models.UpdateUserData) error
 	UpdateUserSettings(inp models.UpdateUserSettings) error
 
 	// todo: jwt serv methods, create Auth or Sessions interface
-
+	// todo: get by refresh token
+	CreateNewUserRefreshSession(user_id int, s *models.RefreshSession) (err error) // todo: limit 5
 }
 type Chats interface {
-	CreateChat(c models.Chat) error
+	CreateChat(c models.Chat) (id int, err error)
 	GetChatInfoByDomain(domain string) (chat models.ChatInfo, err error)
 	GetChatInfoByID(id int) (chat models.ChatInfo, err error)
 	// GetCountChatMembers(chat_id int) (count int, err error)
@@ -45,7 +48,7 @@ type Rooms interface {
 	GetListMessages(room_id int) (messages []models.MessageInfo, err error)
 	// GetMessageInfo
 
-	CreateRoom(r models.Room) error
+	CreateRoom(r models.Room) (id int, err error)
 	UpdateRoomData(inp models.UpdateUserData) error
 }
 

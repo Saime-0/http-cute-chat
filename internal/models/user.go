@@ -26,6 +26,10 @@ type CreateUser struct {
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
 }
+type UserInput struct { // pass & email
+	Domain string `json:"domain"`
+	Name   string `json:"name"`
+}
 type UpdateUserData struct {
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
@@ -65,3 +69,4 @@ type ListUsers struct {
 
 // ? todo: search user by name
 // ? todo: get chats controlled by user
+// todo: user sign im model

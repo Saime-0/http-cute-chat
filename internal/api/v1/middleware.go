@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt"
 )
 
+// todo, create cfg package
 var SECRETKEY = os.Getenv("SECRET_SEGNING_KEY")
 
 func (h *Handler) checkAuth(next http.Handler) http.Handler {
