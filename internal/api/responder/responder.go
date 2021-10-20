@@ -22,3 +22,5 @@ func Respond(w http.ResponseWriter, code int, data interface{}) {
 		json.NewEncoder(w).Encode(data)
 	}
 }
+
+// todo Error and error message

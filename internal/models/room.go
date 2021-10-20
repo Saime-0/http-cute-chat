@@ -29,5 +29,11 @@ type RoomInfo struct {
 	Name       string `json:"name"`
 	Desc       string `json:"desc"`
 }
+type ListRoomInfo struct {
+	Rooms []RoomInfo `json:"rooms"`
+}
+type RoomID struct {
+	ID int `json:"id"`
+}
 
 // todo: change parent room and clear parent room

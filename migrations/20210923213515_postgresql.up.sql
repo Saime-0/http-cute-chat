@@ -1,5 +1,5 @@
 -- Download extensions
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE units (
 	id bigserial primary key,
@@ -49,8 +49,9 @@ CREATE TABLE room_msg_pool (
 CREATE TABLE refresh_sessions (
     id bigserial primary key,
     user_id bigint references users (id) not null,
-    refresh_token uuid not null,
-    user_agent varchar(256) not null,
+    refresh_token varchar(16) not null,
+    user_agent varchar(64) not null,
     exp bigint not null,
-    created_at bigint not null
+    created_at bigint not null,
+	counter smallint not null default 0
 );

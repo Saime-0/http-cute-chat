@@ -58,9 +58,15 @@ func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	token_pair, session := GenerateNewSession(user_id, r)
-	err = h.Services.Repos.Users.CreateNewUserRefreshSession(user_id, session)
+	sessions_count, err := h.Services.Repos.Users.CreateNewUserRefreshSession(user_id, session)
 	if err != nil {
 		panic(err)
+	}
+	if sessions_count > 5 {
+		err = h.Services.Repos.Users.DeleteOldestSession(user_id)
+		if err != nil {
+			panic(err)
+		}
 	}
 	responder.Respond(w, http.StatusOK, token_pair)
 }
@@ -72,6 +78,9 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	session_id, user_id, err := h.Services.Repos.Users.FindSessionByComparedToken(rtoken.RefreshToken)
+	if err != nil {
+		panic(err)
+	}
 	token_pair, session := GenerateNewSession(user_id, r)
 	err = h.Services.Repos.Users.UpdateRefreshSession(session_id, session)
 	if err != nil {
@@ -81,7 +90,7 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateNewSession(user_id int, r *http.Request) (token_pair *models.FreshTokenPair, session *models.RefreshSession) {
-	refresh_token := gotp.RandomSecret(9)
+	refresh_token := gotp.RandomSecret(16)
 	session = &models.RefreshSession{
 		RefreshToken: token_pair.RefreshToken,
 		UserAgent:    r.UserAgent(),

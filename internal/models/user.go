@@ -68,7 +68,7 @@ type FreshTokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
-type ListUsers struct {
+type ListUserInfo struct {
 	Users []UserInfo `json:"users"`
 }
 

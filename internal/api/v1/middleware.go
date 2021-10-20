@@ -13,6 +13,7 @@ import (
 // todo, create cfg package
 var SECRETKEY = os.Getenv("SECRET_SEGNING_KEY")
 
+// todo: token is not expires
 func (h *Handler) checkAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := strings.Split(r.Header.Get("Authorization"), "Bearer ")

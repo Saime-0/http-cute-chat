@@ -30,7 +30,7 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/{chat-id}/members/", h.GetChatMembers).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/rooms/", h.GetChatRooms).Methods(http.MethodGet)
 			// PUT
-			authenticated.HandleFunc("/{chat-id}/data/", h.SetChatData).Methods(http.MethodPut)
+			authenticated.HandleFunc("/{chat-id}/data/", h.UpdateChatData).Methods(http.MethodPut)
 		}
 	}
 }
@@ -85,11 +85,11 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
 	if err != nil {
 		panic(err)
 	}
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		panic(err)
 	}
@@ -101,8 +101,15 @@ func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
 	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
+		panic(err)
+	}
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		panic(err)
 	}
 	chat_data, err := h.Services.Repos.Chats.GetChatDataByID(chat_id)
@@ -113,8 +120,15 @@ func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
 	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
+		panic(err)
+	}
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
 		panic(err)
 	}
 	user_list, err := h.Services.Repos.Chats.GetListChatMembers(chat_id)
@@ -125,8 +139,15 @@ func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
 	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
+		panic(err)
+	}
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
 		panic(err)
 	}
 	room_list, err := h.Services.Repos.Chats.GetListChatRooms(chat_id)
@@ -136,9 +157,16 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 	responder.Respond(w, http.StatusOK, room_list)
 }
 
-func (h *Handler) SetChatData(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
 	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
+		panic(err)
+	}
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		panic(err)
 	}
 	chat_data := &models.UpdateChatData{}

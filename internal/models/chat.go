@@ -22,9 +22,6 @@ type UpdateChatData struct {
 type ChatName struct {
 	Name string `json:"name"`
 }
-type ChatID struct {
-	ID int `json:"id"`
-}
 
 // RESPONSE models
 type ChatInfo struct {
@@ -49,8 +46,8 @@ type ListChatInfo struct {
 type ListChatMembers struct {
 	Members []UserInfo `json:"members"`
 }
-type ListChatRooms struct {
-	Rooms []RoomInfo `json:"rooms"`
+type ChatID struct {
+	ID int `json:"id"`
 }
 
 // todo: user is chat admin
