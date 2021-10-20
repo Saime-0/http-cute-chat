@@ -18,6 +18,7 @@ func (w *Writer) WriteHeader(statusCode int) {
 func Respond(w http.ResponseWriter, code int, data interface{}) {
 	w.WriteHeader(code)
 	if data != nil {
+		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(data)
 	}
 }

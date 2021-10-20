@@ -18,6 +18,7 @@ func NewHandler(services *service.Services) *Handler {
 func (h *Handler) Init(r *mux.Router) {
 	v1 := r.PathPrefix("/v1/").Subrouter()
 	{
+		h.initAuthRoutes(v1)
 		h.initUsersRoutes(v1)
 		h.initChatsRoutes(v1)
 		// h.initUsersRoutes(v1)

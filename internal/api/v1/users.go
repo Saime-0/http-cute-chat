@@ -2,10 +2,12 @@ package v1
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
+	"strconv"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
+	"github.com/saime-0/http-cute-chat/internal/api/responder"
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
@@ -26,39 +28,129 @@ func (h *Handler) initUsersRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/chats/owned/", h.GetUserOwnedChats).Methods(http.MethodGet)
 			authenticated.HandleFunc("/chats/", h.GetUserChats).Methods(http.MethodGet)
 			// PUT
-			authenticated.HandleFunc("/data/", h.SetUserData).Methods(http.MethodPut)
-			authenticated.HandleFunc("/settings/", h.SetUserSettings).Methods(http.MethodPut)
+			authenticated.HandleFunc("/data/", h.UpdateUserData).Methods(http.MethodPut)
+			authenticated.HandleFunc("/settings/", h.UpdateUserSettings).Methods(http.MethodPut)
 
 		}
 	}
 }
 
-func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	user := &models.User{}
-	err := json.NewDecoder(r.Body).Decode(&user)
+func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
+	user_domain := mux.Vars(r)["user-domain"]
+	user, err := h.Services.Repos.Users.GetUserInfoByDomain(user_domain)
 	if err != nil {
 		panic(err)
 	}
-	user_id, err := h.Services.Repos.Users.Create(*user)
-	if err != nil {
-		panic(err)
-	}
-	user.ID = user_id
-	user_json, _ := json.MarshalIndent(user, "", "  ")
-	log.Printf("New user created:\n%s\n", string(user_json))
-	json.NewEncoder(w).Encode(user_id)
+	responder.Respond(w, http.StatusOK, user)
 }
 
-func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
-	// todo: проверка наличия дублирующей записи в бд
-	vars := mux.Vars(r)
-	w.Header().Set("Content-Type", "application/json")
-	user, err := h.Services.Repos.Users.GetUserInfoByDomain(vars["user-domain"])
+func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		panic(err)
 	}
-	user_json, _ := json.MarshalIndent(user, "", "  ")
-	log.Printf("Returning user:\n%s\n", string(user_json))
-	json.NewEncoder(w).Encode(user)
+	user, err := h.Services.Repos.Users.GetUserInfoByID(user_id)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, user)
+}
+
+func (h *Handler) GetUserData(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	data, err := h.Services.Repos.Users.GetUserData(user_id)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, data)
+}
+
+func (h *Handler) GetUserSettings(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	settings, err := h.Services.Repos.Users.GetUserSettings(user_id)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, settings)
+}
+
+func (h *Handler) GetUsersByName(w http.ResponseWriter, r *http.Request) {
+	name_struct := &models.UserName{}
+	err := json.NewDecoder(r.Body).Decode(&name_struct)
+	if err != nil {
+		panic(err)
+	}
+	user_list, err := h.Services.Repos.Users.GetListUsersByName(name_struct.Name)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, user_list)
+}
+
+func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	chat_list, err := h.Services.Repos.Users.GetListChatsOwnedUser(user_id)
+	if err != nil {
+		panic(err)
+	}
+	// json_out, _ := json.MarshalIndent(chat_list, "", "  ")
+	// log.Printf("Returning user:\n%s\n", string(json_out))
+	responder.Respond(w, http.StatusOK, chat_list)
+}
+
+func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	chat_list, err := h.Services.Repos.Users.GetListChatsUser(user_id)
+	if err != nil {
+		panic(err)
+	}
+	// json_out, _ := json.MarshalIndent(chat_list, "", "  ")
+	// log.Printf("Returning user:\n%s\n", string(json_out))
+	responder.Respond(w, http.StatusOK, chat_list)
+}
+
+func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	user_data := &models.UpdateUserData{}
+	err = json.NewDecoder(r.Body).Decode(&user_data)
+	if err != nil {
+		panic(err)
+	}
+	err = h.Services.Repos.Users.UpdateUserData(user_id, user_data)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, "")
+}
+
+func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	user_settings := &models.UpdateUserSettings{}
+	err = json.NewDecoder(r.Body).Decode(&user_settings)
+	if err != nil {
+		panic(err)
+	}
+	err = h.Services.Repos.Users.UpdateUserSettings(user_id, user_settings)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, "")
 }

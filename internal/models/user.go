@@ -11,8 +11,13 @@ type User struct {
 type RefreshSession struct {
 	RefreshToken string `json:"refresh_token"`
 	UserAgent    string `json:"user_agent"`
-	Exp          int    `json:"exp"`
-	CreatedAt    int    `json:"created_at"`
+	Exp          int64  `json:"exp"`
+	CreatedAt    int64  `json:"created_at"`
+}
+
+type CustomClaims struct {
+	UserID    int   `json:"user-id"`
+	ExpiresAt int64 `json:"exp"`
 }
 
 // RegisteredAt time.Time `json:"registeredAt"`

@@ -30,7 +30,7 @@ func (h *Handler) checkAuth(next http.Handler) http.Handler {
 			})
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-				ctx := context.WithValue(r.Context(), "props", claims)
+				ctx := context.WithValue(r.Context(), "jwt", claims)
 				// Access context values in handlers like this
 				// props, _ := r.Context().Value("props").(jwt.MapClaims)
 				next.ServeHTTP(w, r.WithContext(ctx))

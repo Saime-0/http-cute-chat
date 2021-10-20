@@ -22,6 +22,9 @@ type UpdateChatData struct {
 type ChatName struct {
 	Name string `json:"name"`
 }
+type ChatID struct {
+	ID int `json:"id"`
+}
 
 // RESPONSE models
 type ChatInfo struct {

@@ -30,3 +30,6 @@ type MessageInfo struct {
 type MessagesList struct {
 	Messages []MessageInfo `json:"messages"`
 }
+type MessageID struct {
+	ID int `json:"id"`
+}

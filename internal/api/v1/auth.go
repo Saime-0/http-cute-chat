@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -32,7 +33,7 @@ func (h *Handler) AuthSignUp(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	user_id, err := h.Services.Repos.Users.CreateUser(*user)
+	user_id, err := h.Services.Repos.Users.CreateUser(user)
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +47,6 @@ func (h *Handler) AuthSignUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	user := &models.UserInput{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -57,30 +57,47 @@ func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		// todo: uncorrected input
 		panic(err)
 	}
-
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user-id": user_id,
-	}).SignedString(os.Getenv("SECRET_SEGNING_KEY"))
-	if err != nil {
-		panic(err)
-	}
-	refresh_token := gotp.RandomSecret(9)
-	session := &models.RefreshSession{
-		RefreshToken: refresh_token,
-		UserAgent:    r.UserAgent(),
-		Exp:          int(time.Now().Unix() + int64(time.Hour)), // int(time.Now().Unix() + time.Hour * 24 * 60),
-		CreatedAt:    int(time.Now().Unix()),
-	}
+	token_pair, session := GenerateNewSession(user_id, r)
 	err = h.Services.Repos.Users.CreateNewUserRefreshSession(user_id, session)
 	if err != nil {
 		panic(err)
 	}
-	token_pair := &models.FreshTokenPair{
-		AccessToken:  token,
-		RefreshToken: refresh_token,
-	}
-
+	responder.Respond(w, http.StatusOK, token_pair)
 }
 
 func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
+	rtoken := &models.TokenForRefreshPair{}
+	err := json.NewDecoder(r.Body).Decode(&rtoken)
+	if err != nil {
+		panic(err)
+	}
+	session_id, user_id, err := h.Services.Repos.Users.FindSessionByComparedToken(rtoken.RefreshToken)
+	token_pair, session := GenerateNewSession(user_id, r)
+	err = h.Services.Repos.Users.UpdateRefreshSession(session_id, session)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, token_pair)
+}
+
+func GenerateNewSession(user_id int, r *http.Request) (token_pair *models.FreshTokenPair, session *models.RefreshSession) {
+	refresh_token := gotp.RandomSecret(9)
+	session = &models.RefreshSession{
+		RefreshToken: token_pair.RefreshToken,
+		UserAgent:    r.UserAgent(),
+		Exp:          time.Now().Unix() + int64(time.Hour),
+		CreatedAt:    time.Now().Unix(),
+	}
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		ExpiresAt: session.Exp,
+		Subject:   strconv.Itoa(user_id),
+	}).SignedString(os.Getenv("SECRET_SEGNING_KEY"))
+	if err != nil {
+		panic(err)
+	}
+	token_pair = &models.FreshTokenPair{
+		AccessToken:  token,
+		RefreshToken: refresh_token,
+	}
+	return
 }
