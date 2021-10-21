@@ -24,7 +24,7 @@ func (r *UsersRepo) CreateUser(u *models.CreateUser) (id int, err error) {
 			RETURNING id
 			) 
 		INSERT INTO users (id, app_settings) 
-		SELECT u.id FROM u 
+		SELECT u.id, 'default' FROM u 
 		RETURNING id`,
 		u.Domain,
 		u.Name,
@@ -104,32 +104,44 @@ func (r *UsersRepo) GetUserInfoByID(id int) (user models.UserInfo, err error) {
 	return
 }
 
-func (r *UsersRepo) GetListUsersByName(name string) (chats models.ListUserInfo, err error) {
-
-	return
-}
-
-func (r *UsersRepo) GetListChatsOwnedUser(user_id int) (chats models.ListChatInfo, err error) {
-
-	return
-}
-
-func (r *UsersRepo) GetListChatsUser(user_id int) (chats models.ListChatInfo, err error) {
-
+func (r *UsersRepo) GetListUsersByName(name string) (users models.ListUserInfo, err error) {
+	rows, err := r.db.Query(
+		`SELECT units.id, units.domain,units.name
+		FROM units INNER JOIN users 
+		ON units.id = users.id 
+		WHERE units.name ILIKE $1`,
+		"%"+name+"%",
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.UserInfo{}
+		if err = rows.Scan(&m.ID, &m.Domain, &m.Name); err != nil {
+			return
+		}
+		users.Users = append(users.Users, m)
+	}
+	if !rows.NextResultSet() {
+		return
+	}
 	return
 }
 
 func (r *UsersRepo) IsUserExistsByInput(input models.UserInput) bool {
-	id := -1
+	is_exists := false
 	err := r.db.QueryRow(
-		`SELECT units.id
-		FROM units INNER JOIN users 
-		ON units.id = users.id 
-		WHERE units.domain = $1 AND users.name = $2`,
+		`SELECT EXISTS(
+			SELECT 1 FROM units 
+			INNER JOIN users 
+			ON units.id = users.id 
+			WHERE units.domain = $1 AND users.name = $2
+			)`,
 		input.Domain,
 		input.Name,
-	).Scan(&id)
-	if err != nil {
+	).Scan(&is_exists)
+	if err != nil || !is_exists {
 		return false
 	}
 	return true
@@ -155,10 +167,10 @@ func (r *UsersRepo) UpdateUserData(user_id int, inp *models.UpdateUserData) erro
 	if inp.Domain != "" {
 		err := r.db.QueryRow(
 			`UPDATE units
-			SET domain = $1
-			WHERE id = $2`,
-			inp.Domain,
+			SET domain = $2
+			WHERE id = $1`,
 			user_id,
+			inp.Domain,
 		).Err()
 		if err != nil {
 			return err
@@ -167,10 +179,10 @@ func (r *UsersRepo) UpdateUserData(user_id int, inp *models.UpdateUserData) erro
 	if inp.Name != "" {
 		err := r.db.QueryRow(
 			`UPDATE units
-			SET name = $1
-			WHERE id = $2`,
-			inp.Name,
+			SET name = $2
+			WHERE id = $1`,
 			user_id,
+			inp.Name,
 		).Err()
 		if err != nil {
 			return err

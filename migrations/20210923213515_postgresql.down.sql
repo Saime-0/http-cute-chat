@@ -7,3 +7,4 @@ DROP TABLE dialogs;
 DROP TABLE messages;
 DROP TABLE dialog_msg_pool;
 DROP TABLE room_msg_pool;
+DROP TABLE refresh_sessions;

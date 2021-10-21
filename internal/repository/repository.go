@@ -20,9 +20,7 @@ type Users interface {
 	GetUserIdByInput(input models.UserInput) (id int, err error)
 	GetUserInfoByDomain(domain string) (user models.UserInfo, err error)
 	GetUserInfoByID(id int) (user models.UserInfo, err error)
-	GetListUsersByName(name string) (chats models.ListUserInfo, err error)
-	GetListChatsOwnedUser(user_id int) (chats models.ListChatInfo, err error)
-	GetListChatsUser(user_id int) (chats models.ListChatInfo, err error)
+	GetListUsersByName(name string) (users models.ListUserInfo, err error)
 	IsUserExistsByInput(input models.UserInput) bool // new
 	// todo: get jwt: "id"
 	GetUserSettings(user_id int) (settings *models.UserSettings, err error)
@@ -42,17 +40,20 @@ type Chats interface {
 	GetChatInfoByDomain(domain string) (chat models.ChatInfo, err error)
 	GetChatInfoByID(chat_id int) (chat models.ChatInfo, err error)
 	IsChatExistsByID(chat_id int) bool
-	// GetCountChatMembers(chat_id int) (count int, err error)
+	GetCountChatMembers(chat_id int) (count int, err error)
 	GetListChatsByName(name string) (chats models.ListChatInfo, err error)
 	GetListChatMembers(chat_id int) (members models.ListUserInfo, err error)
 	GetListChatRooms(chat_id int) (rooms models.ListRoomInfo, err error)
 
-	GetChatDataByID(id int) (chat models.ChatData, err error)
-	UpdateChatData(chat_id int, inp *models.UpdateChatData) error
+	GetChatDataByID(chat_id int) (chat models.ChatData, err error)
+	UpdateChatData(chat_id int, inp *models.UpdateChatData) (err error)
 
 	UserIsChatOwner(user_id int, chat_id int) bool
 	UserIsChatMember(user_id int, chat_id int) bool
-	AddUserToChat(user_id int, chat_id int) error
+	AddUserToChat(user_id int, chat_id int) (err error)
+
+	GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, err error)
+	GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo, err error)
 }
 type Rooms interface {
 	CreateMessage(room_id int, m *models.CreateMessage) (message_id int, err error)
@@ -93,6 +94,9 @@ type Repositories struct {
 
 func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
-		Users: NewUsersRepo(db),
+		Users:   NewUsersRepo(db),
+		Chats:   NewChatsRepo(db),
+		Rooms:   nil,
+		Dialogs: nil,
 	}
 }

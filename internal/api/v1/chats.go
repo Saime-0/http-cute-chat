@@ -29,6 +29,8 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/{chat-id}/data/", h.GetChatData).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/members/", h.GetChatMembers).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/rooms/", h.GetChatRooms).Methods(http.MethodGet)
+			authenticated.HandleFunc("/owned/", h.GetUserOwnedChats).Methods(http.MethodGet)
+			authenticated.HandleFunc("/involved/", h.GetUserChats).Methods(http.MethodGet)
 			// PUT
 			authenticated.HandleFunc("/{chat-id}/data/", h.UpdateChatData).Methods(http.MethodPut)
 		}
@@ -155,6 +157,32 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	responder.Respond(w, http.StatusOK, room_list)
+}
+
+func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	chat_list, err := h.Services.Repos.Chats.GetChatsOwnedUser(user_id)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, chat_list)
+}
+
+func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
+	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	if err != nil {
+		panic(err)
+	}
+	chat_list, err := h.Services.Repos.Chats.GetChatsInvolvedUser(user_id)
+	if err != nil {
+		panic(err)
+	}
+	// json_out, _ := json.MarshalIndent(chat_list, "", "  ")
+	// log.Printf("Returning user:\n%s\n", string(json_out))
+	responder.Respond(w, http.StatusOK, chat_list)
 }
 
 func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
