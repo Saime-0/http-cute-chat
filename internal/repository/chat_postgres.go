@@ -16,7 +16,7 @@ func NewChatsRepo(db *sql.DB) *ChatsRepo {
 	}
 }
 
-func (r *ChatsRepo) CreateChat(owner_id int, c *models.CreateChat) (id int, err error) {
+func (r *ChatsRepo) CreateChat(owner_id int, chat_model *models.CreateChat) (id int, err error) {
 	// todo: add owner to chat members
 	err = r.db.QueryRow(
 		`WITH u AS (
@@ -27,8 +27,8 @@ func (r *ChatsRepo) CreateChat(owner_id int, c *models.CreateChat) (id int, err 
 		INSERT INTO chats (id, owner_id) 
 		SELECT u.id, $3 FROM u 
 		RETURNING id`,
-		c.Domain,
-		c.Name,
+		chat_model.Domain,
+		chat_model.Name,
 		owner_id,
 	).Scan(&id)
 	if err != nil {
@@ -104,7 +104,7 @@ func (r *ChatsRepo) IsChatExistsByID(chat_id int) bool {
 	return exists
 }
 
-func (r *ChatsRepo) GetListChatsByName(name string) (chats models.ListChatInfo, err error) {
+func (r *ChatsRepo) GetChatsByName(name string) (chats models.ListChatInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
@@ -133,7 +133,7 @@ func (r *ChatsRepo) GetListChatsByName(name string) (chats models.ListChatInfo, 
 	return
 
 }
-func (r *ChatsRepo) GetListChatMembers(chat_id int) (members models.ListUserInfo, err error) {
+func (r *ChatsRepo) GetChatMembers(chat_id int) (members models.ListUserInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, domain, name
 		FROM units
@@ -160,7 +160,7 @@ func (r *ChatsRepo) GetListChatMembers(chat_id int) (members models.ListUserInfo
 	}
 	return
 }
-func (r *ChatsRepo) GetListChatRooms(chat_id int) (rooms models.ListRoomInfo, err error) {
+func (r *ChatsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, parent_room, name, desc
 		FROM rooms
@@ -203,26 +203,26 @@ func (r *ChatsRepo) GetChatDataByID(chat_id int) (chat models.ChatData, err erro
 	return
 }
 
-func (r *ChatsRepo) UpdateChatData(chat_id int, inp *models.UpdateChatData) (err error) {
-	if inp.Domain != "" {
+func (r *ChatsRepo) UpdateChatData(chat_id int, input_model *models.UpdateChatData) (err error) {
+	if input_model.Domain != "" {
 		err = r.db.QueryRow(
 			`UPDATE chats
 			SET domain = $2
 			WHERE id = $1`,
 			chat_id,
-			inp.Domain,
+			input_model.Domain,
 		).Err()
 		if err != nil {
 			return
 		}
 	}
-	if inp.Name != "" {
+	if input_model.Name != "" {
 		err = r.db.QueryRow(
 			`UPDATE chats
 			SET name = $2
 			WHERE id = $1`,
 			chat_id,
-			inp.Name,
+			input_model.Name,
 		).Err()
 		if err != nil {
 			return

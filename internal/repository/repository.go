@@ -15,38 +15,38 @@ type Units interface {
 type Users interface {
 	// user is not exists
 
-	CreateUser(u *models.CreateUser) (id int, err error) // todo: проверка наличия дублирующей записи в бд
+	CreateUser(user_model *models.CreateUser) (id int, err error) // todo: проверка наличия дублирующей записи в бд
 	GetUserData(user_id int) (user models.UserData, err error)
-	GetUserIdByInput(input models.UserInput) (id int, err error)
+	GetUserIdByInput(input_model models.UserInput) (id int, err error)
 	GetUserInfoByDomain(domain string) (user models.UserInfo, err error)
 	GetUserInfoByID(id int) (user models.UserInfo, err error)
 	GetListUsersByName(name string) (users models.ListUserInfo, err error)
-	IsUserExistsByInput(input models.UserInput) bool // new
+	IsUserExistsByInput(input_model models.UserInput) bool // new
 	// todo: get jwt: "id"
 	GetUserSettings(user_id int) (settings *models.UserSettings, err error)
-	UpdateUserData(user_id int, inp *models.UpdateUserData) error
-	UpdateUserSettings(user_id int, inp *models.UpdateUserSettings) error
+	UpdateUserData(user_id int, user_model *models.UpdateUserData) error
+	UpdateUserSettings(user_id int, settings_model *models.UpdateUserSettings) error
 
 	// todo: jwt serv methods, create Auth or Sessions interface
 	// ? todo: get by refresh token
 	// todo: limit 5
-	CreateNewUserRefreshSession(user_id int, s *models.RefreshSession) (sessions_count int, err error)
+	CreateNewUserRefreshSession(user_id int, session_model *models.RefreshSession) (sessions_count int, err error)
 	DeleteOldestSession(user_id int) (err error)
 	FindSessionByComparedToken(token string) (session_id int, user_id int, err error)
-	UpdateRefreshSession(session_id int, s *models.RefreshSession) (err error)
+	UpdateRefreshSession(session_id int, session_model *models.RefreshSession) (err error)
 }
 type Chats interface {
-	CreateChat(owner_id int, c *models.CreateChat) (id int, err error)
+	CreateChat(owner_id int, chat_model *models.CreateChat) (id int, err error)
 	GetChatInfoByDomain(domain string) (chat models.ChatInfo, err error)
 	GetChatInfoByID(chat_id int) (chat models.ChatInfo, err error)
 	IsChatExistsByID(chat_id int) bool
 	GetCountChatMembers(chat_id int) (count int, err error)
-	GetListChatsByName(name string) (chats models.ListChatInfo, err error)
-	GetListChatMembers(chat_id int) (members models.ListUserInfo, err error)
-	GetListChatRooms(chat_id int) (rooms models.ListRoomInfo, err error)
+	GetChatsByName(name string) (chats models.ListChatInfo, err error)
+	GetChatMembers(chat_id int) (members models.ListUserInfo, err error)
+	GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error)
 
 	GetChatDataByID(chat_id int) (chat models.ChatData, err error)
-	UpdateChatData(chat_id int, inp *models.UpdateChatData) (err error)
+	UpdateChatData(chat_id int, input_model *models.UpdateChatData) (err error)
 
 	UserIsChatOwner(user_id int, chat_id int) bool
 	UserIsChatMember(user_id int, chat_id int) bool
@@ -55,14 +55,13 @@ type Chats interface {
 	GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, err error)
 	GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo, err error)
 }
-type Rooms interface {
-	CreateMessage(room_id int, m *models.CreateMessage) (message_id int, err error)
-	GetListMessages(room_id int) (messages models.MessagesList, err error)
-	IsRoomExistsByID(room_id int) bool
-	// GetMessageInfo
+type Rooms interface { //todo: get parent and child rooms
+	CreateMessage(room_id int, message_model *models.CreateMessage) (message_id int, err error)
+	GetMessages(room_id int) (messages models.MessagesList, err error)
+	IsRoomExistsByID(room_id int) (is_exists bool)
 
-	CreateRoom(r *models.CreateRoom) (room_id int, err error)
-	UpdateRoomData(inp *models.UpdateRoomData) error
+	CreateRoom(room_model *models.CreateRoom) (room_id int, err error)
+	UpdateRoomData(room_id int, input_model *models.UpdateRoomData) (err error)
 
 	GetChatIDByRoomID(room_id int) (chat_id int, err error)
 	GetMessageInfo(message_id int, room_id int) (message models.MessageInfo, err error)
@@ -71,11 +70,11 @@ type Rooms interface {
 // ? revision
 type Dialogs interface {
 	//
-	CreateMessage(dialog_id int, m *models.CreateMessage) (message_id int, err error)
+	CreateMessage(dialog_id int, message_model *models.CreateMessage) (message_id int, err error)
 	//IsDialogBetweenUsersAvailable
 	GetDialogIDBetweenUsers(user1_id int, user2_id int) (dialog_id int, err error)
 	GetCompanions(user_id int) (users models.ListUserInfo, err error)
-	GetListMessages(dialog_id int) (messages models.MessagesList, err error)
+	GetMessages(dialog_id int) (messages models.MessagesList, err error)
 	GetMessageInfo(message_id int, dialog_id int) (message models.MessageInfo, err error)
 }
 
@@ -96,7 +95,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
 		Users:   NewUsersRepo(db),
 		Chats:   NewChatsRepo(db),
-		Rooms:   nil,
-		Dialogs: nil,
+		Rooms:   NewRoomsRepoo(db),
+		Dialogs: NewDialogsRepo(db),
 	}
 }

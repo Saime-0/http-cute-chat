@@ -34,7 +34,7 @@ CREATE TABLE dialogs (
 CREATE TABLE messages (
 	id bigserial primary key,
 	reply_to bigint references messages (id),
-	from_id bigint references units (id) not null,
+	author bigint references units (id) not null,
 	body varchar(8192) not null,
 	type smallint not null
 );

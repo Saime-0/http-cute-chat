@@ -64,7 +64,7 @@ func (h *Handler) GetChatsByName(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	chat_list, err := h.Services.Repos.Chats.GetListChatsByName(chat_name.Name)
+	chat_list, err := h.Services.Repos.Chats.GetChatsByName(chat_name.Name)
 	if err != nil {
 		panic(err)
 	}
@@ -133,7 +133,7 @@ func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
 		panic(err)
 	}
-	user_list, err := h.Services.Repos.Chats.GetListChatMembers(chat_id)
+	user_list, err := h.Services.Repos.Chats.GetChatMembers(chat_id)
 	if err != nil {
 		panic(err)
 	}
@@ -152,7 +152,7 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
 		panic(err)
 	}
-	room_list, err := h.Services.Repos.Chats.GetListChatRooms(chat_id)
+	room_list, err := h.Services.Repos.Chats.GetChatRooms(chat_id)
 	if err != nil {
 		panic(err)
 	}

@@ -16,7 +16,7 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 	}
 }
 
-func (r *UsersRepo) CreateUser(u *models.CreateUser) (id int, err error) {
+func (r *UsersRepo) CreateUser(user_model *models.CreateUser) (id int, err error) {
 	err = r.db.QueryRow(
 		`WITH u AS (
 			INSERT INTO units (domain, name) 
@@ -26,8 +26,8 @@ func (r *UsersRepo) CreateUser(u *models.CreateUser) (id int, err error) {
 		INSERT INTO users (id, app_settings) 
 		SELECT u.id, 'default' FROM u 
 		RETURNING id`,
-		u.Domain,
-		u.Name,
+		user_model.Domain,
+		user_model.Name,
 	).Scan(&id)
 	if err != nil {
 		return
@@ -53,14 +53,14 @@ func (r *UsersRepo) GetUserData(user_id int) (user models.UserData, err error) {
 	return
 }
 
-func (r *UsersRepo) GetUserIdByInput(input models.UserInput) (id int, err error) {
+func (r *UsersRepo) GetUserIdByInput(input_model models.UserInput) (id int, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
-		WHERE units.domain = $1 AND users.name = $2`,
-		input.Domain,
-		input.Name,
+		WHERE units.domain = $1 AND units.name = $2`,
+		input_model.Domain,
+		input_model.Name,
 	).Scan(&id)
 	if err != nil {
 		return
@@ -70,7 +70,7 @@ func (r *UsersRepo) GetUserIdByInput(input models.UserInput) (id int, err error)
 
 func (r *UsersRepo) GetUserInfoByDomain(domain string) (user models.UserInfo, err error) {
 	err = r.db.QueryRow(
-		`SELECT units.id,units.domain,units.name,users.app_settings 
+		`SELECT units.id,units.domain,units.name
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.domain = $1`,
@@ -88,7 +88,7 @@ func (r *UsersRepo) GetUserInfoByDomain(domain string) (user models.UserInfo, er
 
 func (r *UsersRepo) GetUserInfoByID(id int) (user models.UserInfo, err error) {
 	err = r.db.QueryRow(
-		`SELECT units.id,units.domain,units.name,users.app_settings 
+		`SELECT units.id,units.domain,units.name
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.id = $1`,
@@ -129,17 +129,17 @@ func (r *UsersRepo) GetListUsersByName(name string) (users models.ListUserInfo, 
 	return
 }
 
-func (r *UsersRepo) IsUserExistsByInput(input models.UserInput) bool {
+func (r *UsersRepo) IsUserExistsByInput(input_model models.UserInput) bool {
 	is_exists := false
 	err := r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 FROM units 
 			INNER JOIN users 
 			ON units.id = users.id 
-			WHERE units.domain = $1 AND users.name = $2
+			WHERE units.domain = $1 AND units.name = $2
 			)`,
-		input.Domain,
-		input.Name,
+		input_model.Domain,
+		input_model.Name,
 	).Scan(&is_exists)
 	if err != nil || !is_exists {
 		return false
@@ -163,26 +163,26 @@ func (r *UsersRepo) GetUserSettings(user_id int) (settings *models.UserSettings,
 	return
 }
 
-func (r *UsersRepo) UpdateUserData(user_id int, inp *models.UpdateUserData) error {
-	if inp.Domain != "" {
+func (r *UsersRepo) UpdateUserData(user_id int, user_model *models.UpdateUserData) error {
+	if user_model.Domain != "" {
 		err := r.db.QueryRow(
 			`UPDATE units
 			SET domain = $2
 			WHERE id = $1`,
 			user_id,
-			inp.Domain,
+			user_model.Domain,
 		).Err()
 		if err != nil {
 			return err
 		}
 	}
-	if inp.Name != "" {
+	if user_model.Name != "" {
 		err := r.db.QueryRow(
 			`UPDATE units
 			SET name = $2
 			WHERE id = $1`,
 			user_id,
-			inp.Name,
+			user_model.Name,
 		).Err()
 		if err != nil {
 			return err
@@ -191,12 +191,12 @@ func (r *UsersRepo) UpdateUserData(user_id int, inp *models.UpdateUserData) erro
 	return nil
 }
 
-func (r *UsersRepo) UpdateUserSettings(user_id int, inp *models.UpdateUserSettings) error {
+func (r *UsersRepo) UpdateUserSettings(user_id int, settings_model *models.UpdateUserSettings) error {
 	err := r.db.QueryRow(
 		`UPDATE users
 		SET app_settings = $1
 		WHERE id = $2`,
-		inp.AppSettings,
+		settings_model.AppSettings,
 		user_id,
 	).Err()
 	if err != nil {
@@ -205,15 +205,15 @@ func (r *UsersRepo) UpdateUserSettings(user_id int, inp *models.UpdateUserSettin
 	return nil
 }
 
-func (r *UsersRepo) CreateNewUserRefreshSession(user_id int, s *models.RefreshSession) (sessions_count int, err error) {
+func (r *UsersRepo) CreateNewUserRefreshSession(user_id int, session_model *models.RefreshSession) (sessions_count int, err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, exp, created_at)
 		VALUES ($1, $2, $3, $4, $5)`,
 		user_id,
-		s.RefreshToken,
-		s.UserAgent,
-		s.Exp,
-		s.CreatedAt,
+		session_model.RefreshToken,
+		session_model.UserAgent,
+		session_model.Exp,
+		session_model.CreatedAt,
 	).Err()
 	if err != nil {
 		return
@@ -261,16 +261,16 @@ func (r *UsersRepo) FindSessionByComparedToken(token string) (session_id int, us
 	return
 
 }
-func (r *UsersRepo) UpdateRefreshSession(session_id int, s *models.RefreshSession) (err error) {
+func (r *UsersRepo) UpdateRefreshSession(session_id int, session_model *models.RefreshSession) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE refresh_sessions
 		SET refresh_token = $2, user_agent = $3, exp = $4, created_at = $5
 		WHERE id = $1`,
 		session_id,
-		s.RefreshToken,
-		s.UserAgent,
-		s.Exp,
-		s.CreatedAt,
+		session_model.RefreshToken,
+		session_model.UserAgent,
+		session_model.Exp,
+		session_model.CreatedAt,
 	).Err()
 	if err != nil {
 		return err

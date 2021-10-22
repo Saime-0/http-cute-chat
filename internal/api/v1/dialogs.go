@@ -82,7 +82,7 @@ func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		panic(err)
 	}
-	message_list, err := h.Services.Repos.Dialogs.GetListMessages(dialog_id)
+	message_list, err := h.Services.Repos.Dialogs.GetMessages(dialog_id)
 	if err != nil {
 		panic(err)
 	}

@@ -91,7 +91,7 @@ func (h *Handler) GetListRoomMessages(w http.ResponseWriter, r *http.Request) {
 	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
 		panic(err)
 	}
-	message_list, err := h.Services.Repos.Rooms.GetListMessages(room_id)
+	message_list, err := h.Services.Repos.Rooms.GetMessages(room_id)
 	if err != nil {
 		panic(err)
 	}
@@ -147,7 +147,7 @@ func (h *Handler) UpdateRoomData(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	err = h.Services.Repos.Rooms.UpdateRoomData(room_data)
+	err = h.Services.Repos.Rooms.UpdateRoomData(room_id, room_data)
 	if err != nil {
 		panic(err)
 	}

@@ -8,8 +8,8 @@ run:
 	
 .PHONY: bandr
 bandr: 
-	make build
-	make run
+	go build -v ./cmd/app
+	./app.exe
 
 
 

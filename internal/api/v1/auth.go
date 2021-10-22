@@ -92,7 +92,7 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 func GenerateNewSession(user_id int, r *http.Request) (token_pair *models.FreshTokenPair, session *models.RefreshSession) {
 	refresh_token := gotp.RandomSecret(16)
 	session = &models.RefreshSession{
-		RefreshToken: token_pair.RefreshToken,
+		RefreshToken: refresh_token,
 		UserAgent:    r.UserAgent(),
 		Exp:          time.Now().Unix() + int64(time.Hour),
 		CreatedAt:    time.Now().Unix(),
@@ -100,7 +100,7 @@ func GenerateNewSession(user_id int, r *http.Request) (token_pair *models.FreshT
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		ExpiresAt: session.Exp,
 		Subject:   strconv.Itoa(user_id),
-	}).SignedString(os.Getenv("SECRET_SEGNING_KEY"))
+	}).SignedString([]byte(os.Getenv("SECRET_SIGNING_KEY")))
 	if err != nil {
 		panic(err)
 	}
