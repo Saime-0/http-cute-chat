@@ -23,7 +23,7 @@ type Users interface {
 	GetListUsersByName(name string) (users models.ListUserInfo, err error)
 	IsUserExistsByInput(input_model models.UserInput) bool // new
 	// todo: get jwt: "id"
-	GetUserSettings(user_id int) (settings *models.UserSettings, err error)
+	GetUserSettings(user_id int) (settings models.UserSettings, err error)
 	UpdateUserData(user_id int, user_model *models.UpdateUserData) error
 	UpdateUserSettings(user_id int, settings_model *models.UpdateUserSettings) error
 
@@ -43,7 +43,6 @@ type Chats interface {
 	GetCountChatMembers(chat_id int) (count int, err error)
 	GetChatsByName(name string) (chats models.ListChatInfo, err error)
 	GetChatMembers(chat_id int) (members models.ListUserInfo, err error)
-	GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error)
 
 	GetChatDataByID(chat_id int) (chat models.ChatData, err error)
 	UpdateChatData(chat_id int, input_model *models.UpdateChatData) (err error)
@@ -61,10 +60,14 @@ type Rooms interface { //todo: get parent and child rooms
 	IsRoomExistsByID(room_id int) (is_exists bool)
 
 	CreateRoom(room_model *models.CreateRoom) (room_id int, err error)
+	GetRoomInfo(room_id int) (room models.RoomInfo, err error)
 	UpdateRoomData(room_id int, input_model *models.UpdateRoomData) (err error)
 
 	GetChatIDByRoomID(room_id int) (chat_id int, err error)
 	GetMessageInfo(message_id int, room_id int) (message models.MessageInfo, err error)
+
+	// ! GetChildRooms(room_id int) (childs models.ListRoomInfo, err error)
+	GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error)
 }
 
 // ? revision
@@ -95,7 +98,7 @@ func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
 		Users:   NewUsersRepo(db),
 		Chats:   NewChatsRepo(db),
-		Rooms:   NewRoomsRepoo(db),
+		Rooms:   NewRoomsRepo(db),
 		Dialogs: NewDialogsRepo(db),
 	}
 }

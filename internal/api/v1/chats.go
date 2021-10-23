@@ -14,11 +14,7 @@ import (
 func (h *Handler) initChatsRoutes(r *mux.Router) {
 	chats := r.PathPrefix("/chats/").Subrouter()
 	{
-		// GET
-		chats.HandleFunc("/d/{chat-id}/", h.GetChatByDomain).Methods(http.MethodGet)
-		chats.HandleFunc("/{chat-id}/", h.GetChatByID).Methods(http.MethodGet)
-		chats.HandleFunc("/", h.GetChatsByName).Methods(http.MethodGet)
-
+		// ! /chats/data/ equal /chats/{chat-id}/
 		authenticated := chats.PathPrefix("/").Subrouter()
 		authenticated.Use(h.checkAuth)
 		{
@@ -34,6 +30,10 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			// PUT
 			authenticated.HandleFunc("/{chat-id}/data/", h.UpdateChatData).Methods(http.MethodPut)
 		}
+		// GET
+		chats.HandleFunc("/d/{chat-domain}/", h.GetChatByDomain).Methods(http.MethodGet)
+		chats.HandleFunc("/{chat-id}/", h.GetChatByID).Methods(http.MethodGet)
+		chats.HandleFunc("/", h.GetChatsByName).Methods(http.MethodGet)
 	}
 }
 
@@ -72,7 +72,8 @@ func (h *Handler) GetChatsByName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -82,12 +83,16 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	chat_id, err := h.Services.Repos.Chats.CreateChat(user_id, chat)
+	if err != nil {
+		panic(err)
+	}
 	responder.Respond(w, http.StatusOK, &models.ChatID{ID: chat_id})
 
 }
 
 func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -103,7 +108,8 @@ func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -122,7 +128,8 @@ func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -141,7 +148,8 @@ func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -152,7 +160,7 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
 		panic(err)
 	}
-	room_list, err := h.Services.Repos.Chats.GetChatRooms(chat_id)
+	room_list, err := h.Services.Repos.Rooms.GetChatRooms(chat_id)
 	if err != nil {
 		panic(err)
 	}
@@ -160,7 +168,8 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -172,7 +181,8 @@ func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -186,7 +196,8 @@ func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}

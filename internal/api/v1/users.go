@@ -14,12 +14,8 @@ import (
 func (h *Handler) initUsersRoutes(r *mux.Router) {
 	users := r.PathPrefix("/users/").Subrouter()
 	{
-		// GET
-		users.HandleFunc("/d/{user-domain}/", h.GetUserByDomain).Methods(http.MethodGet)
-		users.HandleFunc("/{user-id}/", h.GetUserByID).Methods(http.MethodGet)
-		users.HandleFunc("/", h.GetUsersByName).Methods(http.MethodGet)
-
-		authenticated := users.PathPrefix("/").Subrouter()
+		// ! /users/settings/ equal /users/{user-id}/
+		authenticated := users.PathPrefix("/me/").Subrouter()
 		authenticated.Use(h.checkAuth)
 		{
 			// GET
@@ -30,6 +26,11 @@ func (h *Handler) initUsersRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/settings/", h.UpdateUserSettings).Methods(http.MethodPut)
 
 		}
+
+		// GET
+		users.HandleFunc("/d/{user-domain}/", h.GetUserByDomain).Methods(http.MethodGet)
+		users.HandleFunc("/{user-id}/", h.GetUserByID).Methods(http.MethodGet)
+		users.HandleFunc("/", h.GetUsersByName).Methods(http.MethodGet)
 	}
 }
 
@@ -55,7 +56,8 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserData(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +69,8 @@ func (h *Handler) GetUserData(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserSettings(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +95,8 @@ func (h *Handler) GetUsersByName(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -109,7 +113,8 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}

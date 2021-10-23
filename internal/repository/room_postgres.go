@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
@@ -10,7 +11,7 @@ type RoomsRepo struct {
 	db *sql.DB
 }
 
-func NewRoomsRepoo(db *sql.DB) *RoomsRepo {
+func NewRoomsRepo(db *sql.DB) *RoomsRepo {
 	return &RoomsRepo{
 		db: db,
 	}
@@ -78,15 +79,80 @@ func (r *RoomsRepo) IsRoomExistsByID(room_id int) (is_exists bool) {
 }
 
 func (r *RoomsRepo) CreateRoom(room_model *models.CreateRoom) (room_id int, err error) {
+	if room_model.ParentRoom != 0 {
+		parent_room_is_child := false
+		err = r.db.QueryRow(
+			`SELECT EXISTS(SELECT 1 FROM room_relation WHERE child_id=$1)`,
+			room_model.ParentRoom,
+		).Scan(&parent_room_is_child)
+		if err != nil {
+			return
+		}
+		if parent_room_is_child {
+			return 0, errors.New("parent's room with a child")
+		}
+	}
 	err = r.db.QueryRow(
-		`INSER INTO rooms (chat_id, parent_room, name, desc)
-		VALUES ($1, $2, $3, $4)
+		`INSERT INTO rooms (chat_id, name, note)
+		VALUES ($1, $2, $3)
 		RETURNING id`,
 		room_model.ChatID,
-		room_model.ParentRoom,
 		room_model.Name,
-		room_model.Desc,
+		room_model.Note,
 	).Scan(&room_id)
+	if err != nil {
+		return
+	}
+	if room_model.ParentRoom != 0 {
+		err = r.db.QueryRow(
+			`INSERT INTO room_relation (parent_id, child_id)
+			VALUES ($1, $2)`,
+			room_model.ParentRoom,
+			room_id,
+		).Err()
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+// ? почему не работает?
+func (r *RoomsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error) {
+	rows, err := r.db.Query(
+		`SELECT rooms.id, room_relation.parent_id, rooms.name, rooms.note
+		FROM rooms
+		INNER JOIN room_relation
+		ON rooms.id = room_relation.child_id
+		WHERE rooms.chat_id = $1`,
+		chat_id,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.RoomInfo{}
+		if err = rows.Scan(&m.ID, &m.ParentRoom, &m.Name, &m.Note); err != nil {
+			return
+		}
+		rooms.Rooms = append(rooms.Rooms, m)
+	}
+	if !rows.NextResultSet() {
+		return
+	}
+	return
+}
+
+func (r *RoomsRepo) GetRoomInfo(room_id int) (room models.RoomInfo, err error) {
+	err = r.db.QueryRow(
+		`SELECT rooms.id, room_relation.parent_id, rooms.name, rooms.note
+		FROM rooms
+		INNER JOIN room_relation
+		ON rooms.id = room_relation.child_id
+		WHERE rooms.id = $1`,
+		room_id,
+	).Scan()
 	if err != nil {
 		return
 	}
@@ -106,13 +172,13 @@ func (r *RoomsRepo) UpdateRoomData(room_id int, room_model *models.UpdateRoomDat
 			return
 		}
 	}
-	if room_model.Desc != "" {
+	if room_model.Note != "" {
 		err = r.db.QueryRow(
 			`UPDATE rooms
-			SET desc = $2
+			SET note = $2
 			WHERE id = $1`,
 			room_id,
-			room_model.Desc,
+			room_model.Note,
 		).Err()
 		if err != nil {
 			return

@@ -6,7 +6,7 @@ type Room struct {
 	ChatID     int    `json:"chat_id"`
 	ParentRoom int    `json:"parent_room"`
 	Name       string `json:"name"`
-	Desc       string `json:"desc"`
+	Note       string `json:"note"`
 }
 
 // INTERNAL models
@@ -15,11 +15,11 @@ type CreateRoom struct {
 	ChatID     int    `json:"chat_id"`
 	Name       string `json:"name"`
 	ParentRoom int    `json:"parent_room"`
-	Desc       string `json:"desc"`
+	Note       string `json:"note"`
 }
 type UpdateRoomData struct {
 	Name string `json:"name"`
-	Desc string `json:"desc"`
+	Note string `json:"note"`
 }
 
 // RESPONSE models
@@ -27,7 +27,7 @@ type RoomInfo struct {
 	ID         int    `json:"id"`
 	ParentRoom int    `json:"parent_room"`
 	Name       string `json:"name"`
-	Desc       string `json:"desc"`
+	Note       string `json:"note"`
 }
 type ListRoomInfo struct {
 	Rooms []RoomInfo `json:"rooms"`

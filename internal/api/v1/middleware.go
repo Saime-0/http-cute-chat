@@ -11,7 +11,7 @@ import (
 )
 
 // todo, create cfg package
-var SECRETKEY = os.Getenv("SECRET_SEGNING_KEY")
+var SECRETKEY = os.Getenv("SECRET_SIGNING_KEY")
 
 // todo: token is not expires
 func (h *Handler) checkAuth(next http.Handler) http.Handler {
@@ -25,7 +25,7 @@ func (h *Handler) checkAuth(next http.Handler) http.Handler {
 			jwtToken := authHeader[1]
 			token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 				}
 				return []byte(SECRETKEY), nil
 			})

@@ -160,29 +160,6 @@ func (r *ChatsRepo) GetChatMembers(chat_id int) (members models.ListUserInfo, er
 	}
 	return
 }
-func (r *ChatsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error) {
-	rows, err := r.db.Query(
-		`SELECT id, parent_room, name, desc
-		FROM rooms
-		WHERE chat_id = $1`,
-		chat_id,
-	)
-	if err != nil {
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		m := models.RoomInfo{}
-		if err = rows.Scan(&m.ID, &m.ParentRoom, &m.Name, &m.Desc); err != nil {
-			return
-		}
-		rooms.Rooms = append(rooms.Rooms, m)
-	}
-	if !rows.NextResultSet() {
-		return
-	}
-	return
-}
 
 func (r *ChatsRepo) GetChatDataByID(chat_id int) (chat models.ChatData, err error) {
 	err = r.db.QueryRow(
@@ -206,7 +183,7 @@ func (r *ChatsRepo) GetChatDataByID(chat_id int) (chat models.ChatData, err erro
 func (r *ChatsRepo) UpdateChatData(chat_id int, input_model *models.UpdateChatData) (err error) {
 	if input_model.Domain != "" {
 		err = r.db.QueryRow(
-			`UPDATE chats
+			`UPDATE units
 			SET domain = $2
 			WHERE id = $1`,
 			chat_id,
@@ -218,7 +195,7 @@ func (r *ChatsRepo) UpdateChatData(chat_id int, input_model *models.UpdateChatDa
 	}
 	if input_model.Name != "" {
 		err = r.db.QueryRow(
-			`UPDATE chats
+			`UPDATE units
 			SET name = $2
 			WHERE id = $1`,
 			chat_id,
@@ -274,7 +251,7 @@ func (r *ChatsRepo) GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, e
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
-		WHERE id IN (
+		WHERE units.id IN (
 			SELECT chats.id
 			FROM chats INNER JOIN chat_members 
 			ON chats.owner_id = chat_members.user_id
@@ -288,7 +265,7 @@ func (r *ChatsRepo) GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, e
 	defer rows.Close()
 	for rows.Next() {
 		m := models.ChatInfo{}
-		if err = rows.Scan(&m.ID, &m.Domain, &m.Name); err != nil {
+		if err = rows.Scan(&m.ID, &m.OwnerID, &m.Domain, &m.Name); err != nil {
 			return
 		}
 		m.CountMembers, err = r.GetCountChatMembers(m.ID)
@@ -308,7 +285,7 @@ func (r *ChatsRepo) GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
-		WHERE id IN (
+		WHERE units.id IN (
 			SELECT chat_id 
 			FROM chat_members
 			WHERE user_id = $1
@@ -321,7 +298,7 @@ func (r *ChatsRepo) GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo
 	defer rows.Close()
 	for rows.Next() {
 		m := models.ChatInfo{}
-		if err = rows.Scan(&m.ID, &m.Domain, &m.Name); err != nil {
+		if err = rows.Scan(&m.ID, &m.OwnerID, &m.Domain, &m.Name); err != nil {
 			return
 		}
 		m.CountMembers, err = r.GetCountChatMembers(m.ID)

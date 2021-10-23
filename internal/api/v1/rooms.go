@@ -32,7 +32,8 @@ func (h *Handler) initRoomsRoutes(r *mux.Router) {
 }
 
 func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -75,7 +76,8 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetListRoomMessages(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -99,7 +101,8 @@ func (h *Handler) GetListRoomMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -127,7 +130,8 @@ func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateRoomData(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}

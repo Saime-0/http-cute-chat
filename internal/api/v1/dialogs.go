@@ -24,14 +24,15 @@ func (h *Handler) initDialogsRoutes(r *mux.Router) {
 			// GET
 			authenticated.HandleFunc("/", h.GetListCompanions).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{user-id}/messages/", h.GetListDialogMessages).Methods(http.MethodGet)
-			authenticated.HandleFunc("/dialogs/{user-id}/messages/{message-id}/", h.GetDialogMessage).Methods(http.MethodGet)
+			authenticated.HandleFunc("/{user-id}/messages/{message-id}/", h.GetDialogMessage).Methods(http.MethodGet)
 			// PUT
 		}
 	}
 }
 
 func (h *Handler) SendMessageToUser(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -57,7 +58,8 @@ func (h *Handler) SendMessageToUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetListCompanions(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -70,7 +72,8 @@ func (h *Handler) GetListCompanions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}
@@ -90,7 +93,8 @@ func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) 
 }
 
 func (h *Handler) GetDialogMessage(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(r.Context().Value("jwt").(jwt.StandardClaims).Subject)
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {
 		panic(err)
 	}

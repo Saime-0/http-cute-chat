@@ -147,9 +147,9 @@ func (r *UsersRepo) IsUserExistsByInput(input_model models.UserInput) bool {
 	return true
 }
 
-func (r *UsersRepo) GetUserSettings(user_id int) (settings *models.UserSettings, err error) {
+func (r *UsersRepo) GetUserSettings(user_id int) (settings models.UserSettings, err error) {
 	err = r.db.QueryRow(
-		`SELECT units.app_settings
+		`SELECT users.app_settings
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.id = $1`,
