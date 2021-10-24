@@ -22,13 +22,9 @@ CREATE TABLE chat_members (
 CREATE TABLE rooms (
 	id bigserial primary key,
 	chat_id bigint references chats (id) not null,
+	parent_id bigint references rooms (id),
 	name varchar(32) not null,
 	note varchar(64)
-);
-CREATE TABLE room_relation (
-	id bigserial primary key,
-	parent_id bigint references rooms (id) not null,
-	child_id bigint references rooms (id) unique not null 
 );
 CREATE TABLE dialogs (
 	id bigserial primary key,

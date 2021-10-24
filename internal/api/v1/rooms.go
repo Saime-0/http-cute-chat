@@ -21,9 +21,8 @@ func (h *Handler) initRoomsRoutes(r *mux.Router) {
 		{
 			// POST
 			authenticated.HandleFunc("/{room-id}/messages/", h.SendMessageToRoom).Methods(http.MethodPost)
-			authenticated.HandleFunc("/", h.CreateRoom).Methods(http.MethodPost)
 			// GET
-			authenticated.HandleFunc("/{room-id}/messages/", h.GetListRoomMessages).Methods(http.MethodGet)
+			authenticated.HandleFunc("/{room-id}/messages/", h.GetRoomMessages).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{room-id}/messages/{message-id}/", h.GetRoomMessage).Methods(http.MethodGet)
 			// PUT
 			authenticated.HandleFunc("/{room-id}/data/", h.UpdateRoomData).Methods(http.MethodPut)
@@ -62,20 +61,7 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 	responder.Respond(w, http.StatusOK, &models.MessageID{ID: message_id})
 }
 
-func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
-	room := &models.CreateRoom{}
-	err := json.NewDecoder(r.Body).Decode(&room)
-	if err != nil {
-		panic(err)
-	}
-	room_id, err := h.Services.Repos.Rooms.CreateRoom(room)
-	if err != nil {
-		panic(err)
-	}
-	responder.Respond(w, http.StatusOK, &models.RoomID{ID: room_id})
-}
-
-func (h *Handler) GetListRoomMessages(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
 	user_id, err := strconv.Atoi(props["sub"].(string))
 	if err != nil {

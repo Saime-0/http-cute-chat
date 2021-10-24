@@ -59,7 +59,7 @@ type Rooms interface { //todo: get parent and child rooms
 	GetMessages(room_id int) (messages models.MessagesList, err error)
 	IsRoomExistsByID(room_id int) (is_exists bool)
 
-	CreateRoom(room_model *models.CreateRoom) (room_id int, err error)
+	CreateRoom(chat_id int, room_model *models.CreateRoom) (room_id int, err error)
 	GetRoomInfo(room_id int) (room models.RoomInfo, err error)
 	UpdateRoomData(room_id int, input_model *models.UpdateRoomData) (err error)
 
@@ -79,6 +79,8 @@ type Dialogs interface {
 	GetCompanions(user_id int) (users models.ListUserInfo, err error)
 	GetMessages(dialog_id int) (messages models.MessagesList, err error)
 	GetMessageInfo(message_id int, dialog_id int) (message models.MessageInfo, err error)
+	DialogIsExistsBetweenUsers(user1_id int, user2_id int) (exits bool)
+	CreateDialogBetweenUser(user1_id int, user2_id int) (dialog_id int, err error)
 }
 
 // type Auth interface {

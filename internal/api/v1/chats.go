@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -21,6 +22,7 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			// POST
 			authenticated.HandleFunc("/", h.CreateChat).Methods(http.MethodPost)
 			authenticated.HandleFunc("/{chat-id}/join/", h.AddUserToChat).Methods(http.MethodPost)
+			authenticated.HandleFunc("/{chat-id}/rooms/", h.CreateRoom).Methods(http.MethodPost)
 			// GET
 			authenticated.HandleFunc("/{chat-id}/data/", h.GetChatData).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/members/", h.GetChatMembers).Methods(http.MethodGet)
@@ -88,6 +90,31 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 	}
 	responder.Respond(w, http.StatusOK, &models.ChatID{ID: chat_id})
 
+}
+
+func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
+	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
+	user_id, err := strconv.Atoi(props["sub"].(string))
+	if err != nil {
+		panic(err)
+	}
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		panic(err)
+	}
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		panic(errors.New("the user does not have access to the chat"))
+	}
+	room := &models.CreateRoom{}
+	err = json.NewDecoder(r.Body).Decode(&room)
+	if err != nil {
+		panic(err)
+	}
+	room_id, err := h.Services.Repos.Rooms.CreateRoom(chat_id, room)
+	if err != nil {
+		panic(err)
+	}
+	responder.Respond(w, http.StatusOK, &models.RoomID{ID: room_id})
 }
 
 func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {

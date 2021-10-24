@@ -25,7 +25,8 @@ func (r *ChatsRepo) CreateChat(owner_id int, chat_model *models.CreateChat) (id 
 			RETURNING id
 			) 
 		INSERT INTO chats (id, owner_id) 
-		SELECT u.id, $3 FROM u 
+		SELECT u.id, $3 
+		FROM u 
 		RETURNING id`,
 		chat_model.Domain,
 		chat_model.Name,

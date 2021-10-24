@@ -17,15 +17,17 @@ func NewDialogsRepo(db *sql.DB) *DialogsRepo {
 }
 
 func (r *DialogsRepo) CreateMessage(dialog_id int, message_model *models.CreateMessage) (message_id int, err error) {
-	err = r.db.QueryRow( // todo: add record to "dialogs" if not exists
+	err = r.db.QueryRow(
 		`WITH m AS (
 			INSERT INTO messages (reply_to, author, body, type)
-			VALUES($2, $3, $4, $5)
+			VALUES (NULLIF($2, 0), $3, $4, $5)
 			RETURNING id
-			)
+		)
 		INSERT INTO dialog_msg_pool (dialog_id, message_id) 
 		SELECT $1, m.id
-		FROM m`,
+		FROM m
+		RETURNING message_id`,
+		dialog_id,
 		message_model.ReplyTo,
 		message_model.Author,
 		message_model.Body,
@@ -53,7 +55,7 @@ func (r *DialogsRepo) GetDialogIDBetweenUsers(user1_id int, user2_id int) (dialo
 
 func (r *DialogsRepo) GetCompanions(user_id int) (users models.ListUserInfo, err error) {
 	rows, err := r.db.Query(
-		`SELECT units.id,units.domain,units.name,users.app_settings 
+		`SELECT units.id,units.domain,units.name 
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.id IN (
@@ -86,7 +88,7 @@ func (r *DialogsRepo) GetCompanions(user_id int) (users models.ListUserInfo, err
 
 func (r *DialogsRepo) GetMessages(dialog_id int) (messages models.MessagesList, err error) {
 	rows, err := r.db.Query(
-		`SELECT id, reply_to, author, body, type
+		`SELECT id, COALESCE(reply_to, 0), author, body, type
 		FROM messages
 		WHERE id IN (
 			SELECT message_id 
@@ -115,7 +117,7 @@ func (r *DialogsRepo) GetMessages(dialog_id int) (messages models.MessagesList, 
 
 func (r *DialogsRepo) GetMessageInfo(message_id int, dialog_id int) (message models.MessageInfo, err error) {
 	err = r.db.QueryRow(
-		`SELECT messages.id, messages.reply_to, messages.author, messages.body, messages.type
+		`SELECT messages.id, COALESCE(messages.reply_to, 0), messages.author, messages.body, messages.type
 		FROM messages
 		INNER JOIN dialog_msg_pool
 		ON messages.id = dialog_msg_pool.message_id
@@ -129,6 +131,30 @@ func (r *DialogsRepo) GetMessageInfo(message_id int, dialog_id int) (message mod
 		&message.Body,
 		&message.Type,
 	)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (r *DialogsRepo) DialogIsExistsBetweenUsers(user1_id int, user2_id int) (exits bool) {
+	_ = r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1 
+			FROM dialogs 
+			WHERE user1 = $1 AND user2 = $2 OR user1 = $2 AND user2 = $1
+			)`,
+	).Scan(&exits)
+	return
+}
+func (r *DialogsRepo) CreateDialogBetweenUser(user1_id int, user2_id int) (dialog_id int, err error) {
+	err = r.db.QueryRow(
+		`INSERT INTO dialogs (user1, user2)
+		VALUES ($1, $2)
+		RETURNING id`,
+		user1_id,
+		user2_id,
+	).Scan(&dialog_id)
 	if err != nil {
 		return
 	}
