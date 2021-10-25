@@ -13,21 +13,16 @@ import (
 )
 
 func (h *Handler) initDialogsRoutes(r *mux.Router) {
-	dialogs := r.PathPrefix("/dialogs/").Subrouter()
+	authenticated := r.PathPrefix("/dialogs").Subrouter()
+	authenticated.Use(checkAuth)
 	{
-		//
-
-		authenticated := dialogs.PathPrefix("/").Subrouter()
-		authenticated.Use(h.checkAuth)
-		{
-			// POST
-			authenticated.HandleFunc("/{user-id}/messages/", h.SendMessageToUser).Methods(http.MethodPost)
-			// GET
-			authenticated.HandleFunc("/{user-id}/messages/", h.GetListDialogMessages).Methods(http.MethodGet)
-			authenticated.HandleFunc("/{user-id}/messages/{message-id}/", h.GetDialogMessage).Methods(http.MethodGet)
-			authenticated.HandleFunc("/", h.GetListCompanions).Methods(http.MethodGet)
-			// PUT
-		}
+		// POST
+		authenticated.HandleFunc("/{user-id}/messages", h.SendMessageToUser).Methods(http.MethodPost)
+		// GET
+		authenticated.HandleFunc("/{user-id}/messages", h.GetListDialogMessages).Methods(http.MethodGet)
+		authenticated.HandleFunc("/{user-id}/messages/{message-id}", h.GetDialogMessage).Methods(http.MethodGet)
+		authenticated.HandleFunc("", h.GetListCompanions).Methods(http.MethodGet)
+		// PUT
 	}
 }
 
@@ -54,7 +49,6 @@ func (h *Handler) SendMessageToUser(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// todo: create dialog OR create dialog if not exists
 	message := &models.CreateMessage{}
 	err = json.NewDecoder(r.Body).Decode(&message)
 	if err != nil {
@@ -82,8 +76,6 @@ func (h *Handler) GetListCompanions(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// ! FIX: при отправке сообщения в диалог, оно попаает не известно куда и при чтении
-// ! через GetListDialogMessages возвращается 1 сообщение из комнаты чата
 func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) {
 	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
 	user_id, err := strconv.Atoi(props["sub"].(string))

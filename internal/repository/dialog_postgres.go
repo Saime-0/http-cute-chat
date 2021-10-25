@@ -138,12 +138,14 @@ func (r *DialogsRepo) GetMessageInfo(message_id int, dialog_id int) (message mod
 }
 
 func (r *DialogsRepo) DialogIsExistsBetweenUsers(user1_id int, user2_id int) (exits bool) {
-	_ = r.db.QueryRow(
+	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
 			FROM dialogs 
 			WHERE user1 = $1 AND user2 = $2 OR user1 = $2 AND user2 = $1
 			)`,
+		user1_id,
+		user2_id,
 	).Scan(&exits)
 	return
 }

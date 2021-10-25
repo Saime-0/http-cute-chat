@@ -12,21 +12,16 @@ import (
 )
 
 func (h *Handler) initRoomsRoutes(r *mux.Router) {
-	rooms := r.PathPrefix("/rooms/").Subrouter()
+	authenticated := r.PathPrefix("/rooms").Subrouter()
+	authenticated.Use(checkAuth)
 	{
-		//
-
-		authenticated := rooms.PathPrefix("/").Subrouter()
-		authenticated.Use(h.checkAuth)
-		{
-			// POST
-			authenticated.HandleFunc("/{room-id}/messages/", h.SendMessageToRoom).Methods(http.MethodPost)
-			// GET
-			authenticated.HandleFunc("/{room-id}/messages/", h.GetRoomMessages).Methods(http.MethodGet)
-			authenticated.HandleFunc("/{room-id}/messages/{message-id}/", h.GetRoomMessage).Methods(http.MethodGet)
-			// PUT
-			authenticated.HandleFunc("/{room-id}/data/", h.UpdateRoomData).Methods(http.MethodPut)
-		}
+		// POST
+		authenticated.HandleFunc("/{room-id}/messages", h.SendMessageToRoom).Methods(http.MethodPost)
+		// GET
+		authenticated.HandleFunc("/{room-id}/messages", h.GetRoomMessages).Methods(http.MethodGet)
+		authenticated.HandleFunc("/{room-id}/messages/{message-id}", h.GetRoomMessage).Methods(http.MethodGet)
+		// PUT
+		authenticated.HandleFunc("/{room-id}/data", h.UpdateRoomData).Methods(http.MethodPut)
 	}
 }
 
@@ -141,5 +136,5 @@ func (h *Handler) UpdateRoomData(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	responder.Respond(w, http.StatusOK, "")
+	responder.Respond(w, http.StatusOK, nil)
 }

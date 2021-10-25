@@ -20,7 +20,7 @@ type Users interface {
 	GetUserIdByInput(input_model models.UserInput) (id int, err error)
 	GetUserInfoByDomain(domain string) (user models.UserInfo, err error)
 	GetUserInfoByID(id int) (user models.UserInfo, err error)
-	GetListUsersByName(name string) (users models.ListUserInfo, err error)
+	GetUsersByNameFragment(fragment string, offset int) (users models.ListUserInfo, err error)
 	IsUserExistsByInput(input_model models.UserInput) bool // new
 	// todo: get jwt: "id"
 	GetUserSettings(user_id int) (settings models.UserSettings, err error)
@@ -41,7 +41,7 @@ type Chats interface {
 	GetChatInfoByID(chat_id int) (chat models.ChatInfo, err error)
 	IsChatExistsByID(chat_id int) bool
 	GetCountChatMembers(chat_id int) (count int, err error)
-	GetChatsByName(name string) (chats models.ListChatInfo, err error)
+	GetChatsByNameFragment(name string, offset int) (chats models.ListChatInfo, err error)
 	GetChatMembers(chat_id int) (members models.ListUserInfo, err error)
 
 	GetChatDataByID(chat_id int) (chat models.ChatData, err error)

@@ -16,12 +16,12 @@ import (
 )
 
 func (h *Handler) initAuthRoutes(r *mux.Router) {
-	auth := r.PathPrefix("/auth/").Subrouter()
+	auth := r.PathPrefix("/auth").Subrouter()
 	{
 		// POST
-		auth.HandleFunc("/sign-up/", h.AuthSignUp).Methods(http.MethodPost)
-		auth.HandleFunc("/sign-in/", h.AuthSignIn).Methods(http.MethodPost)
-		auth.HandleFunc("/refresh/", h.AuthRefresh).Methods(http.MethodPost)
+		auth.HandleFunc("/sign-up", h.AuthSignUp).Methods(http.MethodPost)
+		auth.HandleFunc("/sign-in", h.AuthSignIn).Methods(http.MethodPost)
+		auth.HandleFunc("/refresh", h.AuthRefresh).Methods(http.MethodPost)
 
 	}
 }
@@ -43,7 +43,7 @@ func (h *Handler) AuthSignUp(w http.ResponseWriter, r *http.Request) {
 	}
 	user_json, _ := json.MarshalIndent(uinfo, "", "  ")
 	log.Printf("New user created:\n%s\n", string(user_json))
-	responder.Respond(w, http.StatusOK, "")
+	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {

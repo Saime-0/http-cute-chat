@@ -3,18 +3,40 @@ package v1
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/saime-0/http-cute-chat/internal/api/responder"
 )
+
+func LogRequest(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("started %s %s", r.Method, r.RequestURI)
+
+		start := time.Now()
+		rw := &responder.Writer{
+			ResponseWriter: w,
+			Code:           http.StatusOK,
+		}
+		next.ServeHTTP(rw, r)
+
+		log.Printf(
+			"completed with %d %s in %v\n",
+			rw.Code,
+			http.StatusText(rw.Code),
+			time.Since(start),
+		)
+	})
+}
 
 // todo, create cfg package
 var SECRETKEY = os.Getenv("SECRET_SIGNING_KEY")
 
-// todo: token is not expires
-func (h *Handler) checkAuth(next http.Handler) http.Handler {
+func checkAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := strings.Split(r.Header.Get("Authorization"), "Bearer ")
 		if len(authHeader) != 2 {

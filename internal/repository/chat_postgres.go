@@ -105,13 +105,16 @@ func (r *ChatsRepo) IsChatExistsByID(chat_id int) bool {
 	return exists
 }
 
-func (r *ChatsRepo) GetChatsByName(name string) (chats models.ListChatInfo, err error) {
+func (r *ChatsRepo) GetChatsByNameFragment(name string, offset int) (chats models.ListChatInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
-		WHERE units.name ILIKE $1`,
+		WHERE units.name ILIKE $1
+		LIMIT 20
+		OFFSET $2`,
 		"%"+name+"%",
+		offset,
 	)
 	if err != nil {
 		return

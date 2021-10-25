@@ -104,13 +104,16 @@ func (r *UsersRepo) GetUserInfoByID(id int) (user models.UserInfo, err error) {
 	return
 }
 
-func (r *UsersRepo) GetListUsersByName(name string) (users models.ListUserInfo, err error) {
+func (r *UsersRepo) GetUsersByNameFragment(fragment string, offset int) (users models.ListUserInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id, units.domain,units.name
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
-		WHERE units.name ILIKE $1`,
-		"%"+name+"%",
+		WHERE units.name ILIKE $1
+		LIMIT 20
+		OFFSET $2`,
+		"%"+fragment+"%",
+		offset,
 	)
 	if err != nil {
 		return
