@@ -93,17 +93,6 @@ func (r *ChatsRepo) GetCountChatMembers(chat_id int) (count int, err error) {
 	}
 	return
 }
-func (r *ChatsRepo) IsChatExistsByID(chat_id int) bool {
-	exists := false
-	err := r.db.QueryRow(
-		`SELECT EXISTS(SELECT 1 FROM chats WHERE id=$1)`,
-		chat_id,
-	).Scan(&exists)
-	if err != nil || !exists {
-		return exists
-	}
-	return exists
-}
 
 func (r *ChatsRepo) GetChatsByNameFragment(name string, offset int) (chats models.ListChatInfo, err error) {
 	rows, err := r.db.Query(
@@ -314,5 +303,30 @@ func (r *ChatsRepo) GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo
 	if !rows.NextResultSet() {
 		return
 	}
+	return
+}
+
+func (r *ChatsRepo) GetCountUserChats(user_id int) (count int, err error) {
+	err = r.db.QueryRow(
+		`SELECT count(*)
+		FROM units INNER JOIN chats 
+		ON units.id = chats.id 
+		WHERE units.id IN (
+			SELECT chat_id 
+			FROM chat_members
+			WHERE user_id = $1
+			)`,
+		user_id,
+	).Scan(&count)
+	return
+}
+
+func (r *ChatsRepo) GetCountRooms(chat_id int) (count int, err error) {
+	err = r.db.QueryRow(
+		`SELECT count(*)
+		FROM rooms
+		WHERE chat_id = $1`,
+		chat_id,
+	).Scan(&count)
 	return
 }

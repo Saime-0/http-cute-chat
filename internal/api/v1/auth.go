@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"log"
 	"net/http"
 	"os"
@@ -90,7 +91,7 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func GenerateNewSession(user_id int, r *http.Request) (token_pair *models.FreshTokenPair, session *models.RefreshSession) {
-	refresh_token := gotp.RandomSecret(16)
+	refresh_token := gotp.RandomSecret(rules.RefreshTokenLength)
 	session = &models.RefreshSession{
 		RefreshToken: refresh_token,
 		UserAgent:    r.UserAgent(),

@@ -1,11 +1,13 @@
 package v1
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+
 	"github.com/gorilla/mux"
 	"github.com/saime-0/http-cute-chat/internal/api/responder"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -26,115 +28,167 @@ func (h *Handler) initRoomsRoutes(r *mux.Router) {
 }
 
 func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
-	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
-	user_id, err := strconv.Atoi(props["sub"].(string))
-	if err != nil {
-		panic(err)
-	}
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
 	room_id, err := strconv.Atoi(mux.Vars(r)["room-id"])
 	if err != nil {
-		panic(err)
-	}
-	chat_id, err := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
-	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
-		panic(err)
+	if !h.Services.Repos.Rooms.IsRoomExistsByID(room_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrRoomNotFound)
+
+		return
 	}
+
+	chat_id, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
 	message := &models.CreateMessage{}
 	err = json.NewDecoder(r.Body).Decode(&message)
 	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
 	}
+
 	message.Author = user_id
 	message_id, err := h.Services.Repos.Rooms.CreateMessage(room_id, message)
-	if err != nil {
+	switch {
+	case err == sql.ErrNoRows:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 		panic(err)
+
+	case err != nil:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
+		return
 	}
+
 	responder.Respond(w, http.StatusOK, &models.MessageID{ID: message_id})
 }
 
 func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
-	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
-	user_id, err := strconv.Atoi(props["sub"].(string))
-	if err != nil {
-		panic(err)
-	}
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
 	room_id, err := strconv.Atoi(mux.Vars(r)["room-id"])
 	if err != nil {
-		panic(err)
-	}
-	chat_id, err := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
-	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
 	}
 
+	if !h.Services.Repos.Rooms.IsRoomExistsByID(room_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrRoomNotFound)
+
+		return
+	}
+
+	chat_id, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
 	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
 	}
+
 	message_list, err := h.Services.Repos.Rooms.GetMessages(room_id)
-	if err != nil {
+	switch {
+	case err == sql.ErrNoRows:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 		panic(err)
+
+	case err != nil:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
+		return
 	}
+
 	responder.Respond(w, http.StatusOK, message_list)
 }
 
 func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
-	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
-	user_id, err := strconv.Atoi(props["sub"].(string))
-	if err != nil {
-		panic(err)
-	}
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
 	room_id, err := strconv.Atoi(mux.Vars(r)["room-id"])
 	if err != nil {
-		panic(err)
-	}
-	message_id, err := strconv.Atoi(mux.Vars(r)["message-id"])
-	if err != nil {
-		panic(err)
-	}
-	chat_id, err := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
-	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
 	}
 
+	if !h.Services.Repos.Rooms.IsRoomExistsByID(room_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrRoomNotFound)
+
+		return
+	}
+
+	chat_id, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
 	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
 	}
-	message, err := h.Services.Repos.Rooms.GetMessageInfo(message_id, room_id)
+
+	message_id, err := strconv.Atoi(mux.Vars(r)["message-id"])
 	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
 	}
+
+	message, err := h.Services.Repos.Rooms.GetMessageInfo(message_id, room_id)
+	switch {
+	case err == sql.ErrNoRows:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+		panic(err)
+
+	case err != nil:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
+		return
+	}
+
 	responder.Respond(w, http.StatusOK, message)
 }
 
 func (h *Handler) UpdateRoomData(w http.ResponseWriter, r *http.Request) {
-	props, _ := r.Context().Value("jwt").(jwt.MapClaims)
-	user_id, err := strconv.Atoi(props["sub"].(string))
-	if err != nil {
-		panic(err)
-	}
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
 	room_id, err := strconv.Atoi(mux.Vars(r)["room-id"])
 	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
 	}
-	chat_id, err := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
-	if err != nil {
-		panic(err)
+
+	chat_id, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
 	}
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
-		panic(err)
-	}
+
 	room_data := &models.UpdateRoomData{}
 	err = json.NewDecoder(r.Body).Decode(&room_data)
 	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
 	}
+
 	err = h.Services.Repos.Rooms.UpdateRoomData(room_id, room_data)
-	if err != nil {
+	switch {
+	case err == sql.ErrNoRows:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 		panic(err)
+
+	case err != nil:
+		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
+		return
 	}
+
 	responder.Respond(w, http.StatusOK, nil)
 }

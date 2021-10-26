@@ -280,3 +280,13 @@ func (r *UsersRepo) UpdateRefreshSession(session_id int, session_model *models.R
 	}
 	return nil
 }
+
+func (r *UsersRepo) GetCountUserOwnedChats(user_id int) (count int, err error) {
+	err = r.db.QueryRow(
+		`SELECT count(*)
+		FROM chats 
+		WHERE owner_id = $1`,
+		user_id,
+	).Scan(&count)
+	return
+}

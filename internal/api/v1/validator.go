@@ -1,20 +1,22 @@
 package v1
 
+import "github.com/saime-0/http-cute-chat/internal/api/rules"
+
 func validateDomain(domain string) (valid bool) {
-	if (len(domain) > DomainMaxLength) || (len(domain) < DomainMinLength) {
+	if (len(domain) > rules.DomainMaxLength) || (len(domain) < rules.DomainMinLength) {
 		return false
 	}
 	return true
 }
 func validateName(name string) (valid bool) {
-	if (len(name) > NameMaxLength) || (len(name) < NameMinLength) {
+	if (len(name) > rules.NameMaxLength) || (len(name) < rules.NameMinLength) {
 		return false
 	}
 	return true
 }
 func validateAppSettings(settings string) (valid bool) {
 
-	return len(settings) <= AppSettingsMaxLength
+	return len(settings) <= rules.AppSettingsMaxLength
 
 }
 

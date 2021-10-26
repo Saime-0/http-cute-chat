@@ -6,11 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/saime-0/http-cute-chat/internal/api/responder"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
 
 func LogRequest(next http.Handler) http.Handler {
@@ -53,7 +55,8 @@ func checkAuth(next http.Handler) http.Handler {
 			})
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-				ctx := context.WithValue(r.Context(), "jwt", claims)
+				user_id, _ := strconv.Atoi(claims["sub"].(string))
+				ctx := context.WithValue(r.Context(), rules.UserIDFromToken, user_id)
 				// Access context values in handlers like this
 				// props, _ := r.Context().Value("props").(jwt.MapClaims)
 				next.ServeHTTP(w, r.WithContext(ctx))

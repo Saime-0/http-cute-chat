@@ -8,8 +8,10 @@ import (
 
 // revision
 type Units interface {
-	GetDomainByID(id int) (domain string, err error)
-	GetIDByDomain(domain string) (id int, err error)
+	GetDomainByID(unit_id int) (domain string, err error)
+	GetIDByDomain(unit_domain string) (id int, err error)
+	IsUnitExistsByID(unit_id int) (exists bool)
+	IsUnitExistsByDomain(unit_domain string) (exists bool)
 }
 
 type Users interface {
@@ -34,12 +36,12 @@ type Users interface {
 	DeleteOldestSession(user_id int) (err error)
 	FindSessionByComparedToken(token string) (session_id int, user_id int, err error)
 	UpdateRefreshSession(session_id int, session_model *models.RefreshSession) (err error)
+	GetCountUserOwnedChats(user_id int) (count int, err error)
 }
 type Chats interface {
 	CreateChat(owner_id int, chat_model *models.CreateChat) (id int, err error)
 	GetChatInfoByDomain(domain string) (chat models.ChatInfo, err error)
 	GetChatInfoByID(chat_id int) (chat models.ChatInfo, err error)
-	IsChatExistsByID(chat_id int) bool
 	GetCountChatMembers(chat_id int) (count int, err error)
 	GetChatsByNameFragment(name string, offset int) (chats models.ListChatInfo, err error)
 	GetChatMembers(chat_id int) (members models.ListUserInfo, err error)
@@ -53,6 +55,8 @@ type Chats interface {
 
 	GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, err error)
 	GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo, err error)
+	GetCountRooms(chat_id int) (count int, err error)
+	GetCountUserChats(user_id int) (count int, err error)
 }
 type Rooms interface { //todo: get parent and child rooms
 	CreateMessage(room_id int, message_model *models.CreateMessage) (message_id int, err error)
@@ -90,6 +94,7 @@ type Dialogs interface {
 // }
 
 type Repositories struct {
+	Units   Units
 	Users   Users
 	Chats   Chats
 	Rooms   Rooms
@@ -98,6 +103,7 @@ type Repositories struct {
 
 func NewRepositories(db *sql.DB) *Repositories {
 	return &Repositories{
+		Units:   NewUnitsRepo(db),
 		Users:   NewUsersRepo(db),
 		Chats:   NewChatsRepo(db),
 		Rooms:   NewRoomsRepo(db),
