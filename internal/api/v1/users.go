@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -37,57 +36,34 @@ func (h *Handler) initUsersRoutes(r *mux.Router) {
 }
 
 func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
-	user_domain := mux.Vars(r)["user-domain"]
-	if !validateDomain(user_domain) {
-		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+	pl := initPipeline(w, r, h)
+	user_domain := pl.parseUserDomainFromRequest()
 
-		return
-	}
-
-	if !h.Services.Repos.Units.IsUnitExistsByDomain(user_domain) {
+	if !h.Services.Repos.Users.UserExistsByDomain(user_domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserNotFound)
 
 		return
 	}
 
 	user, err := h.Services.Repos.Users.GetUserInfoByDomain(user_domain)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	pl.finalInspectionDatabase(err)
 
 	responder.Respond(w, http.StatusOK, user)
 }
 
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	user_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
-	if err != nil {
-		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+	pl := initPipeline(w, r, h)
 
-		return
-	}
+	user_id := pl.parseUserIDFromRequest()
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(user_id) {
+	if !h.Services.Repos.Users.UserExistsByID(user_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserNotFound)
 
 		return
 	}
 
 	user, err := h.Services.Repos.Users.GetUserInfoByID(user_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, user)
 }
@@ -96,15 +72,7 @@ func (h *Handler) GetUserData(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 
 	data, err := h.Services.Repos.Users.GetUserData(user_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, data)
 }
@@ -113,15 +81,7 @@ func (h *Handler) GetUserSettings(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 
 	settings, err := h.Services.Repos.Users.GetUserSettings(user_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, settings)
 }
@@ -148,15 +108,7 @@ func (h *Handler) GetUsersByName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user_list, err := h.Services.Repos.Users.GetUsersByNameFragment(name_fragment, offset)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, user_list)
 }
@@ -179,15 +131,7 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.Services.Repos.Users.UpdateUserData(user_id, user_data)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
@@ -210,15 +154,7 @@ func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.Services.Repos.Users.UpdateUserSettings(user_id, user_settings)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }

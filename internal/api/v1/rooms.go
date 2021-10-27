@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -37,7 +36,7 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Rooms.IsRoomExistsByID(room_id) {
+	if !h.Services.Repos.Rooms.RoomExistsByID(room_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrRoomNotFound)
 
 		return
@@ -59,16 +58,8 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message.Author = user_id
-	message_id, err := h.Services.Repos.Rooms.CreateMessage(room_id, message)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	message_id, err := h.Services.Repos.Messages.CreateMessageInRoom(room_id, message)
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, &models.MessageID{ID: message_id})
 }
@@ -83,7 +74,7 @@ func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Rooms.IsRoomExistsByID(room_id) {
+	if !h.Services.Repos.Rooms.RoomExistsByID(room_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrRoomNotFound)
 
 		return
@@ -96,16 +87,8 @@ func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message_list, err := h.Services.Repos.Rooms.GetMessages(room_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	message_list, err := h.Services.Repos.Messages.GetMessagesFromRoom(room_id)
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, message_list)
 }
@@ -120,7 +103,7 @@ func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Rooms.IsRoomExistsByID(room_id) {
+	if !h.Services.Repos.Rooms.RoomExistsByID(room_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrRoomNotFound)
 
 		return
@@ -140,16 +123,8 @@ func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message, err := h.Services.Repos.Rooms.GetMessageInfo(message_id, room_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	message, err := h.Services.Repos.Messages.GetMessageFromRoom(message_id, room_id)
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, message)
 }
@@ -180,15 +155,7 @@ func (h *Handler) UpdateRoomData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.Services.Repos.Rooms.UpdateRoomData(room_id, room_data)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }

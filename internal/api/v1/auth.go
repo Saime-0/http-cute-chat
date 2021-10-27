@@ -2,12 +2,13 @@ package v1
 
 import (
 	"encoding/json"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
@@ -59,12 +60,12 @@ func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	token_pair, session := GenerateNewSession(user_id, r)
-	sessions_count, err := h.Services.Repos.Users.CreateNewUserRefreshSession(user_id, session)
+	sessions_count, err := h.Services.Repos.Auth.CreateNewUserRefreshSession(user_id, session)
 	if err != nil {
 		panic(err)
 	}
 	if sessions_count > 5 {
-		err = h.Services.Repos.Users.DeleteOldestSession(user_id)
+		err = h.Services.Repos.Auth.DeleteOldestSession(user_id)
 		if err != nil {
 			panic(err)
 		}
@@ -78,12 +79,12 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	session_id, user_id, err := h.Services.Repos.Users.FindSessionByComparedToken(rtoken.RefreshToken)
+	session_id, user_id, err := h.Services.Repos.Auth.FindSessionByComparedToken(rtoken.RefreshToken)
 	if err != nil {
 		panic(err)
 	}
 	token_pair, session := GenerateNewSession(user_id, r)
-	err = h.Services.Repos.Users.UpdateRefreshSession(session_id, session)
+	err = h.Services.Repos.Auth.UpdateRefreshSession(session_id, session)
 	if err != nil {
 		panic(err)
 	}

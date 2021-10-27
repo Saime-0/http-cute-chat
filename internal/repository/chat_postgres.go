@@ -37,7 +37,7 @@ func (r *ChatsRepo) CreateChat(owner_id int, chat_model *models.CreateChat) (id 
 	}
 	return
 }
-func (r *ChatsRepo) GetChatInfoByDomain(domain string) (chat models.ChatInfo, err error) {
+func (r *ChatsRepo) GetChatByDomain(domain string) (chat models.ChatInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
@@ -59,7 +59,7 @@ func (r *ChatsRepo) GetChatInfoByDomain(domain string) (chat models.ChatInfo, er
 	}
 	return
 }
-func (r *ChatsRepo) GetChatInfoByID(chat_id int) (chat models.ChatInfo, err error) {
+func (r *ChatsRepo) GetChatByID(chat_id int) (chat models.ChatInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
@@ -328,5 +328,33 @@ func (r *ChatsRepo) GetCountRooms(chat_id int) (count int, err error) {
 		WHERE chat_id = $1`,
 		chat_id,
 	).Scan(&count)
+	return
+}
+
+func (r *ChatsRepo) ChatExistsByID(chat_id int) (exists bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM chats
+			WHERE id = $1
+		)`,
+		chat_id,
+	).Scan(&exists)
+
+	return
+}
+
+func (r *ChatsRepo) ChatExistsByDomain(chat_domain string) (exists bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM units
+			INNER JOIN chats
+			ON chats.id = units.id
+			WHERE units.domain = $1
+		)`,
+		chat_domain,
+	).Scan(&exists)
+
 	return
 }

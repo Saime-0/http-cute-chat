@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -48,22 +47,14 @@ func (h *Handler) GetChatByDomain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByDomain(chat_domain) {
+	if !h.Services.Repos.Chats.ChatExistsByDomain(chat_domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrChatNotFound)
 
 		return
 	}
 
-	chat, err := h.Services.Repos.Chats.GetChatInfoByDomain(chat_domain)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	chat, err := h.Services.Repos.Chats.GetChatByDomain(chat_domain)
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat)
 }
@@ -76,22 +67,14 @@ func (h *Handler) GetChatByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrChatNotFound)
 
 		return
 	}
 
-	chat, err := h.Services.Repos.Chats.GetChatInfoByID(chat_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	chat, err := h.Services.Repos.Chats.GetChatByID(chat_id)
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat)
 }
@@ -118,15 +101,7 @@ func (h *Handler) GetChatsByName(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chat_list, err := h.Services.Repos.Chats.GetChatsByNameFragment(name_fragment, offset)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat_list)
 }
@@ -155,7 +130,7 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.Services.Repos.Units.IsUnitExistsByDomain(chat.Domain) {
+	if h.Services.Repos.Chats.ChatExistsByDomain(chat.Domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOccupiedDomain)
 
 		return
@@ -168,15 +143,7 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chat_id, err := h.Services.Repos.Chats.CreateChat(user_id, chat)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, &models.ChatID{ID: chat_id})
 
@@ -192,7 +159,7 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrChatNotFound)
 
 		return
@@ -233,15 +200,7 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	room_id, err := h.Services.Repos.Rooms.CreateRoom(chat_id, room)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, &models.RoomID{ID: room_id})
 }
@@ -256,7 +215,7 @@ func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
@@ -276,15 +235,7 @@ func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.Services.Repos.Chats.AddUserToChat(user_id, chat_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
@@ -299,7 +250,7 @@ func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
@@ -312,15 +263,7 @@ func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chat_data, err := h.Services.Repos.Chats.GetChatDataByID(chat_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat_data)
 }
@@ -335,7 +278,7 @@ func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
@@ -348,15 +291,7 @@ func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user_list, err := h.Services.Repos.Chats.GetChatMembers(chat_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, user_list)
 }
@@ -371,7 +306,7 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
@@ -384,15 +319,7 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 	}
 
 	room_list, err := h.Services.Repos.Rooms.GetChatRooms(chat_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, room_list)
 }
@@ -401,15 +328,7 @@ func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 
 	chat_list, err := h.Services.Repos.Chats.GetChatsOwnedUser(user_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat_list)
 }
@@ -418,15 +337,7 @@ func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 
 	chat_list, err := h.Services.Repos.Chats.GetChatsInvolvedUser(user_id)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat_list)
 }
@@ -440,7 +351,7 @@ func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Units.IsUnitExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
@@ -461,15 +372,7 @@ func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.Services.Repos.Chats.UpdateChatData(chat_id, chat_data)
-	switch {
-	case err == sql.ErrNoRows:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
-		panic(err)
-
-	case err != nil:
-		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
-		return
-	}
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
