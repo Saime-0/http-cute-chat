@@ -52,6 +52,5 @@ CREATE TABLE refresh_sessions (
     refresh_token varchar(16) not null,
     user_agent varchar(64) not null,
     exp bigint not null,
-    created_at bigint not null,
-	counter smallint not null default 0
+    created_at bigint not null
 );

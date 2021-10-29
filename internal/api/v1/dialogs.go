@@ -102,6 +102,12 @@ func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	offset, err := parseOffsetFromQuery(w, r)
+	if err != nil {
+
+		return
+	}
+
 	if !h.Services.Repos.Users.UserExistsByID(target_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
@@ -123,7 +129,7 @@ func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	message_list, err := h.Services.Repos.Messages.GetMessagesFromDialog(dialog_id)
+	message_list, err := h.Services.Repos.Messages.GetMessagesFromDialog(dialog_id, offset)
 	if err != nil {
 		panic(err)
 	}

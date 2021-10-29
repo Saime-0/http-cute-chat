@@ -2,7 +2,6 @@ package v1
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -29,22 +28,17 @@ func (h *Handler) initAuthRoutes(r *mux.Router) {
 }
 
 func (h *Handler) AuthSignUp(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
 	user := &models.CreateUser{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
 	}
-	user_id, err := h.Services.Repos.Users.CreateUser(user)
-	if err != nil {
-		panic(err)
-	}
-	uinfo, err := h.Services.Repos.Users.GetUserInfoByID(user_id)
-	if err != nil {
-		panic(err)
-	}
-	user_json, _ := json.MarshalIndent(uinfo, "", "  ")
-	log.Printf("New user created:\n%s\n", string(user_json))
+
+	_, err = h.Services.Repos.Users.CreateUser(user)
+	finalInspectionDatabase(w, err)
+
 	responder.Respond(w, http.StatusOK, nil)
 }
 
@@ -52,9 +46,12 @@ func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {
 	user := &models.UserInput{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		panic(err)
+		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
 	}
-	user_id, err := h.Services.Repos.Users.GetUserIdByInput(*user)
+
+	user_id, err := h.Services.Repos.Users.GetUserIdByInput(user)
 	if err != nil {
 		// todo: uncorrected input
 		panic(err)

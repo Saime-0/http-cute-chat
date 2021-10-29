@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/gorilla/mux"
 	"github.com/saime-0/http-cute-chat/internal/api/responder"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
@@ -71,65 +71,30 @@ func checkAuth(next http.Handler) http.Handler {
 	})
 }
 
-// ? Может вынести в отдельный файл
-type pipeline struct {
-	// c context.Context
-	w http.ResponseWriter
-	r *http.Request
-	h *Handler
-}
-
-func initPipeline(w http.ResponseWriter, r *http.Request, h *Handler) *pipeline {
-	return &pipeline{
-		w: w,
-		r: r,
-		h: h,
-	}
-}
-
-func (p *pipeline) finalInspectionDatabase(err error) {
+func finalInspectionDatabase(w http.ResponseWriter, err error) {
 	switch {
 	case err == sql.ErrNoRows:
-		responder.Error(p.w, http.StatusInternalServerError, rules.ErrDataRetrieved)
+		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
 		panic(err)
 
 	case err != nil:
-		responder.Error(p.w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 		panic(err)
 	}
 }
 
-func (p *pipeline) parseUserDomainFromRequest() (user_domain string) {
-	user_domain = mux.Vars(p.r)["user-domain"]
-	if !validateDomain(user_domain) {
-		err := rules.ErrInvalidValue
-		responder.Error(p.w, http.StatusBadRequest, err)
+func parseOffsetFromQuery(w http.ResponseWriter, r *http.Request) (offset int, err error) {
+	offset, err = strconv.Atoi(r.URL.Query().Get("offset"))
+	if err != nil && r.URL.Query().Get("offset") != "" {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
-		panic(err)
+		return
 	}
 
-	return
-}
+	if offset < 0 {
+		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
 
-func (p *pipeline) parseUserIDFromRequest() (user_id int) {
-	user_id, err := strconv.Atoi(mux.Vars(p.r)["user-id"])
-	if err != nil {
-		err := rules.ErrInvalidValue
-		responder.Error(p.w, http.StatusBadRequest, err)
-
-		panic(err)
+		return 0, errors.New(rules.ErrOutOfRange.Message)
 	}
-
-	return
-}
-
-func (p *pipeline) inspectUserExistsByDomain(user_domain string) {
-	if !p.h.Services.Repos.Users.UserExistsByDomain(user_domain) {
-		err := rules.ErrUserNotFound
-		responder.Error(p.w, http.StatusBadRequest, err)
-
-		log.Panic(err)
-	}
-
 	return
 }

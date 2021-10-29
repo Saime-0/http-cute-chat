@@ -101,7 +101,7 @@ func (r *MessagesRepo) GetMessageFromRoom(message_id int, room_id int) (message 
 	return
 }
 
-func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int) (messages models.MessagesList, err error) {
+func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int, offset int) (messages models.MessagesList, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, COALESCE(reply_to, 0), author, body, type
 		FROM messages
@@ -110,8 +110,10 @@ func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int) (messages models.Mes
 			FROM dialog_msg_pool 
 			WHERE dialog_id = $1 
 			LIMIT 20
+			OFFSET $2
 			)`,
 		dialog_id,
+		offset,
 	)
 	if err != nil {
 		return
@@ -131,7 +133,7 @@ func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int) (messages models.Mes
 	return
 }
 
-func (r *MessagesRepo) GetMessagesFromRoom(room_id int) (messages models.MessagesList, err error) {
+func (r *MessagesRepo) GetMessagesFromRoom(room_id int, offset int) (messages models.MessagesList, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, COALESCE(reply_to, 0), author, body, type
 		FROM messages
@@ -140,8 +142,10 @@ func (r *MessagesRepo) GetMessagesFromRoom(room_id int) (messages models.Message
 			FROM room_msg_pool 
 			WHERE room_id = $1 
 			LIMIT 20
+			OFFSET $2
 			)`,
 		room_id,
+		offset,
 	)
 	if err != nil {
 		return

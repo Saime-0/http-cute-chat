@@ -239,7 +239,7 @@ func (r *ChatsRepo) AddUserToChat(user_id int, chat_id int) (err error) {
 }
 
 // migrate from UsersRepo
-func (r *ChatsRepo) GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, err error) {
+func (r *ChatsRepo) GetChatsOwnedUser(user_id int, offset int) (chats models.ListChatInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
@@ -249,8 +249,11 @@ func (r *ChatsRepo) GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, e
 			FROM chats INNER JOIN chat_members 
 			ON chats.owner_id = chat_members.user_id
 			WHERE chats.owner_id = $1
+			LIMIT 20
+			OFFSET $2
 			)`,
 		user_id,
+		offset,
 	)
 	if err != nil {
 		return
@@ -273,7 +276,7 @@ func (r *ChatsRepo) GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, e
 	return
 }
 
-func (r *ChatsRepo) GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo, err error) {
+func (r *ChatsRepo) GetChatsInvolvedUser(user_id int, offset int) (chats models.ListChatInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
@@ -282,8 +285,11 @@ func (r *ChatsRepo) GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo
 			SELECT chat_id 
 			FROM chat_members
 			WHERE user_id = $1
+			LIMIT 20
+			OFFSET $2
 			)`,
 		user_id,
+		offset,
 	)
 	if err != nil {
 		return
@@ -355,6 +361,17 @@ func (r *ChatsRepo) ChatExistsByDomain(chat_domain string) (exists bool) {
 		)`,
 		chat_domain,
 	).Scan(&exists)
+
+	return
+}
+
+func (r *ChatsRepo) RemoveUserFromChat(user_id int, chat_id int) (err error) {
+	err = r.db.QueryRow(
+		`DELETE FROM chat_members
+		WHERE user_id = $1 AND chat_id = $2`,
+		user_id,
+		chat_id,
+	).Err()
 
 	return
 }

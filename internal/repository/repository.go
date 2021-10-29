@@ -16,11 +16,11 @@ type Units interface {
 type Users interface {
 	CreateUser(user_model *models.CreateUser) (id int, err error) // todo: проверка наличия дублирующей записи в бд
 	GetUserData(user_id int) (user models.UserData, err error)
-	GetUserIdByInput(input_model models.UserInput) (id int, err error)
-	GetUserInfoByDomain(user_domain string) (user models.UserInfo, err error)
-	GetUserInfoByID(user_id int) (user models.UserInfo, err error)
+	GetUserIdByInput(input_model *models.UserInput) (id int, err error)
+	UserExistsByInput(input_model *models.UserInput) (exists bool)
+	GetUserByDomain(user_domain string) (user models.UserInfo, err error)
+	GetUserByID(user_id int) (user models.UserInfo, err error)
 	GetUsersByNameFragment(fragment string, offset int) (users models.ListUserInfo, err error)
-	UserExistsByInput(input_model models.UserInput) bool // new
 
 	GetUserSettings(user_id int) (settings models.UserSettings, err error)
 	UpdateUserData(user_id int, user_model *models.UpdateUserData) error
@@ -52,9 +52,10 @@ type Chats interface {
 	UserIsChatOwner(user_id int, chat_id int) bool
 	UserIsChatMember(user_id int, chat_id int) bool
 	AddUserToChat(user_id int, chat_id int) (err error)
+	RemoveUserFromChat(user_id int, chat_id int) (err error)
 
-	GetChatsOwnedUser(user_id int) (chats models.ListChatInfo, err error)
-	GetChatsInvolvedUser(user_id int) (chats models.ListChatInfo, err error)
+	GetChatsOwnedUser(user_id int, offset int) (chats models.ListChatInfo, err error)
+	GetChatsInvolvedUser(user_id int, offset int) (chats models.ListChatInfo, err error)
 	GetCountRooms(chat_id int) (count int, err error)
 	GetCountUserChats(user_id int) (count int, err error)
 	ChatExistsByID(chat_id int) (exists bool)
@@ -80,8 +81,8 @@ type Dialogs interface {
 type Messages interface {
 	CreateMessageInRoom(room_id int, message_model *models.CreateMessage) (message_id int, err error)
 	CreateMessageInDialog(dialog_id int, message_model *models.CreateMessage) (message_id int, err error)
-	GetMessagesFromRoom(room_id int) (messages models.MessagesList, err error)
-	GetMessagesFromDialog(dialog_id int) (messages models.MessagesList, err error)
+	GetMessagesFromRoom(room_id int, offset int) (messages models.MessagesList, err error)
+	GetMessagesFromDialog(dialog_id int, offset int) (messages models.MessagesList, err error)
 	GetMessageFromRoom(message_id int, room_id int) (message models.MessageInfo, err error)
 	GetMessageFromDialog(message_id int, dialog_id int) (message models.MessageInfo, err error)
 	MessageExistsByID(message_id int) (exists bool)

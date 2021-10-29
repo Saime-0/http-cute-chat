@@ -53,7 +53,23 @@ func (r *UsersRepo) GetUserData(user_id int) (user models.UserData, err error) {
 	return
 }
 
-func (r *UsersRepo) GetUserIdByInput(input_model models.UserInput) (id int, err error) {
+func (r *UsersRepo) UserExistsByInput(input_model *models.UserInput) (exists bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM units INNER JOIN users 
+			ON units.id = users.id 
+			WHERE units.domain = $1 AND units.name = $2
+			)`,
+		input_model.Domain,
+		input_model.Name,
+	).Scan(&exists)
+
+	return
+
+}
+
+func (r *UsersRepo) GetUserIdByInput(input_model *models.UserInput) (id int, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id
 		FROM units INNER JOIN users 
@@ -68,7 +84,7 @@ func (r *UsersRepo) GetUserIdByInput(input_model models.UserInput) (id int, err 
 	return
 }
 
-func (r *UsersRepo) GetUserInfoByDomain(domain string) (user models.UserInfo, err error) {
+func (r *UsersRepo) GetUserByDomain(domain string) (user models.UserInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id,units.domain,units.name
 		FROM units INNER JOIN users 
@@ -86,7 +102,7 @@ func (r *UsersRepo) GetUserInfoByDomain(domain string) (user models.UserInfo, er
 	return
 }
 
-func (r *UsersRepo) GetUserInfoByID(id int) (user models.UserInfo, err error) {
+func (r *UsersRepo) GetUserByID(id int) (user models.UserInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id,units.domain,units.name
 		FROM units INNER JOIN users 
@@ -130,24 +146,6 @@ func (r *UsersRepo) GetUsersByNameFragment(fragment string, offset int) (users m
 		return
 	}
 	return
-}
-
-func (r *UsersRepo) UserExistsByInput(input_model models.UserInput) bool {
-	is_exists := false
-	err := r.db.QueryRow(
-		`SELECT EXISTS(
-			SELECT 1 FROM units 
-			INNER JOIN users 
-			ON units.id = users.id 
-			WHERE units.domain = $1 AND units.name = $2
-			)`,
-		input_model.Domain,
-		input_model.Name,
-	).Scan(&is_exists)
-	if err != nil || !is_exists {
-		return false
-	}
-	return true
 }
 
 func (r *UsersRepo) GetUserSettings(user_id int) (settings models.UserSettings, err error) {

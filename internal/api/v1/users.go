@@ -35,9 +35,15 @@ func (h *Handler) initUsersRoutes(r *mux.Router) {
 	}
 }
 
+// GetUserByDomain ...
 func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
-	pl := initPipeline(w, r, h)
-	user_domain := pl.parseUserDomainFromRequest()
+
+	user_domain := mux.Vars(r)["user-domain"]
+	if !validateDomain(user_domain) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
 
 	if !h.Services.Repos.Users.UserExistsByDomain(user_domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserNotFound)
@@ -45,64 +51,64 @@ func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.Services.Repos.Users.GetUserInfoByDomain(user_domain)
-	pl.finalInspectionDatabase(err)
+	user, err := h.Services.Repos.Users.GetUserByDomain(user_domain)
+	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, user)
 }
 
+// GetUserByID ...
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
-	pl := initPipeline(w, r, h)
 
-	user_id := pl.parseUserIDFromRequest()
+	user_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
+		return
+	}
 	if !h.Services.Repos.Users.UserExistsByID(user_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserNotFound)
 
 		return
 	}
 
-	user, err := h.Services.Repos.Users.GetUserInfoByID(user_id)
+	user, err := h.Services.Repos.Users.GetUserByID(user_id)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, user)
 }
 
+// GetUserData ...
 func (h *Handler) GetUserData(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
-
-	data, err := h.Services.Repos.Users.GetUserData(user_id)
+	data, err := h.Services.Repos.Users.GetUserData(
+		r.Context().Value(rules.UserIDFromToken).(int),
+	)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, data)
 }
 
+// GetUserSettings ...
 func (h *Handler) GetUserSettings(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
-
-	settings, err := h.Services.Repos.Users.GetUserSettings(user_id)
+	settings, err := h.Services.Repos.Users.GetUserSettings(
+		r.Context().Value(rules.UserIDFromToken).(int),
+	)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, settings)
 }
 
+// GetUsersByName ...
 func (h *Handler) GetUsersByName(w http.ResponseWriter, r *http.Request) {
+
 	name_fragment := r.URL.Query().Get("name")
 	if len(name_fragment) > rules.NameMaxLength || len(name_fragment) == 0 {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-
-	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
-	if err != nil && r.URL.Query().Get("offset") != "" {
-		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
-
-		return
-	}
-
-	if offset < 0 {
-		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
+	offset, err := parseOffsetFromQuery(w, r)
+	if err != nil {
 
 		return
 	}
@@ -113,9 +119,8 @@ func (h *Handler) GetUsersByName(w http.ResponseWriter, r *http.Request) {
 	responder.Respond(w, http.StatusOK, user_list)
 }
 
+// UpdateUserData ...
 func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
-
 	user_data := &models.UpdateUserData{}
 	err := json.NewDecoder(r.Body).Decode(&user_data)
 	if err != nil {
@@ -130,15 +135,23 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Services.Repos.Users.UpdateUserData(user_id, user_data)
+	if h.Services.Repos.Users.UserExistsByDomain(user_data.Domain) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrOccupiedDomain)
+
+		return
+	}
+
+	err = h.Services.Repos.Users.UpdateUserData(
+		r.Context().Value(rules.UserIDFromToken).(int),
+		user_data,
+	)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
+// UpdateUserSettings ...
 func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
-
 	user_settings := &models.UpdateUserSettings{}
 	err := json.NewDecoder(r.Body).Decode(&user_settings)
 	if err != nil {
@@ -153,7 +166,10 @@ func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Services.Repos.Users.UpdateUserSettings(user_id, user_settings)
+	err = h.Services.Repos.Users.UpdateUserSettings(
+		r.Context().Value(rules.UserIDFromToken).(int),
+		user_settings,
+	)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)

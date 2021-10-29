@@ -31,6 +31,9 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/involved", h.GetUserChats).Methods(http.MethodGet)
 			// PUT
 			authenticated.HandleFunc("/{chat-id}/data", h.UpdateChatData).Methods(http.MethodPut)
+			// DELETE
+			authenticated.HandleFunc("/{chat-id}/leave", h.RemoveUserFromChat).Methods(http.MethodDelete)
+
 		}
 		// GET
 		chats.HandleFunc("/d/{chat-domain}", h.GetChatByDomain).Methods(http.MethodGet)
@@ -87,15 +90,8 @@ func (h *Handler) GetChatsByName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
-	if err != nil && r.URL.Query().Get("offset") != "" {
-		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
-
-		return
-	}
-
-	if offset < 0 {
-		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
+	offset, err := parseOffsetFromQuery(w, r)
+	if err != nil {
 
 		return
 	}
@@ -192,6 +188,12 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.Services.Repos.Rooms.RoomExistsByID(room.ParentID) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+
 	parent_chat, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room.ParentID)
 	if parent_chat != chat_id {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
@@ -234,7 +236,42 @@ func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	count_members, err := h.Services.Repos.Chats.GetCountChatMembers(chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+
+	if count_members >= rules.MaxMembersOnChat {
+		responder.Error(w, http.StatusBadRequest, rules.ErrMembersLimitHasBeenReached)
+
+		return
+	}
+
 	err = h.Services.Repos.Chats.AddUserToChat(user_id, chat_id)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, nil)
+}
+
+func (h *Handler) RemoveUserFromChat(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	err = h.Services.Repos.Chats.RemoveUserFromChat(user_id, chat_id)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
@@ -284,7 +321,8 @@ func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
+		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -312,7 +350,8 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
+		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -327,7 +366,13 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_list, err := h.Services.Repos.Chats.GetChatsOwnedUser(user_id)
+	offset, err := parseOffsetFromQuery(w, r)
+	if err != nil {
+
+		return
+	}
+
+	chat_list, err := h.Services.Repos.Chats.GetChatsOwnedUser(user_id, offset)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat_list)
@@ -336,7 +381,13 @@ func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_list, err := h.Services.Repos.Chats.GetChatsInvolvedUser(user_id)
+	offset, err := parseOffsetFromQuery(w, r)
+	if err != nil {
+
+		return
+	}
+
+	chat_list, err := h.Services.Repos.Chats.GetChatsInvolvedUser(user_id, offset)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat_list)
@@ -367,6 +418,12 @@ func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&chat_data)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
+	}
+
+	if h.Services.Repos.Chats.ChatExistsByDomain(chat_data.Domain) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrOccupiedDomain)
 
 		return
 	}

@@ -74,6 +74,12 @@ func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	offset, err := parseOffsetFromQuery(w, r)
+	if err != nil {
+
+		return
+	}
+
 	if !h.Services.Repos.Rooms.RoomExistsByID(room_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrRoomNotFound)
 
@@ -81,13 +87,14 @@ func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chat_id, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
+		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	message_list, err := h.Services.Repos.Messages.GetMessagesFromRoom(room_id)
+	message_list, err := h.Services.Repos.Messages.GetMessagesFromRoom(room_id, offset)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, message_list)
@@ -110,7 +117,8 @@ func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chat_id, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
+		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -140,7 +148,8 @@ func (h *Handler) UpdateRoomData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	chat_id, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room_id)
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
+		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return

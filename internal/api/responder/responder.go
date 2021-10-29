@@ -3,6 +3,8 @@ package responder
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
 
 type Writer struct {
@@ -25,15 +27,15 @@ func Respond(w http.ResponseWriter, code int, data interface{}) {
 }
 
 type ResponseError struct {
-	Error string `json:"error"`
+	Error rules.PureErrorModels `json:"error"`
 }
 
-func Error(w http.ResponseWriter, code int, err error) {
+func Error(w http.ResponseWriter, code int, err rules.PureErrorModels) {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(ResponseError{
-		Error: err.Error(),
+		Error: err,
 	})
 
 }
