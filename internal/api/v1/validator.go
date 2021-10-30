@@ -1,6 +1,10 @@
 package v1
 
-import "github.com/saime-0/http-cute-chat/internal/api/rules"
+import (
+	"regexp"
+
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+)
 
 func validateDomain(domain string) (valid bool) {
 	if (len(domain) > rules.DomainMaxLength) || (len(domain) < rules.DomainMinLength) {
@@ -14,10 +18,17 @@ func validateName(name string) (valid bool) {
 	}
 	return true
 }
+func validatePassword(password string) (valid bool) { // todo
+
+	return len(password) <= rules.MaxPasswordLength && len(password) >= rules.MinPasswordLength
+}
+func validateEmail(email string) (valid bool) { // todo
+	matched, _ := regexp.MatchString(`/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i`, email)
+	return matched
+}
 func validateAppSettings(settings string) (valid bool) {
 
 	return len(settings) <= rules.AppSettingsMaxLength
-
 }
 
 // func handleDatabaseError(err error) error {

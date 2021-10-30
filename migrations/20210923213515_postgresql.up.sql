@@ -1,6 +1,3 @@
--- Download extensions
--- CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 CREATE TABLE units (
 	id bigserial primary key,
 	domain varchar(32) not null unique,
@@ -8,23 +5,56 @@ CREATE TABLE units (
 );
 CREATE TABLE users (
 	id bigint primary key references units (id),
-	app_settings varchar(512)
+	app_settings varchar(256),
+	password varchar(32) not null,
+	email varchar(256) not null
 );
 CREATE TABLE chats (
 	id bigint primary key references units (id) not null,
-	owner_id bigint references users (id) not null
+	owner_id bigint references users (id) not null,
+	private boolean not null
 );
-CREATE TABLE chat_members (
-	id bigserial primary key,
-	user_id bigint references users (id) not null,
-	chat_id bigint references chats (id) not null
+CREATE TABLE chat_banlist (
+	chat_id bigint references chats (id) not null,
+	user_id bigint references users (id) not null
+);
+CREATE TABLE invite_links (
+	code varchar(16) primary key,
+	chat_id bigint references chats (id) not null,
+	aliens smallint,
+	exp bigint not null
 );
 CREATE TABLE rooms (
 	id bigserial primary key,
 	chat_id bigint references chats (id) not null,
 	parent_id bigint references rooms (id),
 	name varchar(32) not null,
-	note varchar(64)
+	note varchar(64),
+	msg_format varchar(8192),
+	visible boolean not null
+);
+CREATE TABLE roles (
+	id bigserial primary key,
+	chat_id bigint references chats (id) not null,
+	role_name varchar(32) not null,
+	color varchar(7) not null,
+	visible boolean not null,
+	manage_rooms boolean not null,
+	room_id bigint references rooms (id),
+	manage_chat boolean not null,
+	manage_roles boolean not null,
+	manage_members boolean not null
+);
+CREATE TABLE chat_members (
+	id bigserial primary key,
+	user_id bigint references users (id) not null,
+	chat_id bigint references chats (id) not null,
+	role_id bigint references roles (id) not null,
+	joined_at bigint not null
+);
+CREATE TABLE room_whitelist (
+	room_id bigint references rooms (id) not null,
+	role_id bigint references roles (id) not null
 );
 CREATE TABLE dialogs (
 	id bigserial primary key,

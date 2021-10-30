@@ -36,6 +36,24 @@ func (h *Handler) AuthSignUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	switch {
+	case !validateDomain(user.Domain):
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidDomain)
+		return
+
+	case !validateName(user.Name):
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidName)
+		return
+
+	case !validateEmail(user.Email):
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidEmail)
+		return
+
+	case !validatePassword(user.Password):
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidPassword)
+		return
+	}
+	//todo crypt password
 	_, err = h.Services.Repos.Users.CreateUser(user)
 	finalInspectionDatabase(w, err)
 

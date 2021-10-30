@@ -23,7 +23,7 @@ type Users interface {
 	GetUsersByNameFragment(fragment string, offset int) (users models.ListUserInfo, err error)
 
 	GetUserSettings(user_id int) (settings models.UserSettings, err error)
-	UpdateUserData(user_id int, user_model *models.UpdateUserData) error
+	UpdateUserData(user_id int, user_model *models.UpdateUserData) (err error)
 	UpdateUserSettings(user_id int, settings_model *models.UpdateUserSettings) error
 
 	GetCountUserOwnedChats(user_id int) (count int, err error)

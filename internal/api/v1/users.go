@@ -129,9 +129,21 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if (!validateName(user_data.Name) && len(user_data.Name) == 0) && (!validateName(user_data.Domain) && len(user_data.Domain) == 0) {
-		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+	switch {
+	case !validateDomain(user_data.Domain) && len(user_data.Domain) != 0:
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidDomain)
+		return
 
+	case !validateName(user_data.Name) && len(user_data.Domain) != 0:
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidName)
+		return
+
+	case !validateEmail(user_data.Email) && len(user_data.Domain) != 0:
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidEmail)
+		return
+
+	case !validatePassword(user_data.Password) && len(user_data.Domain) != 0:
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidPassword)
 		return
 	}
 

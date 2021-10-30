@@ -24,17 +24,16 @@ func (r *ChatsRepo) CreateChat(owner_id int, chat_model *models.CreateChat) (id 
 			VALUES ($1, $2) 
 			RETURNING id
 			) 
-		INSERT INTO chats (id, owner_id) 
-		SELECT u.id, $3 
+		INSERT INTO chats (id, owner_id, private) 
+		SELECT u.id, $3, $4
 		FROM u 
 		RETURNING id`,
 		chat_model.Domain,
 		chat_model.Name,
 		owner_id,
+		chat_model.Private,
 	).Scan(&id)
-	if err != nil {
-		return
-	}
+
 	return
 }
 func (r *ChatsRepo) GetChatByDomain(domain string) (chat models.ChatInfo, err error) {
@@ -156,7 +155,7 @@ func (r *ChatsRepo) GetChatMembers(chat_id int) (members models.ListUserInfo, er
 
 func (r *ChatsRepo) GetChatDataByID(chat_id int) (chat models.ChatData, err error) {
 	err = r.db.QueryRow(
-		`SELECT units.id, chats.owner_id, units.domain, units.name
+		`SELECT units.id, chats.owner_id, units.domain, units.name, chats.private
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
 		WHERE units.id = $1`,
@@ -166,10 +165,9 @@ func (r *ChatsRepo) GetChatDataByID(chat_id int) (chat models.ChatData, err erro
 		&chat.OwnerID,
 		&chat.Domain,
 		&chat.Name,
+		&chat.Private,
 	)
-	if err != nil {
-		return
-	}
+
 	return
 }
 
@@ -198,6 +196,15 @@ func (r *ChatsRepo) UpdateChatData(chat_id int, input_model *models.UpdateChatDa
 			return
 		}
 	}
+
+	err = r.db.QueryRow(
+		`UPDATE users
+		SET private = $2
+		WHERE id = $1`,
+		chat_id,
+		input_model.Private,
+	).Err()
+
 	return
 }
 

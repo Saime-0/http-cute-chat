@@ -43,6 +43,8 @@ const (
 	LimitOnShowChats         = 20
 	LimitOnShowDialogs       = 20
 	LimitOnShowMembers       = 20
+	MinPasswordLength        = 6
+	MaxPasswordLength        = 32
 )
 
 // Errors ...
@@ -116,5 +118,21 @@ var (
 	ErrDialogWithYourself = PureErrorModels{
 		Code:    "ErrDialogWithYourself",
 		Message: "there is a special section for this",
+	}
+	ErrInvalidName = PureErrorModels{
+		Code:    "ErrInvalidUserName",
+		Message: "invalid name",
+	}
+	ErrInvalidDomain = PureErrorModels{
+		Code:    "ErrInvalidDomain",
+		Message: "invalid domain",
+	}
+	ErrInvalidEmail = PureErrorModels{
+		Code:    "ErrInvalidEmail",
+		Message: "invalid email",
+	}
+	ErrInvalidPassword = PureErrorModels{
+		Code:    "ErrInvalidPassword",
+		Message: "invalid password",
 	}
 )

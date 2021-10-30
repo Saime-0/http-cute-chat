@@ -23,16 +23,19 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			authenticated.HandleFunc("", h.CreateChat).Methods(http.MethodPost)
 			authenticated.HandleFunc("/{chat-id}/join", h.AddUserToChat).Methods(http.MethodPost)
 			authenticated.HandleFunc("/{chat-id}/rooms", h.CreateRoom).Methods(http.MethodPost)
+			authenticated.HandleFunc("/{chat-id}/links", h.CreateInviteLink).Methods(http.MethodPost)
 			// GET
 			authenticated.HandleFunc("/{chat-id}/data", h.GetChatData).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/members", h.GetChatMembers).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/rooms", h.GetChatRooms).Methods(http.MethodGet)
 			authenticated.HandleFunc("/owned", h.GetUserOwnedChats).Methods(http.MethodGet)
 			authenticated.HandleFunc("/involved", h.GetUserChats).Methods(http.MethodGet)
+			authenticated.HandleFunc("/{chat-id}/links", h.GetInviteLinks).Methods(http.MethodGet)
 			// PUT
 			authenticated.HandleFunc("/{chat-id}/data", h.UpdateChatData).Methods(http.MethodPut)
 			// DELETE
 			authenticated.HandleFunc("/{chat-id}/leave", h.RemoveUserFromChat).Methods(http.MethodDelete)
+			// todo delete link
 
 		}
 		// GET

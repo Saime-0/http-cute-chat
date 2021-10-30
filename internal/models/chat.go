@@ -11,16 +11,15 @@ type Chat struct {
 // INTERNAL models
 // RECEIVED models
 type CreateChat struct {
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
+	Domain  string `json:"domain"`
+	Name    string `json:"name"`
+	Private bool   `json:"private"`
 }
 
 type UpdateChatData struct {
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
-}
-type ChatName struct {
-	Name string `json:"name"`
+	Domain  string `json:"domain"`
+	Name    string `json:"name"`
+	Private bool   `json:"private"`
 }
 
 // RESPONSE models
@@ -36,6 +35,7 @@ type ChatData struct {
 	OwnerID int    `json:"owner_id"`
 	Domain  string `json:"domain"`
 	Name    string `json:"name"`
+	Private bool   `json:"private"`
 }
 type ChatMembersCount struct {
 	Count int `json:"count"`

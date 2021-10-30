@@ -23,11 +23,14 @@ func (r *UsersRepo) CreateUser(user_model *models.CreateUser) (id int, err error
 			VALUES ($1, $2) 
 			RETURNING id
 			) 
-		INSERT INTO users (id, app_settings) 
-		SELECT u.id, 'default' FROM u 
+		INSERT INTO users (id, app_settings, email, password) 
+		SELECT u.id, 'default', $3, $4 
+		FROM u 
 		RETURNING id`,
 		user_model.Domain,
 		user_model.Name,
+		user_model.Password,
+		user_model.Email,
 	).Scan(&id)
 	if err != nil {
 		return
@@ -37,7 +40,7 @@ func (r *UsersRepo) CreateUser(user_model *models.CreateUser) (id int, err error
 
 func (r *UsersRepo) GetUserData(user_id int) (user models.UserData, err error) {
 	err = r.db.QueryRow(
-		`SELECT units.id,units.domain,units.name
+		`SELECT units.id, units.domain, units.name, users.email
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.id = $1`,
@@ -46,6 +49,7 @@ func (r *UsersRepo) GetUserData(user_id int) (user models.UserData, err error) {
 		&user.ID,
 		&user.Domain,
 		&user.Name,
+		&user.Email,
 	)
 	if err != nil {
 		return
@@ -57,12 +61,11 @@ func (r *UsersRepo) UserExistsByInput(input_model *models.UserInput) (exists boo
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
-			FROM units INNER JOIN users 
-			ON units.id = users.id 
-			WHERE units.domain = $1 AND units.name = $2
+			FROM users
+			WHERE email = $1 AND password = $2
 			)`,
-		input_model.Domain,
-		input_model.Name,
+		input_model.Email,
+		input_model.Password,
 	).Scan(&exists)
 
 	return
@@ -74,9 +77,9 @@ func (r *UsersRepo) GetUserIdByInput(input_model *models.UserInput) (id int, err
 		`SELECT units.id
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
-		WHERE units.domain = $1 AND units.name = $2`,
-		input_model.Domain,
-		input_model.Name,
+		WHERE users.email = $1 AND users.password = $2`,
+		input_model.Email,
+		input_model.Password,
 	).Scan(&id)
 	if err != nil {
 		return
@@ -164,9 +167,9 @@ func (r *UsersRepo) GetUserSettings(user_id int) (settings models.UserSettings, 
 	return
 }
 
-func (r *UsersRepo) UpdateUserData(user_id int, user_model *models.UpdateUserData) error {
+func (r *UsersRepo) UpdateUserData(user_id int, user_model *models.UpdateUserData) (err error) {
 	if user_model.Domain != "" {
-		err := r.db.QueryRow(
+		err = r.db.QueryRow(
 			`UPDATE units
 			SET domain = $2
 			WHERE id = $1`,
@@ -174,11 +177,11 @@ func (r *UsersRepo) UpdateUserData(user_id int, user_model *models.UpdateUserDat
 			user_model.Domain,
 		).Err()
 		if err != nil {
-			return err
+			return
 		}
 	}
 	if user_model.Name != "" {
-		err := r.db.QueryRow(
+		err = r.db.QueryRow(
 			`UPDATE units
 			SET name = $2
 			WHERE id = $1`,
@@ -186,10 +189,34 @@ func (r *UsersRepo) UpdateUserData(user_id int, user_model *models.UpdateUserDat
 			user_model.Name,
 		).Err()
 		if err != nil {
-			return err
+			return
 		}
 	}
-	return nil
+	if user_model.Email != "" {
+		err = r.db.QueryRow(
+			`UPDATE user
+			SET email = $2
+			WHERE id = $1`,
+			user_id,
+			user_model.Email,
+		).Err()
+		if err != nil {
+			return
+		}
+	}
+	if user_model.Password != "" {
+		err = r.db.QueryRow(
+			`UPDATE units
+			SET password = $2
+			WHERE id = $1`,
+			user_id,
+			user_model.Password,
+		).Err()
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func (r *UsersRepo) UpdateUserSettings(user_id int, settings_model *models.UpdateUserSettings) error {

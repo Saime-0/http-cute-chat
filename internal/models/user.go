@@ -28,26 +28,26 @@ type CustomClaims struct {
 // RECEIVED models
 // todo: input data to refresh_sessions
 type CreateUser struct {
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
+	Domain   string `json:"domain"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 type UserInput struct { // pass & email
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 type UpdateUserData struct {
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
+	Domain   string `json:"domain"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 type UpdateUserSettings struct {
 	AppSettings string `json:"app_settings"`
 }
-
 type TokenForRefreshPair struct {
 	RefreshToken string `json:"refresh_token"`
-}
-type UserName struct {
-	Name string `json:"name"`
 }
 
 // RESPONSE models
@@ -60,6 +60,7 @@ type UserData struct {
 	ID     int    `json:"id"`
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
+	Email  string `json:"email"`
 }
 type UserSettings struct {
 	AppSettings string `json:"app_settings"`
