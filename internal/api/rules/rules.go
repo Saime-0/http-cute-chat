@@ -45,6 +45,7 @@ const (
 	LimitOnShowMembers       = 20
 	MinPasswordLength        = 6
 	MaxPasswordLength        = 32
+	MaxInviteLinks           = 3
 )
 
 // Errors ...

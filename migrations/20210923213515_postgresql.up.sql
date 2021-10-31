@@ -18,8 +18,12 @@ CREATE TABLE chat_banlist (
 	chat_id bigint references chats (id) not null,
 	user_id bigint references users (id) not null
 );
+create function generate_invite_code() returns text language sql as $$
+  SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
+  FROM generate_series(1, 16)
+$$;
 CREATE TABLE invite_links (
-	code varchar(16) primary key,
+	code varchar(16) primary key default generate_invite_code(),
 	chat_id bigint references chats (id) not null,
 	aliens smallint,
 	exp bigint not null

@@ -87,9 +87,7 @@ func (r *ChatsRepo) GetCountChatMembers(chat_id int) (count int, err error) {
 		WHERE chat_id = $1`,
 		chat_id,
 	).Scan(&count)
-	if err != nil {
-		return
-	}
+
 	return
 }
 
@@ -379,6 +377,90 @@ func (r *ChatsRepo) RemoveUserFromChat(user_id int, chat_id int) (err error) {
 		user_id,
 		chat_id,
 	).Err()
+
+	return
+}
+
+func (r *ChatsRepo) GetCountLinks(chat_id int) (count int, err error) {
+	err = r.db.QueryRow(
+		`SELECT count(*)
+		FROM invite_links  
+		WHERE chat_id = $1`,
+		chat_id,
+	).Scan(&count)
+
+	return
+}
+func (r *ChatsRepo) GetChatLinks(chat_id int) (links models.InviteLinks, err error) {
+	rows, err := r.db.Query(
+		`SELECT code, aliens, exp
+		FROM invite_links
+		WHERE chat_id = $1`,
+		chat_id,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.InviteLink{}
+		if err = rows.Scan(&m.Code, &m.Aliens, &m.Exp); err != nil {
+			return
+		}
+		links.Links = append(links.Links, m)
+	}
+
+	return
+}
+func (r *ChatsRepo) LinkExistsByCode(code string) (exists bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM invite_links
+			WHERE code = $1
+			)`,
+		code,
+	).Scan(&exists)
+
+	return
+}
+func (r *ChatsRepo) FindInviteLinkByCode(code string) (link models.InviteLink, err error) {
+	err = r.db.QueryRow(
+		`SELECT code, aliens, exp
+		FROM invite_links  
+		WHERE code = $1`,
+		code,
+	).Scan(
+		&link.Code,
+		&link.Aliens,
+		&link.Exp,
+	)
+
+	return
+}
+func (r *ChatsRepo) DeleteInviteLinkByCode(code string) (err error) {
+	err = r.db.QueryRow(
+		`DELETE FROM invite_links
+		WHERE code = $1`,
+		code,
+	).Err()
+
+	return
+}
+
+func (r *ChatsRepo) CreateInviteLink(link_model *models.CreateInviteLink) (link models.InviteLink, err error) {
+	err = r.db.QueryRow(
+		`INSERT INTO invite_links (chat_id, aliens, exp) 
+		VALUES ($1, $2, $3)
+		RETURNING id`,
+		link_model.ChatID,
+		link_model.Aliens,
+		link_model.Exp,
+	).Scan(
+		&link.Code,
+		&link.Aliens,
+		&link.Exp,
+	)
 
 	return
 }

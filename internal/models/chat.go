@@ -49,5 +49,23 @@ type ListChatMembers struct {
 type ChatID struct {
 	ID int `json:"id"`
 }
+type InviteLink struct {
+	Code   string `json:"code"`
+	ChatID int    `json:"chat_id,omitempty"`
+	Aliens int    `json:"aliens"`
+	Exp    int64  `json:"exp"`
+}
+type InviteLinkInput struct {
+	Aliens   int   `json:"aliens"`
+	LifeTime int64 `json:"lifetime"`
+}
+type CreateInviteLink struct {
+	ChatID int   `json:"chat_id"`
+	Aliens int   `json:"aliens"`
+	Exp    int64 `json:"exp"`
+}
+type InviteLinks struct {
+	Links []InviteLink
+}
 
 // todo: user is chat admin

@@ -98,3 +98,5 @@ func parseOffsetFromQuery(w http.ResponseWriter, r *http.Request) (offset int, e
 	}
 	return
 }
+
+// мб скомбинировать pipline и обычные проверки?

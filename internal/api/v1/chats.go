@@ -436,3 +436,53 @@ func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
 
 	responder.Respond(w, http.StatusOK, nil)
 }
+
+func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
+	// мб эту часть кода свернуть в функцию, то есть то надо взять ид и знать что существует такой юнит или комната
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+	// до сюда
+
+	input_link := &models.InviteLinkInput{}
+	err = json.NewDecoder(r.Body).Decode(&input_link) // todo validate lifetime & aliens
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
+	}
+
+	count, err := h.Services.Repos.Chats.GetCountLinks(chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if count > rules.MaxInviteLinks {
+		responder.Error(w, http.StatusBadRequest, rules.ErrLimitHasBeenReached)
+
+		return
+	}
+
+	exp := input_link.LifeTime + 0 // todo time now
+
+	link, err := h.Services.Repos.Chats.CreateInviteLink(
+		&models.CreateInviteLink{
+			ChatID: chat_id,
+			Aliens: input_link.Aliens,
+			Exp:    exp,
+		},
+	)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, link)
+}
