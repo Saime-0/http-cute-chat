@@ -64,10 +64,12 @@ type Chats interface {
 	// invites
 	GetCountLinks(chat_id int) (count int, err error)
 	GetChatLinks(chat_id int) (links models.InviteLinks, err error)
-	LinkExistsByCode(code string) (exists bool)
+	LinkExistsByCode(code string) (exists bool) // ? equal relevant
 	FindInviteLinkByCode(code string) (link models.InviteLink, err error)
 	DeleteInviteLinkByCode(code string) (err error)
 	CreateInviteLink(link_model *models.CreateInviteLink) (link models.InviteLink, err error)
+	InviteLinkIsRelevant(code string) (relevant bool)
+	AddUserByCode(code string, user_id int) (chat_id int, err error)
 }
 type Rooms interface { //todo: get parent and child rooms
 	RoomExistsByID(room_id int) (is_exists bool)

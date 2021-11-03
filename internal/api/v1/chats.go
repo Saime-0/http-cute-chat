@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 
@@ -35,7 +36,7 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/{chat-id}/data", h.UpdateChatData).Methods(http.MethodPut)
 			// DELETE
 			authenticated.HandleFunc("/{chat-id}/leave", h.RemoveUserFromChat).Methods(http.MethodDelete)
-			// todo delete link
+			authenticated.HandleFunc("/{chat-id}/links/{link-code}", h.DeleteInviteLink).Methods(http.MethodDelete)
 
 		}
 		// GET
@@ -438,6 +439,8 @@ func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
 	// мб эту часть кода свернуть в функцию, то есть то надо взять ид и знать что существует такой юнит или комната
 	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
@@ -453,10 +456,27 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 	}
 	// до сюда
 
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
 	input_link := &models.InviteLinkInput{}
-	err = json.NewDecoder(r.Body).Decode(&input_link) // todo validate lifetime & aliens
+	err = json.NewDecoder(r.Body).Decode(&input_link)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
+	}
+
+	if input_link.LifeTime != 0 && !validateLifetime(input_link.LifeTime) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
+
+		return
+	}
+	if input_link.Aliens != 0 && !validateAliens(input_link.Aliens) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
 
 		return
 	}
@@ -473,16 +493,77 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	exp := input_link.LifeTime + 0 // todo time now
-
 	link, err := h.Services.Repos.Chats.CreateInviteLink(
 		&models.CreateInviteLink{
 			ChatID: chat_id,
 			Aliens: input_link.Aliens,
-			Exp:    exp,
+			Exp:    input_link.LifeTime + time.Now().UTC().Unix(),
 		},
 	)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, link)
+}
+
+func (h *Handler) GetInviteLinks(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	links, err := h.Services.Repos.Chats.GetChatLinks(chat_id)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, links)
+}
+
+func (h *Handler) DeleteInviteLink(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	link_code := mux.Vars(r)["link-code"]
+	if !h.Services.Repos.Chats.InviteLinkIsRelevant(link_code) {
+		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
+
+		return
+	}
+
+	err = h.Services.Repos.Chats.DeleteInviteLinkByCode(link_code)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, nil)
 }

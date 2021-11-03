@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
@@ -452,7 +453,7 @@ func (r *ChatsRepo) CreateInviteLink(link_model *models.CreateInviteLink) (link 
 	err = r.db.QueryRow(
 		`INSERT INTO invite_links (chat_id, aliens, exp) 
 		VALUES ($1, $2, $3)
-		RETURNING id`,
+		RETURNING code, aliens, exp`,
 		link_model.ChatID,
 		link_model.Aliens,
 		link_model.Exp,
@@ -461,6 +462,45 @@ func (r *ChatsRepo) CreateInviteLink(link_model *models.CreateInviteLink) (link 
 		&link.Aliens,
 		&link.Exp,
 	)
+
+	return
+}
+
+func (r *ChatsRepo) InviteLinkIsRelevant(code string) (relevant bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM invite_links
+			WHERE code = $1 AND aliens > 0 AND exp > $2
+			)`,
+		code,
+		time.Now().UTC().Unix(),
+	).Scan(&relevant)
+	if !relevant {
+		r.db.Exec(
+			`DELETE FROM invite_links
+			WHERE code = $1`,
+			code,
+		)
+	}
+
+	return
+}
+
+func (r *ChatsRepo) AddUserByCode(code string, user_id int) (chat_id int, err error) {
+
+	err = r.db.QueryRow(
+		`WITH l AS (
+			UPDATE invite_links
+			SET aliens = aliens - 1
+			WHERE code = $1
+			RETURNING chat_id
+			)
+		INSERT INTO chat_members (user_id, chat_id)
+		VALUES ($2, l.chat_id)`,
+		code,
+		user_id,
+	).Scan(&chat_id)
 
 	return
 }

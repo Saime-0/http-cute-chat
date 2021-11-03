@@ -2,6 +2,7 @@ package v1
 
 import (
 	"regexp"
+	"time"
 
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
@@ -29,6 +30,14 @@ func validateEmail(email string) (valid bool) { // todo
 func validateAppSettings(settings string) (valid bool) {
 
 	return len(settings) <= rules.AppSettingsMaxLength
+}
+func validateLifetime(lt int64) (valid bool) {
+
+	return lt >= int64(time.Minute) && lt <= rules.Year
+}
+func validateAliens(aliens int) (valid bool) {
+
+	return aliens >= 1 && aliens <= 99_999
 }
 
 // func handleDatabaseError(err error) error {

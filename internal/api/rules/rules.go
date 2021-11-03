@@ -1,5 +1,7 @@
 package rules
 
+const Year = 31536000
+
 type BindKeys string
 
 const (
@@ -135,5 +137,9 @@ var (
 	ErrInvalidPassword = PureErrorModels{
 		Code:    "ErrInvalidPassword",
 		Message: "invalid password",
+	}
+	ErrInviteLinkNotFound = PureErrorModels{
+		Code:    "ErrInviteLinkNotFound",
+		Message: "invite link was not found",
 	}
 )
