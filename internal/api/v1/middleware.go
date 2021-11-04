@@ -3,7 +3,6 @@ package v1
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -83,8 +82,8 @@ func finalInspectionDatabase(w http.ResponseWriter, err error) {
 	}
 }
 
-func parseOffsetFromQuery(w http.ResponseWriter, r *http.Request) (offset int, err error) {
-	offset, err = strconv.Atoi(r.URL.Query().Get("offset"))
+func parseOffsetFromQuery(w http.ResponseWriter, r *http.Request) (offset int, ok bool) {
+	offset, err := strconv.Atoi(r.URL.Query().Get("offset"))
 	if err != nil && r.URL.Query().Get("offset") != "" {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
@@ -94,9 +93,15 @@ func parseOffsetFromQuery(w http.ResponseWriter, r *http.Request) (offset int, e
 	if offset < 0 {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
 
-		return 0, errors.New(rules.ErrOutOfRange.Message)
+		return
 	}
-	return
+	return offset, true
 }
 
 // мб скомбинировать pipline и обычные проверки?
+
+// todo
+func UserHaveAccessToManageRoom(user_id int, room_id int) (have bool) {
+	// get user role
+	return // role.RoomManage == true && (room_id == nil || room_id == role.RoomID)
+}

@@ -23,6 +23,7 @@ func (h *Handler) Init(r *mux.Router) {
 		h.initChatsRoutes(v1)
 		h.initRoomsRoutes(v1)
 		h.initDialogsRoutes(v1)
+		h.initInviteRoutes(v1)
 
 		// v1.GET("/settings", h.setSchoolFromRequest, h.getSchoolSettings)
 		// v1.GET("/promocodes/:code", h.setSchoolFromRequest, h.getPromo)

@@ -97,7 +97,7 @@ func (r *ChatsRepo) GetChatsByNameFragment(name string, offset int) (chats model
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
-		WHERE units.name ILIKE $1
+		WHERE units.name ILIKE $1 AND chats.private = FALSE
 		LIMIT 20
 		OFFSET $2`,
 		"%"+name+"%",
@@ -501,6 +501,201 @@ func (r *ChatsRepo) AddUserByCode(code string, user_id int) (chat_id int, err er
 		code,
 		user_id,
 	).Scan(&chat_id)
+
+	return
+}
+
+func (r *ChatsRepo) ChatIsPrivate(chat_id int) (private bool) {
+	r.db.QueryRow(
+		`SELECT private
+		FROM chats
+		WHERE chat_id = $1`,
+		chat_id,
+	).Scan(&private)
+
+	return
+}
+
+func (r *ChatsRepo) BanUserInChat(user_id int, chat_id int) (err error) {
+	err = r.db.QueryRow(
+		`INSERT INTO chat_banlist (chat_id, user_id)
+		VALUES ($1, $2)`,
+		chat_id,
+		user_id,
+	).Err()
+
+	return
+}
+
+func (r *ChatsRepo) UnbanUserInChat(user_id int, chat_id int) (err error) {
+	err = r.db.QueryRow(
+		`DELETE FROM chat_banlist
+		WHERE chat_id = $1 AND user_id = $2`,
+		chat_id,
+		user_id,
+	).Err()
+
+	return
+}
+
+func (r *ChatsRepo) UserIsBannedInChat(user_id int, chat_id int) (banned bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM chat_banlist
+			WHERE chat_id = $1 AND user_id = $2
+		)`,
+		chat_id,
+		user_id,
+	).Scan(&banned)
+
+	return
+}
+
+func (r *ChatsRepo) GetChatBanlist(chat_id int) (users models.ListUserInfo, err error) {
+	rows, err := r.db.Query(
+		`SELECT id, domain, name
+		FROM units
+		WHERE id IN (
+			SELECT user_id 
+			FROM chat_banlist
+			WHERE chat_id = $1
+			)`,
+		chat_id,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.UserInfo{}
+		if err = rows.Scan(&m.ID, &m.Domain, &m.Name); err != nil {
+			return
+		}
+		users.Users = append(users.Users, m)
+	}
+	if !rows.NextResultSet() {
+		return
+	}
+	return
+}
+
+func (r *ChatsRepo) GetUserRoleData(user_id int, chat_id int) (role models.RoleData, err error) {
+	err = r.db.QueryRow(
+		`SELECT id, role_name, color, visible, manage_rooms, COALESCE(room_id, 0), manage_chat, manage_roles, manage_members
+		FROM roles 
+		WHERE id = (
+			SELECT role_id
+			FROM chat_members
+			WHERE user_id = $1 AND chat_id = $2
+		)`,
+		user_id,
+		chat_id,
+	).Scan(
+		&role.ID,
+		&role.RoleName,
+		&role.Color,
+		&role.Visible,
+		&role.ManageRooms,
+		&role.RoomID,
+		&role.ManageChat,
+		&role.ManageRoles,
+		&role.ManageMembers,
+	)
+
+	return
+}
+
+func (r *ChatsRepo) GetUserRoleInfo(user_id int, chat_id int) (role models.RoleInfo, err error) {
+	err = r.db.QueryRow(
+		`SELECT id, role_name, color
+		FROM roles 
+		WHERE id = (
+			SELECT role_id
+			FROM chat_members
+			WHERE user_id = $1 AND chat_id = $2
+		)`,
+		user_id,
+		chat_id,
+	).Scan(
+		&role.ID,
+		&role.RoleName,
+		&role.Color,
+	)
+
+	return
+}
+
+func (r *ChatsRepo) CreateRoleInChat(chat_id int, role_model *models.CreateRole) (role_id int, err error) {
+	err = r.db.QueryRow(
+		`INSERT INTO roles
+		(chat_id, role_name, color, visible, manage_rooms, room_id, manage_chat, manage_roles, manage_members)
+		VALUES ($1, $2, $3, $4, $5, NULLIF($6, 0), $7, $8, $9)
+		RETURNING id`,
+		chat_id,
+		role_model.RoleName,
+		role_model.Color,
+		role_model.Visible,
+		role_model.ManageRooms,
+		role_model.RoomID,
+		role_model.ManageChat,
+		role_model.ManageRoles,
+		role_model.ManageMembers,
+	).Scan(&role_id)
+
+	return
+}
+
+func (r *ChatsRepo) GetChatRolesData(chat_id int) (roles models.ListRolesData, err error) {
+	rows, err := r.db.Query(
+		`SELECT id, role_name, color, visible, manage_rooms, COALESCE(room_id, 0), manage_chat, manage_roles, manage_members
+		FROM roles 
+		WHERE chat_id = $1`,
+		chat_id,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.RoleData{}
+		if err = rows.Scan(&m.ID, &m.RoleName, &m.Color, &m.Visible, &m.ManageRooms, &m.RoomID, &m.ManageChat, &m.ManageRoles, &m.ManageMembers); err != nil {
+			return
+		}
+		roles.Roles = append(roles.Roles, m)
+	}
+
+	return
+}
+
+func (r *ChatsRepo) GetChatRolesInfo(chat_id int) (roles models.ListRolesInfo, err error) {
+	rows, err := r.db.Query(
+		`SELECT id, role_name, color
+		FROM roles 
+		WHERE chat_id = $1`,
+		chat_id,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.RoleInfo{}
+		if err = rows.Scan(&m.ID, &m.RoleName, &m.Color); err != nil {
+			return
+		}
+		roles.Roles = append(roles.Roles, m)
+	}
+
+	return
+}
+func (r *ChatsRepo) GetCountChatRoles(chat_id int) (count int, err error) {
+	err = r.db.QueryRow(
+		`SELECT count(*)
+		FROM roles 
+		WHERE chat_id = $1`,
+		chat_id,
+	).Scan(&count)
 
 	return
 }

@@ -27,10 +27,10 @@ func Respond(w http.ResponseWriter, code int, data interface{}) {
 }
 
 type ResponseError struct {
-	Error rules.PureErrorModels `json:"error"`
+	Error rules.AdvancedError `json:"error"`
 }
 
-func Error(w http.ResponseWriter, code int, err rules.PureErrorModels) {
+func Error(w http.ResponseWriter, code int, err rules.AdvancedError) {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 

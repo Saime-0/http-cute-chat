@@ -11,6 +11,7 @@ const (
 	BindChatID     BindKeys = "chat-id"
 	BindRoomID     BindKeys = "room-id"
 	BindMessageID  BindKeys = "message-id"
+	BindInviteCode BindKeys = "invite-code"
 )
 
 type ContextKeys int
@@ -48,98 +49,108 @@ const (
 	MinPasswordLength        = 6
 	MaxPasswordLength        = 32
 	MaxInviteLinks           = 3
+	MaxRolesInChat           = 128
+	Max
 )
 
 // Errors ...
-type PureErrorModels struct {
+type AdvancedError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
-func (p *PureErrorModels) Error() string {
+func (p *AdvancedError) Error() string {
 	return p.Message
 }
 
 var (
 	// Errors
-	ErrOutOfRange = PureErrorModels{
+	ErrOutOfRange = AdvancedError{
 		Code:    "ErrOutOfRange",
 		Message: "parameter value is out of range",
 	}
-	ErrInvalidValue = PureErrorModels{
+	ErrInvalidValue = AdvancedError{
 		Code:    "ErrInvalidValue",
 		Message: "invalid parameter value",
 	}
-	ErrAccessingDatabase = PureErrorModels{
+	ErrAccessingDatabase = AdvancedError{
 		Code:    "ErrAccessingDatabase",
 		Message: "internal server error when accessing the database",
 	}
-	ErrUserNotFound = PureErrorModels{
+	ErrUserNotFound = AdvancedError{
 		Code:    "ErrUserNotFound",
 		Message: "user was not found",
 	}
-	ErrChatNotFound = PureErrorModels{
+	ErrChatNotFound = AdvancedError{
 		Code:    "ErrChatNotFound",
 		Message: "chat was not found",
 	}
-	ErrRoomNotFound = PureErrorModels{
+	ErrRoomNotFound = AdvancedError{
 		Code:    "ErrRoomNotFound",
 		Message: "room was not found",
 	}
-	ErrDialogNotFound = PureErrorModels{
+	ErrDialogNotFound = AdvancedError{
 		Code:    "ErrDialogNotFound",
 		Message: "dialog was not found",
 	}
-	ErrMessageNotFound = PureErrorModels{
+	ErrMessageNotFound = AdvancedError{
 		Code:    "ErrMessageNotFound",
 		Message: "message was not found",
 	}
-	ErrDataRetrieved = PureErrorModels{
+	ErrDataRetrieved = AdvancedError{
 		Code:    "ErrDataRetrieved",
 		Message: "server failed to process the data successfully",
 	}
-	ErrOccupiedDomain = PureErrorModels{
+	ErrOccupiedDomain = AdvancedError{
 		Code:    "ErrOccupiedDomain",
 		Message: "domain is occupied by someone",
 	}
-	ErrLimitHasBeenReached = PureErrorModels{
+	ErrLimitHasBeenReached = AdvancedError{
 		Code:    "ErrLimitHasBeenReached",
 		Message: "maximum limit has been reached",
 	}
-	ErrMembersLimitHasBeenReached = PureErrorModels{
+	ErrMembersLimitHasBeenReached = AdvancedError{
 		Code:    "ErrMembersLimitHasBeenReached",
 		Message: "seats are occupied in this chat",
 	}
-	ErrNoAccess = PureErrorModels{
+	ErrNoAccess = AdvancedError{
 		Code:    "ErrNoAccess",
 		Message: "there is not enough access for this action",
 	}
-	ErrBadRequestBody = PureErrorModels{
+	ErrBadRequestBody = AdvancedError{
 		Code:    "ErrBadRequestBody",
 		Message: "bad request body",
 	}
-	ErrDialogWithYourself = PureErrorModels{
+	ErrDialogWithYourself = AdvancedError{
 		Code:    "ErrDialogWithYourself",
 		Message: "there is a special section for this",
 	}
-	ErrInvalidName = PureErrorModels{
+	ErrInvalidName = AdvancedError{
 		Code:    "ErrInvalidUserName",
 		Message: "invalid name",
 	}
-	ErrInvalidDomain = PureErrorModels{
+	ErrInvalidDomain = AdvancedError{
 		Code:    "ErrInvalidDomain",
 		Message: "invalid domain",
 	}
-	ErrInvalidEmail = PureErrorModels{
+	ErrInvalidEmail = AdvancedError{
 		Code:    "ErrInvalidEmail",
 		Message: "invalid email",
 	}
-	ErrInvalidPassword = PureErrorModels{
+	ErrInvalidPassword = AdvancedError{
 		Code:    "ErrInvalidPassword",
 		Message: "invalid password",
 	}
-	ErrInviteLinkNotFound = PureErrorModels{
+	ErrInviteLinkNotFound = AdvancedError{
 		Code:    "ErrInviteLinkNotFound",
 		Message: "invite link was not found",
+	}
+	ErrUserBannedInChat = AdvancedError{
+		Code:    "ErrUserBannedInChat",
+		Message: "user was banned in this chat",
+	}
+	ErrUserIsNotChatMember = AdvancedError{
+		Code:    "ErrUserIsNotChatMember",
+		Message: "user is not a member of the chat",
 	}
 )

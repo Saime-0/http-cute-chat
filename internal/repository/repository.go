@@ -64,12 +64,33 @@ type Chats interface {
 	// invites
 	GetCountLinks(chat_id int) (count int, err error)
 	GetChatLinks(chat_id int) (links models.InviteLinks, err error)
-	LinkExistsByCode(code string) (exists bool) // ? equal relevant
+	LinkExistsByCode(code string) (exists bool) // ! equal relevant
 	FindInviteLinkByCode(code string) (link models.InviteLink, err error)
 	DeleteInviteLinkByCode(code string) (err error)
 	CreateInviteLink(link_model *models.CreateInviteLink) (link models.InviteLink, err error)
 	InviteLinkIsRelevant(code string) (relevant bool)
 	AddUserByCode(code string, user_id int) (chat_id int, err error)
+
+	ChatIsPrivate(chat_id int) (private bool)
+
+	BanUserInChat(user_id int, chat_id int) (err error)
+	UnbanUserInChat(user_id int, chat_id int) (err error)
+	UserIsBannedInChat(user_id int, chat_id int) (banned bool)
+	GetChatBanlist(chat_id int) (users models.ListUserInfo, err error)
+
+	//GetChatOwnerID(chat_id int)
+
+	GetUserRoleData(user_id int, chat_id int) (role models.RoleData, err error)
+	GetUserRoleInfo(user_id int, chat_id int) (role models.RoleInfo, err error)
+	CreateRoleInChat(chat_id int, role_model *models.CreateRole) (role_id int, err error)
+	GetChatRolesData(chat_id int) (roles models.ListRolesData, err error)
+	GetChatRolesInfo(chat_id int) (roles models.ListRolesInfo, err error)
+	GetCountChatRoles(chat_id int) (count int, err error)
+	// ? GetCountUserRoles(user_id int, chat_id int) (count int, err error)
+	// ! GiveRole(user_id int, role_id int) (err error)
+	// todo TakeRole(user_id int, role_id) (err error)
+	// todo UpdateRoleData(role_id int, input_model *models.UpdateRoleData) (err error)
+	// todo DeleteRole(role_id int) (err error)
 }
 type Rooms interface { //todo: get parent and child rooms
 	RoomExistsByID(room_id int) (is_exists bool)

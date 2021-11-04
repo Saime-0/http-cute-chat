@@ -102,8 +102,8 @@ func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	offset, err := parseOffsetFromQuery(w, r)
-	if err != nil {
+	offset, ok := parseOffsetFromQuery(w, r)
+	if !ok {
 
 		return
 	}
