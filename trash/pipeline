@@ -51,6 +51,7 @@ func finalInspectionDatabase(w http.ResponseWriter, err error) {
 	}
 }
 
+// todo передавать строки в параметры
 func (p *pipeline) parseUserDomainFromRequest() {
 	if p.cancel {
 		return

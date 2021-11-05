@@ -153,4 +153,12 @@ var (
 		Code:    "ErrUserIsNotChatMember",
 		Message: "user is not a member of the chat",
 	}
+	ErrRoleHidden = AdvancedError{
+		Code:    "ErrRoleHidden",
+		Message: "this role is hidden",
+	}
+	ErrPrivateRoom = AdvancedError{
+		Code:    "ErrRoomPrivate",
+		Message: "no right to send messages to the room",
+	}
 )

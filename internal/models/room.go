@@ -7,6 +7,7 @@ type Room struct {
 	ParentID int    `json:"parent_id"`
 	Name     string `json:"name"`
 	Note     string `json:"note"`
+	Private  bool   `json:"private"`
 }
 
 // INTERNAL models
@@ -15,10 +16,12 @@ type CreateRoom struct {
 	Name     string `json:"name"`
 	ParentID int    `json:"parent_id"`
 	Note     string `json:"note"`
+	Private  bool   `json:"private"`
 }
 type UpdateRoomData struct {
-	Name string `json:"name"`
-	Note string `json:"note"`
+	Name    string `json:"name"`
+	Note    string `json:"note"`
+	Private bool   `json:"private"`
 }
 
 // RESPONSE models
@@ -27,6 +30,7 @@ type RoomInfo struct {
 	ParentID int    `json:"parent_id"`
 	Name     string `json:"name"`
 	Note     string `json:"note"`
+	Private  bool   `json:"private"`
 }
 type ListRoomInfo struct {
 	Rooms []RoomInfo `json:"rooms"`
@@ -34,5 +38,3 @@ type ListRoomInfo struct {
 type RoomID struct {
 	ID int `json:"id"`
 }
-
-// todo: change parent room and clear parent room

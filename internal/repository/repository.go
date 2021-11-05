@@ -87,10 +87,12 @@ type Chats interface {
 	GetChatRolesInfo(chat_id int) (roles models.ListRolesInfo, err error)
 	GetCountChatRoles(chat_id int) (count int, err error)
 	// ? GetCountUserRoles(user_id int, chat_id int) (count int, err error)
-	// ! GiveRole(user_id int, role_id int) (err error)
-	// todo TakeRole(user_id int, role_id) (err error)
-	// todo UpdateRoleData(role_id int, input_model *models.UpdateRoleData) (err error)
-	// todo DeleteRole(role_id int) (err error)
+	GiveRole(user_id int, role_id int) (err error)
+	RoleExistsByID(role_id int, chat_id int) (exists bool)
+	TakeRole(user_id int, chat_id int) (err error)
+	UpdateRoleData(role_id int, input_model *models.UpdateRole) (err error)
+	DeleteRole(role_id int) (err error)
+	// ? user have role?
 }
 type Rooms interface { //todo: get parent and child rooms
 	RoomExistsByID(room_id int) (is_exists bool)
@@ -98,8 +100,10 @@ type Rooms interface { //todo: get parent and child rooms
 	GetRoom(room_id int) (room models.RoomInfo, err error)
 	UpdateRoomData(room_id int, input_model *models.UpdateRoomData) (err error)
 	GetChatIDByRoomID(room_id int) (chat_id int, err error)
-	// ! GetChildRooms(room_id int) (childs models.ListRoomInfo, err error)
 	GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error)
+	RoomIsPrivate(room_id int) (private bool)
+	// todo SetRoomParent(room_id int, parent_id int) (err error)
+	// todo GetChildRooms(room_id int) (childs models.ListRoomInfo, err error)
 }
 
 type Dialogs interface {

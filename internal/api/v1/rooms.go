@@ -49,6 +49,27 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	room, err := h.Services.Repos.Rooms.GetRoom(room_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	//- private and !room_id and (!manage or !nil)
+	//- !(room.Private && (role.ManageRooms && role.RoomID == 0 || role.RoomID == room_id) || !room.Private || h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) && )
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) && room.Private && role.RoomID != room_id && (!role.ManageRooms || role.RoomID != 0) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrPrivateRoom)
+
+		return
+	}
+
 	message := &models.CreateMessage{}
 	err = json.NewDecoder(r.Body).Decode(&message)
 	if err != nil {
@@ -94,6 +115,25 @@ func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	room, err := h.Services.Repos.Rooms.GetRoom(room_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) && room.Private && role.RoomID != room_id && (!role.ManageRooms || role.RoomID != 0) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrPrivateRoom)
+
+		return
+	}
+
 	message_list, err := h.Services.Repos.Messages.GetMessagesFromRoom(room_id, offset)
 	finalInspectionDatabase(w, err)
 
@@ -120,6 +160,25 @@ func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
 		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	room, err := h.Services.Repos.Rooms.GetRoom(room_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) && room.Private && role.RoomID != room_id && (!role.ManageRooms || role.RoomID != 0) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrPrivateRoom)
 
 		return
 	}

@@ -42,13 +42,14 @@ func (r *RoomsRepo) CreateRoom(chat_id int, room_model *models.CreateRoom) (room
 		}
 	}
 	err = r.db.QueryRow(
-		`INSERT INTO rooms (chat_id, parent_id, name, note)
-		VALUES ($1, NULLIF($2, 0), $3, $4)
+		`INSERT INTO rooms (chat_id, parent_id, name, note, private)
+		VALUES ($1, NULLIF($2, 0), $3, $4, $5)
 		RETURNING id`,
 		chat_id,
 		room_model.ParentID,
 		room_model.Name,
 		room_model.Note,
+		room_model.Private,
 	).Scan(&room_id)
 	if err != nil {
 		return
@@ -58,7 +59,7 @@ func (r *RoomsRepo) CreateRoom(chat_id int, room_model *models.CreateRoom) (room
 
 func (r *RoomsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error) {
 	rows, err := r.db.Query(
-		`SELECT id, COALESCE(parent_id, 0), name, note
+		`SELECT id, COALESCE(parent_id, 0), name, note, private
 		FROM rooms
 		WHERE chat_id = $1`,
 		chat_id,
@@ -69,7 +70,7 @@ func (r *RoomsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err er
 	defer rows.Close()
 	for rows.Next() {
 		m := models.RoomInfo{}
-		if err = rows.Scan(&m.ID, &m.ParentID, &m.Name, &m.Note); err != nil {
+		if err = rows.Scan(&m.ID, &m.ParentID, &m.Name, &m.Note, &m.Private); err != nil {
 			return
 		}
 		rooms.Rooms = append(rooms.Rooms, m)
@@ -82,14 +83,18 @@ func (r *RoomsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err er
 
 func (r *RoomsRepo) GetRoom(room_id int) (room models.RoomInfo, err error) {
 	err = r.db.QueryRow(
-		`SELECT id, COALESCE(parent_id, 0), name, note
+		`SELECT id, COALESCE(parent_id, 0), name, note, private
 		FROM rooms
 		WHERE id = $1`,
 		room_id,
-	).Scan()
-	if err != nil {
-		return
-	}
+	).Scan(
+		&room.ID,
+		&room.ParentID,
+		&room.Name,
+		&room.Note,
+		&room.Private,
+	)
+
 	return
 }
 
@@ -97,7 +102,7 @@ func (r *RoomsRepo) UpdateRoomData(room_id int, room_model *models.UpdateRoomDat
 	if room_model.Name != "" {
 		err = r.db.QueryRow(
 			`UPDATE rooms
-			SET name = $2
+			SET name = $2, private = $3
 			WHERE id = $1`,
 			room_id,
 			room_model.Name,
@@ -109,15 +114,17 @@ func (r *RoomsRepo) UpdateRoomData(room_id int, room_model *models.UpdateRoomDat
 	if room_model.Note != "" {
 		err = r.db.QueryRow(
 			`UPDATE rooms
-			SET note = $2
+			SET note = $2, private = $3
 			WHERE id = $1`,
 			room_id,
 			room_model.Note,
+			room_model.Private,
 		).Err()
 		if err != nil {
 			return
 		}
 	}
+
 	return
 }
 
@@ -131,5 +138,16 @@ func (r *RoomsRepo) GetChatIDByRoomID(room_id int) (chat_id int, err error) {
 	if err != nil {
 		return
 	}
+	return
+}
+
+func (r *RoomsRepo) RoomIsPrivate(room_id int) (private bool) {
+	r.db.QueryRow(
+		`SELECT private
+		FROM rooms
+		WHERE id = $1`,
+		room_id,
+	).Scan(&private)
+
 	return
 }

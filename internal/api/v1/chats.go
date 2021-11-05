@@ -37,6 +37,7 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/{chat-id}/links", h.GetInviteLinks).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/banlist", h.GetChatBanlist).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/roles", h.GetChatRoles).Methods(http.MethodGet)
+			// authenticated.HandleFunc("/{chat-id}/roles/data", h.GetChatRolesData).Methods(http.MethodGet)
 			authenticated.HandleFunc("/{chat-id}/members/{user-id}/role", h.GetUserRole).Methods(http.MethodGet)
 			// PUT
 			authenticated.HandleFunc("/{chat-id}/data", h.UpdateChatData).Methods(http.MethodPut)
@@ -46,7 +47,7 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 			authenticated.HandleFunc("/{chat-id}/links/{invite-code}", h.DeleteInviteLink).Methods(http.MethodDelete)
 			authenticated.HandleFunc("/{chat-id}/banlist/{user-id}", h.UnbanUserInChat).Methods(http.MethodDelete)
 			authenticated.HandleFunc("/{chat-id}/roles/{role-id}", h.RemoveChatRole).Methods(http.MethodDelete)
-			authenticated.HandleFunc("/{chat-id}/roles/{role-id}", h.TakeUserRole).Methods(http.MethodDelete)
+			authenticated.HandleFunc("/{chat-id}/members/{user-id}/role", h.TakeUserRole).Methods(http.MethodDelete)
 
 		}
 		// GET
@@ -779,22 +780,250 @@ func (h *Handler) AddRoleToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	member_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(member_id) {
+	if !h.Services.Repos.Users.UserExistsByID(target_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(member_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
 
 		return
 	}
 
+	err = h.Services.Repos.Chats.GiveRole(target_id, chat_id)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, nil)
+}
+
+func (h *Handler) GetChatRoles(w http.ResponseWriter, r *http.Request) {
+
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	switch {
+	case h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id):
+		roles, err := h.Services.Repos.Chats.GetChatRolesData(chat_id)
+		finalInspectionDatabase(w, err)
+
+		responder.Respond(w, http.StatusOK, roles)
+
+	case h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id):
+		roles, err := h.Services.Repos.Chats.GetChatRolesInfo(chat_id)
+		finalInspectionDatabase(w, err)
+
+		responder.Respond(w, http.StatusOK, roles)
+	default:
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+}
+
+func (h *Handler) GetUserRole(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
+
+		return
+	}
+
+	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
+
+		return
+	}
+	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
+
+		return
+	}
+
+	role, err := h.Services.Repos.Chats.GetUserRoleData(target_id, chat_id)
+	finalInspectionDatabase(w, err)
+
+	switch {
+	case h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id):
+		responder.Respond(w, http.StatusOK, role)
+	default:
+		if !role.Visible {
+			responder.Error(w, http.StatusBadRequest, rules.ErrRoleHidden)
+
+			return
+		}
+		responder.Respond(w, http.StatusOK, models.RoleInfo{
+			ID:       role.ID,
+			RoleName: role.RoleName,
+			Color:    role.Color,
+		})
+	}
+
+}
+
+func (h *Handler) UpdateRoleData(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	role_id, err := strconv.Atoi(mux.Vars(r)["role-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Chats.RoleExistsByID(role_id, chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	update_model := &models.UpdateRole{}
+	err = json.NewDecoder(r.Body).Decode(&update_model)
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
+	}
+
+	err = h.Services.Repos.Chats.UpdateRoleData(role_id, update_model)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, nil)
+}
+
+func (h *Handler) RemoveChatRole(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	role_id, err := strconv.Atoi(mux.Vars(r)["role-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Chats.RoleExistsByID(role_id, chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	err = h.Services.Repos.Chats.DeleteRole(role_id)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, nil)
+}
+
+func (h *Handler) TakeUserRole(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
+	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
+
+		return
+	}
+
+	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
+
+		return
+	}
+	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
+
+		return
+	}
+
+	err = h.Services.Repos.Chats.TakeRole(target_id, chat_id)
+	finalInspectionDatabase(w, err)
+
+	responder.Respond(w, http.StatusOK, nil)
 }

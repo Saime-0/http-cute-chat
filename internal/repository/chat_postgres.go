@@ -699,3 +699,70 @@ func (r *ChatsRepo) GetCountChatRoles(chat_id int) (count int, err error) {
 
 	return
 }
+
+func (r *ChatsRepo) GiveRole(user_id int, role_id int) (err error) {
+	err = r.db.QueryRow(
+		`UPDATE chat_members
+		SET role_id = $2
+		WHERE user_id = $1`,
+		user_id,
+		role_id,
+	).Err()
+
+	return
+}
+
+func (r *ChatsRepo) RoleExistsByID(role_id int, chat_id int) (exists bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM roles
+			WHERE role_id = $1 AND chat_id = $2
+		)`,
+		role_id,
+		chat_id,
+	).Scan(&exists)
+
+	return
+}
+
+func (r *ChatsRepo) UpdateRoleData(role_id int, input_model *models.UpdateRole) (err error) {
+	err = r.db.QueryRow(
+		`UPDATE roles
+		SET role_name = $2, color = $3, visible = $4, manage_rooms = $5, room_id =  NULLIF($6, 0), manage_chat, manage_roles, manage_members
+		WHERE id = $1`,
+		role_id,
+		input_model.RoleName,
+		input_model.Color,
+		input_model.Visible,
+		input_model.ManageRooms,
+		input_model.RoomID,
+		input_model.ManageChat,
+		input_model.ManageRoles,
+		input_model.ManageMembers,
+	).Err()
+
+	return
+}
+
+func (r *ChatsRepo) DeleteRole(role_id int) (err error) {
+	err = r.db.QueryRow(
+		`DELETE FROM roles
+		WHERE id = $1`,
+		role_id,
+	).Err()
+
+	return
+}
+
+func (r *ChatsRepo) TakeRole(user_id int, chat_id int) (err error) {
+	err = r.db.QueryRow(
+		`UPDATE chat_members
+		SET role_id = NULL
+		WHERE user_id = $1`,
+		user_id,
+		chat_id,
+	).Err()
+
+	return
+}

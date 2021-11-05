@@ -35,7 +35,7 @@ CREATE TABLE rooms (
 	name varchar(32) not null,
 	note varchar(64),
 	msg_format varchar(8192),
-	visible boolean not null
+	private boolean not null
 );
 CREATE TABLE roles (
 	id bigserial primary key,
