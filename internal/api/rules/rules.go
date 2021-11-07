@@ -1,6 +1,6 @@
 package rules
 
-const Year = 31536000
+const Year int64 = 31536000
 
 type BindKeys string
 
@@ -57,6 +57,7 @@ const (
 type AdvancedError struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+	// http status const
 }
 
 func (p *AdvancedError) Error() string {

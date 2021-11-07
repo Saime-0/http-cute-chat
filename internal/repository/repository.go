@@ -104,6 +104,10 @@ type Rooms interface { //todo: get parent and child rooms
 	RoomIsPrivate(room_id int) (private bool)
 	// todo SetRoomParent(room_id int, parent_id int) (err error)
 	// todo GetChildRooms(room_id int) (childs models.ListRoomInfo, err error)
+
+	RoomFormIsSet(room_id int) (is_set bool)
+	GetRoomForm(room_id int) (form models.FormPattern, err error)
+	UpdateRoomForm(room_id int, format string) (err error)
 }
 
 type Dialogs interface {

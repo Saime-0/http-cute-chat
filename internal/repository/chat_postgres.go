@@ -233,10 +233,11 @@ func (r *ChatsRepo) UserIsChatMember(user_id int, chat_id int) bool {
 }
 func (r *ChatsRepo) AddUserToChat(user_id int, chat_id int) (err error) {
 	err = r.db.QueryRow(
-		`INSERT INTO chat_members (user_id, chat_id)
-		VALUES ($1, $2)`,
+		`INSERT INTO chat_members (user_id, chat_id, joined_at)
+		VALUES ($1, $2, $3)`,
 		user_id,
 		chat_id,
+		time.Now().UTC().Unix(),
 	).Err()
 	if err != nil {
 		return

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -148,6 +149,48 @@ func (r *RoomsRepo) RoomIsPrivate(room_id int) (private bool) {
 		WHERE id = $1`,
 		room_id,
 	).Scan(&private)
+
+	return
+}
+
+func (r *RoomsRepo) GetRoomForm(room_id int) (form models.FormPattern, err error) {
+	var format string
+	err = r.db.QueryRow(
+		`SELECT msg_format
+		FROM rooms
+		WHERE room_id = $1`,
+		room_id,
+	).Scan(&format)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal([]byte(format), &form)
+
+	return
+}
+
+func (r *RoomsRepo) UpdateRoomForm(room_id int, format string) (err error) {
+	err = r.db.QueryRow(
+		`UPDATE rooms
+		SET msg_format = NULLIF($2, '')
+		WHERE id = $1`,
+		room_id,
+		format,
+	).Err()
+
+	return
+}
+
+func (r *RoomsRepo) RoomFormIsSet(room_id int) (is_set bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1
+			FROM rooms
+			WHERE id = $1 AND msg_format IS NOT NULL
+		)`,
+		room_id,
+	).Scan(&is_set)
 
 	return
 }
