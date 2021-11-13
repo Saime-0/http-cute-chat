@@ -67,5 +67,9 @@ type CreateInviteLink struct {
 type InviteLinks struct {
 	Links []InviteLink
 }
+type MemberInfo struct {
+	RoleID   int `json:"role_id"`
+	JoinedAt int `json:"joined_at"`
+}
 
 // todo: user is chat admin

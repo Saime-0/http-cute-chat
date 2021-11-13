@@ -189,8 +189,13 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRooms) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -332,7 +337,13 @@ func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -447,7 +458,13 @@ func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -491,7 +508,13 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 	}
 	// до сюда
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -556,7 +579,13 @@ func (h *Handler) GetInviteLinks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -604,6 +633,7 @@ func (h *Handler) DeleteInviteLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) BanUserInChat(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
@@ -616,39 +646,59 @@ func (h *Handler) BanUserInChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(user_id) {
+	if !h.Services.Repos.Users.UserExistsByID(target_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	if h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
-		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
-
-		return
-	}
-
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.BanUserInChat(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageMembers) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	role, err = h.Services.Repos.Chats.GetUserRoleData(target_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if h.Services.Repos.Chats.UserIsChatOwner(target_id, chat_id) || role.ManageRooms {
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
+
+		return
+	}
+
+	err = h.Services.Repos.Chats.BanUserInChat(target_id, chat_id)
 	finalInspectionDatabase(w, err)
-	err = h.Services.Repos.Chats.RemoveUserFromChat(user_id, chat_id)
+	err = h.Services.Repos.Chats.RemoveUserFromChat(target_id, chat_id)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) UnbanUserInChat(w http.ResponseWriter, r *http.Request) {
+	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+
 	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
@@ -661,25 +711,37 @@ func (h *Handler) UnbanUserInChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageMembers) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
+
+		return
+	}
+
+	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(user_id) {
+	if !h.Services.Repos.Users.UserExistsByID(target_id) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsBannedInChat(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsBannedInChat(target_id, chat_id) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.UnbanUserInChat(user_id, chat_id)
+	err = h.Services.Repos.Chats.UnbanUserInChat(target_id, chat_id)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
@@ -700,7 +762,13 @@ func (h *Handler) GetChatBanlist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -727,7 +795,13 @@ func (h *Handler) CreateRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRooms) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -774,7 +848,13 @@ func (h *Handler) AddRoleToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRooms) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -913,7 +993,13 @@ func (h *Handler) UpdateRoleData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRoles) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -960,7 +1046,13 @@ func (h *Handler) RemoveChatRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -999,7 +1091,13 @@ func (h *Handler) TakeUserRole(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+		panic(err)
+	}
+	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRoles) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return

@@ -133,19 +133,20 @@ func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int, offset int) (message
 	return
 }
 
-func (r *MessagesRepo) GetMessagesFromRoom(room_id int, offset int) (messages models.MessagesList, err error) {
+func (r *MessagesRepo) GetMessagesFromRoom(room_id int, created_after int, offset int) (messages models.MessagesList, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, COALESCE(reply_to, 0), author, body, type
 		FROM messages
 		WHERE id IN (
 			SELECT message_id 
 			FROM room_msg_pool 
-			WHERE room_id = $1 
+			WHERE room_id = $1  AND time > $3
 			LIMIT 20
 			OFFSET $2
 			)`,
 		room_id,
 		offset,
+		created_after,
 	)
 	if err != nil {
 		return

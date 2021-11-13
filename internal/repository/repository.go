@@ -93,6 +93,8 @@ type Chats interface {
 	UpdateRoleData(role_id int, input_model *models.UpdateRole) (err error)
 	DeleteRole(role_id int) (err error)
 	// ? user have role?
+
+	GetMemberInfo(user_id int, chat_id int) (user models.MemberInfo, err error)
 }
 type Rooms interface { //todo: get parent and child rooms
 	RoomExistsByID(room_id int) (is_exists bool)
@@ -120,7 +122,7 @@ type Dialogs interface {
 type Messages interface {
 	CreateMessageInRoom(room_id int, message_model *models.CreateMessage) (message_id int, err error)
 	CreateMessageInDialog(dialog_id int, message_model *models.CreateMessage) (message_id int, err error)
-	GetMessagesFromRoom(room_id int, offset int) (messages models.MessagesList, err error)
+	GetMessagesFromRoom(room_id int, created_after int, offset int) (messages models.MessagesList, err error)
 	GetMessagesFromDialog(dialog_id int, offset int) (messages models.MessagesList, err error)
 	GetMessageFromRoom(message_id int, room_id int) (message models.MessageInfo, err error)
 	GetMessageFromDialog(message_id int, dialog_id int) (message models.MessageInfo, err error)

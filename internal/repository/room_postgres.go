@@ -156,7 +156,7 @@ func (r *RoomsRepo) RoomIsPrivate(room_id int) (private bool) {
 func (r *RoomsRepo) GetRoomForm(room_id int) (form models.FormPattern, err error) {
 	var format string
 	err = r.db.QueryRow(
-		`SELECT msg_format
+		`SELECT COALESCE(msg_format, '')
 		FROM rooms
 		WHERE room_id = $1`,
 		room_id,

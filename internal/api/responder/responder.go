@@ -30,12 +30,12 @@ type ResponseError struct {
 	Error rules.AdvancedError `json:"error"`
 }
 
-func Error(w http.ResponseWriter, code int, err rules.AdvancedError) {
+func Error(w http.ResponseWriter, code int, err *rules.AdvancedError) {
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 
 	json.NewEncoder(w).Encode(ResponseError{
-		Error: err,
+		Error: *err,
 	})
 
 }

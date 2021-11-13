@@ -85,6 +85,25 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 	}
 
 	message.Author = user_id
+
+	// room_form, err := h.Services.Repos.Rooms.GetRoomForm(room_id)
+	switch message.Type { // todo: auto detection of the message type by the format of the room, if there is one
+	case rules.UserMsg:
+	case rules.FormattedMsg:
+		if !h.Services.Repos.Rooms.RoomFormIsSet(room_id) {
+			responder.Error(w, http.StatusBadRequest, rules.ErrRoomIsNotHaveMsgFormat)
+
+			return
+
+		}
+		// the format of the message corresponds to the format of the room
+
+	default:
+		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidMsgType)
+
+		return
+	}
+
 	message_id, err := h.Services.Repos.Messages.CreateMessageInRoom(room_id, message)
 	finalInspectionDatabase(w, err)
 
@@ -140,7 +159,14 @@ func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message_list, err := h.Services.Repos.Messages.GetMessagesFromRoom(room_id, offset)
+	// todo: member have permissions
+	member, err := h.Services.Repos.Chats.GetMemberInfo(user_id, chat_id)
+	if err != nil {
+		responder.Error(w, http.StatusBadRequest, rules.ErrDataRetrieved)
+
+		panic(err)
+	}
+	message_list, err := h.Services.Repos.Messages.GetMessagesFromRoom(room_id, member.JoinedAt, offset)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, message_list)
@@ -340,7 +366,7 @@ func (h *Handler) SetRoomForm(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)
 
-		return
+		panic(err)
 	}
 	err = h.Services.Repos.Rooms.UpdateRoomForm(room_id, string(format))
 	finalInspectionDatabase(w, err)

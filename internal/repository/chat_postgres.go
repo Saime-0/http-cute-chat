@@ -767,3 +767,18 @@ func (r *ChatsRepo) TakeRole(user_id int, chat_id int) (err error) {
 
 	return
 }
+
+func (r *ChatsRepo) GetMemberInfo(user_id int, chat_id int) (user models.MemberInfo, err error) {
+	err = r.db.QueryRow(
+		`SELECT role_id, joined_at
+		FROM chat_members
+		WHERE user_id = $1 AND chat_id = $2`,
+		user_id,
+		chat_id,
+	).Scan(
+		&user.RoleID,
+		&user.JoinedAt,
+	)
+
+	return
+}
