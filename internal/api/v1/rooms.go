@@ -86,25 +86,37 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 
 	message.Author = user_id
 
-	// room_form, err := h.Services.Repos.Rooms.GetRoomForm(room_id)
-	switch message.Type { // todo: auto detection of the message type by the format of the room, if there is one
-	case rules.UserMsg:
-	case rules.FormattedMsg:
-		if !h.Services.Repos.Rooms.RoomFormIsSet(room_id) {
-			responder.Error(w, http.StatusBadRequest, rules.ErrRoomIsNotHaveMsgFormat)
+	msg_type := rules.UserMsg
+	if h.Services.Repos.Rooms.RoomFormIsSet(room_id) {
+		msg_type = rules.FormattedMsg
+		var input_choice models.FormCompleted
+		err := json.Unmarshal([]byte(message.Body), &input_choice)
+		if err != nil {
+			responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 			return
+		}
+		room_form, err := h.Services.Repos.Rooms.GetRoomForm(room_id)
+		if err != nil {
+			responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
+
+			panic(err)
+		}
+		choice, aerr := MatchMessageType(&input_choice, &room_form)
+		if aerr != nil {
+			responder.Error(w, http.StatusBadRequest, aerr)
+
+			return
+		}
+		msg_body, err := json.Marshal(choice)
+		if err != nil {
+			responder.Error(w, http.StatusBadRequest, rules.ErrDataRetrieved)
 
 		}
-		// the format of the message corresponds to the format of the room
-
-	default:
-		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidMsgType)
-
-		return
+		message.Body = string(msg_body)
 	}
 
-	message_id, err := h.Services.Repos.Messages.CreateMessageInRoom(room_id, message)
+	message_id, err := h.Services.Repos.Messages.CreateMessageInRoom(room_id, msg_type, message)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, &models.MessageID{ID: message_id})
@@ -360,7 +372,12 @@ func (h *Handler) SetRoomForm(w http.ResponseWriter, r *http.Request) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 		return
-	} // todo validate
+	}
+	if !validateRoomForm(form_pattern) {
+		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
+
+		return
+	}
 
 	format, err := io.ReadAll(r.Body)
 	if err != nil {

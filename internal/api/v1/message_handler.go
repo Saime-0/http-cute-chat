@@ -7,45 +7,58 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
-func MatchMessageType(input *models.FormCompleted, sample *models.FormPattern) (map[string]string, *rules.AdvancedError) {
+func MatchMessageType(input *models.FormCompleted, sample *models.FormPattern) (models.FormCompleted, *rules.AdvancedError) {
 	completed := make(map[string]string)
 	for _, field := range sample.Fields {
 		for _, choice := range input.Input {
 			if choice.Key == field.Key {
+				var adv_err *rules.AdvancedError
 				if len(choice.Value) > field.Length && field.Length > 0 {
-					return completed, rules.ErrChoiceValueLength
+					adv_err = rules.ErrChoiceValueLength
 				}
 				switch field.Type {
-				case string(rules.TextField):
-					break
+				case rules.TextField:
+					// nothing
 
-				case string(rules.DateField):
+				case rules.DateField:
 					if _, err := strconv.ParseInt(choice.Value, 10, 64); err != nil {
-						return completed, rules.ErrInvalidChoiceDate
+						adv_err = rules.ErrInvalidChoiceDate
 					}
 
-				case string(rules.EmailField):
+				case rules.EmailField:
 					if !validateEmail(choice.Value) {
-						return completed, rules.ErrInvalidEmail
+						adv_err = rules.ErrInvalidEmail
 					}
 
-				case string(rules.LinkField):
+				case rules.LinkField:
 					if !validateLink(choice.Value) {
-						return completed, rules.ErrInvalidLink
+						adv_err = rules.ErrInvalidLink
 					}
 
-				case string(rules.NumericField):
+				case rules.NumericField:
 					if _, err := strconv.Atoi(choice.Value); err != nil {
-						return completed, rules.ErrInvalidChoiceValue
-					}
-
-				case string(rules.RadiobuttonField):
-					if _, err := strconv.ParseBool(choice.Value); err != nil {
-						return completed, rules.ErrInvalidChoiceValue
+						adv_err = rules.ErrInvalidChoiceValue
 					}
 
 				default:
-					return completed, rules.ErrDataRetrieved
+					adv_err = rules.ErrDataRetrieved
+				}
+				if adv_err != nil {
+					return models.FormCompleted{}, adv_err
+				}
+				if len(field.Items) != 0 {
+					contains := func(arr []string, str string) bool {
+						for _, a := range arr {
+							if a == str {
+								return true
+							}
+						}
+						return false
+					}(field.Items, choice.Value)
+
+					if !contains {
+						return models.FormCompleted{}, rules.ErrInvalidChoiceValue
+					}
 				}
 				completed[field.Key] = choice.Value
 			}
@@ -53,9 +66,19 @@ func MatchMessageType(input *models.FormCompleted, sample *models.FormPattern) (
 		}
 		_, ok := completed[field.Key]
 		if !(ok || field.Optional) {
-			return completed, rules.ErrMissingChoicePair
+			return models.FormCompleted{}, rules.ErrMissingChoicePair
 		}
 
 	}
-	return nil, nil
+	return mapToFormCompleted(&completed), nil
+}
+
+func mapToFormCompleted(inp *map[string]string) (form models.FormCompleted) {
+	for k, v := range *inp {
+		form.Input = append(form.Input, models.FormChoice{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return
 }

@@ -70,7 +70,7 @@ CREATE TABLE messages (
 	reply_to bigint references messages (id),
 	author bigint references units (id) not null,
 	body varchar(8192) not null,
-	type smallint not null,
+	type varchar(16) not null,
 	created_at bigint not null 
 );
 CREATE TABLE dialog_msg_pool (

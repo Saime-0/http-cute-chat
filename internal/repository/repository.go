@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
@@ -120,7 +121,7 @@ type Dialogs interface {
 }
 
 type Messages interface {
-	CreateMessageInRoom(room_id int, message_model *models.CreateMessage) (message_id int, err error)
+	CreateMessageInRoom(room_id int, msg_type rules.MessageType, message_model *models.CreateMessage) (message_id int, err error)
 	CreateMessageInDialog(dialog_id int, message_model *models.CreateMessage) (message_id int, err error)
 	GetMessagesFromRoom(room_id int, created_after int, offset int) (messages models.MessagesList, err error)
 	GetMessagesFromDialog(dialog_id int, offset int) (messages models.MessagesList, err error)

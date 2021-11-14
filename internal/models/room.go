@@ -1,14 +1,14 @@
 package models
 
 // general room model
-type Room struct {
-	ID       int    `json:"id"`
-	ChatID   int    `json:"chat_id"`
-	ParentID int    `json:"parent_id"`
-	Name     string `json:"name"`
-	Note     string `json:"note"`
-	Private  bool   `json:"private"`
-}
+// type Room struct {
+// 	ID       int    `json:"id"`
+// 	ChatID   int    `json:"chat_id"`
+// 	ParentID int    `json:"parent_id"`
+// 	Name     string `json:"name"`
+// 	Note     string `json:"note"`
+// 	Private  bool   `json:"private"`
+// }
 
 // INTERNAL models
 // RECEIVED models

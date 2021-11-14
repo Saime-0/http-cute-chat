@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
@@ -179,7 +180,7 @@ func (r *MessagesRepo) CreateMessageInDialog(dialog_id int, message_model *model
 		message_model.ReplyTo,
 		message_model.Author,
 		message_model.Body,
-		message_model.Type,
+		rules.UserMsg,
 	).Scan(&message_id)
 	if err != nil {
 		return
@@ -187,7 +188,7 @@ func (r *MessagesRepo) CreateMessageInDialog(dialog_id int, message_model *model
 	return
 }
 
-func (r *MessagesRepo) CreateMessageInRoom(room_id int, message_model *models.CreateMessage) (message_id int, err error) {
+func (r *MessagesRepo) CreateMessageInRoom(room_id int, msg_type rules.MessageType, message_model *models.CreateMessage) (message_id int, err error) {
 	err = r.db.QueryRow(
 		`WITH m AS (
 			INSERT INTO messages (reply_to, author, body, type)
@@ -202,7 +203,7 @@ func (r *MessagesRepo) CreateMessageInRoom(room_id int, message_model *models.Cr
 		message_model.ReplyTo,
 		message_model.Author,
 		message_model.Body,
-		message_model.Type,
+		msg_type,
 	).Scan(&message_id)
 	if err != nil {
 		return

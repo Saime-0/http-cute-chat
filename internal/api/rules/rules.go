@@ -2,15 +2,23 @@ package rules
 
 const Year int64 = 31536000
 
+// type MessageEventType string
+
+// const (
+// 	RenameRoomEvent MessageEventType = "RenameRoomEvent"
+// 	Re
+// )
+
 type FieldType string
 
 const (
-	EmailField       FieldType = "email"
-	DateField        FieldType = "date"
-	LinkField        FieldType = "link"
-	TextField        FieldType = "text"
-	NumericField     FieldType = "numeric"
-	RadiobuttonField FieldType = "radiobutton"
+	EmailField    FieldType = "email"
+	DateField     FieldType = "date"
+	LinkField     FieldType = "link"
+	TextField     FieldType = "text"
+	NumericField  FieldType = "numeric"
+	SelectorField FieldType = "selector"
+	// EventField FieldType = "event"
 )
 
 type MessageType string
@@ -217,5 +225,9 @@ var (
 	ErrMissingChoicePair = &AdvancedError{
 		Code:    "ErrMissingChoicePair",
 		Message: "the mandatory key-value pair is missing in the submitted form",
+	}
+	ErrInvalidFormPattern = &AdvancedError{
+		Code:    "ErrInvalidFormPattern",
+		Message: "invalid form pattern",
 	}
 )

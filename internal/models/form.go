@@ -1,11 +1,13 @@
 package models
 
+import "github.com/saime-0/http-cute-chat/internal/api/rules"
+
 type FormField struct {
-	Key      string `json:"key"`      // unique, but used for grouping radiobutton type fields
-	Type     string `json:"type"`     // email, date(past|future), link(by domain(ex:https://youtube.com/)),
-	Optional bool   `json:"optional"` // omitempty
-	Length   int    `json:"length"`   // omitempty
-	Value    string `json:"value"`    // field for radiobutton and similar
+	Key      string          `json:"key"`      // unique, but used for grouping radiobutton type fields
+	Type     rules.FieldType `json:"type"`     // email, date(past|future), link(by domain(ex:https://youtube.com/)),
+	Optional bool            `json:"optional"` // omitempty
+	Length   int             `json:"length"`   // omitempty
+	Items    []string        `json:"items"`    // field for radiobutton and similar
 }
 
 type FormPattern struct {
@@ -22,14 +24,25 @@ type FormCompleted struct {
 }
 
 var (
-	CommonFormPattern = &FormPattern{
+	UserMsgPattern = &FormPattern{
 		Fields: []FormField{
 			{
-				Key:      "text",
-				Type:     "text",
+				Key:      "",
+				Type:     "",
 				Optional: false,
 				Length:   0,
-				Value:    "",
+				Items:    []string{},
+			},
+		},
+	}
+	SystemMsgPattern = &FormPattern{
+		Fields: []FormField{
+			{
+				Key:      "event",
+				Type:     "",
+				Optional: false,
+				Length:   0,
+				Items:    []string{},
 			},
 		},
 	}
