@@ -28,6 +28,7 @@ type MessageInfo struct {
 	Author  int               `json:"author"`
 	Body    string            `json:"body"`
 	Type    rules.MessageType `json:"type"`
+	Time    int               `json:"time"`
 }
 type MessagesList struct {
 	Messages []MessageInfo `json:"messages"`

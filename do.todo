@@ -1,0 +1,7 @@
+(#1) cchatus:
+- [x] 📃 controle expire session
+- [ ] 🎨 messages by events
+- [ ] 🎉 vote
+- [ ] 🎉 migrate message between rooms(except formatted)
+- [ ] 🎉 after/before date message
+----

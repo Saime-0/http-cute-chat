@@ -878,7 +878,7 @@ func (h *Handler) AddRoleToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Services.Repos.Chats.GiveRole(target_id, chat_id)
+	err = h.Services.Repos.Chats.GiveRole(target_id, chat_id) // ! fix role_id?
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)

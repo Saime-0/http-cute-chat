@@ -1,0 +1,179 @@
+# некоторые int заменены на string
+scalar Date 
+
+type UnitType {
+	CHAT
+	USER
+}
+
+type Unit {
+	id: ID!
+	domain: String!
+	name: String!
+	type: UnitType!
+}
+
+type User {
+	unit: Unit!
+}
+
+type Me {
+	user: User!
+	data: UserData!
+	chats: [Chat!]
+	owned_chats: [Chat!]
+}
+
+type UserData {
+	domain: String!
+	name: String!
+	password: String!
+	email: String!
+}
+
+type Role {
+	id: ID!
+	users: [User!]
+	name: String!
+	color: String!
+	visible: Boolean!
+	manage_rooms: Boolean!
+	room: Room
+	manage_chat:Boolean!
+	manage_roles: Boolean!
+	manage_members: Boolean!
+
+}
+
+enum FieldType {
+	EMAIL
+	DATE
+	LINK
+	TEXT
+	NUMERIC
+	SELECTOR
+} 
+
+type FormField {
+	key: String!
+	type: FieldType!
+	optional: Boolean!
+	length: Int
+	items: [String!]
+}
+
+type Form {
+	fields: [FormField!]!
+}
+
+enum MessageType {
+	SYSTEM
+	USER
+	FORMATTED
+}
+
+type Message {
+	id: ID!
+	room: Room
+	reply_to: Message
+	author: Unit!
+	body: String!
+	type: MessageType!
+	date: Date!	 
+}
+
+type Room {
+	id: ID!
+	chat: Chat!
+	name: String!
+	parent: Room
+	note: String
+	msg_format: Form
+	private: Boolean!
+	whitelist: [Role!]
+	messages: [Message!]
+}
+
+type Invite {
+	chat: Chat!
+	code: String!
+	aliens: Int
+	exp: Date	
+}
+
+type ChatMember {
+	chat: Chat!
+	user: User!
+	role: Role
+	joined_at: Date!
+}
+
+type Chat {
+	unit: Unit!
+	owner: User!
+	rooms: [Room!]
+	private: Boolean!
+	count_members: String!
+	members: [ChatMember!]
+	roles: [Role!]
+	invites: [Invite!]
+	banlist: [User!]
+}
+
+input Params {
+	limit: Int = 20
+	offset: Int = 0
+}
+input MessageFilter {
+	text_fragment: String
+	author: ID
+	chat: ID
+	room: ID
+	companion: ID
+}
+
+type Query {
+	# 
+	# unit
+	units(name_fragment: String!, type: UnitType, params: Params): [Unit!]
+	unit(id: ID, domain: String): Unit
+
+	# 
+	#  user
+	users(name_fragment: String!, params: Params): [User!]
+	user(id: ID, domain: String): User		
+	me(): Me!
+
+	# 
+	# chat
+	chats(name_fragment: String!, params: Params): [Chat!]
+	chat(id: ID, domain: String): Chat
+	members(chat: ID!, user: ID): [ChatMember!]
+
+	# 
+	# room
+	rooms(chat: ID!, params: Params): [Room!]
+	room(id: ID!): Room
+	whitelist(room: ID!): [Role!]
+
+
+	# 
+	# message
+	messages(room: ID, filter: MessageFilter, params: Params): [Messages!]
+	message(id: ID!, room: ID!): Message
+
+
+	# 
+	# role
+	roles(chat: ID!, params: Params): [Role!]
+	role()
+
+	# 
+	# form
+	form(room: ID!): Form
+
+
+	# 
+	# invite
+	invite(code: String!): Invite
+}
