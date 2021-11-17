@@ -39,7 +39,7 @@ func newApiServer(db *sql.DB, handler http.Handler) *ApiServer {
 }
 
 func Run() {
-	log.Println("Runned")
+	log.Println("Run")
 	start := time.Now()
 
 	// init database
@@ -47,7 +47,12 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Print("error when closing the database")
+		}
+	}(db)
 
 	// new services
 	services := service.NewServices(db)

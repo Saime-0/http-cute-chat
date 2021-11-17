@@ -1,9 +1,9 @@
-interface ProblemInterface {
+interface ErrorInterface {
+    code: String!
     message: String!
 }
 
-type InternalErrorProblem implements ProblemInterface {
+type AdvancedError implements ErrorInterface {
+    code: String!
     message: String!
 }
-
-type

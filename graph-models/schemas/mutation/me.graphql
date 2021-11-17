@@ -1,0 +1,39 @@
+type MeMutation
+
+extend type Mutation {
+    me_mutation: MeMutation!
+}
+
+extend type MeMutation {
+    update_me_data(input: UpdateMeDataInput!): UpdateMeDataResult!
+    join_to_chat(chat_id: ID!): JoinToChatResult!
+    join_by_invite(code: String!): Chat!
+    leave_from_chat(chat_id: ID!): Chat!
+}
+
+# UpdateMeData ...
+input UpdateMeDataInput  {
+    domain: String
+    name: String
+    password: String
+    email: String
+}
+union UpdateMeDataResult =
+    | AdvancedError
+    | UserData
+
+# JoinToChat ...
+union JoinToChatResult =
+    | AdvancedError
+    | Chat
+
+# JoinByInvite ...
+union JoinByInviteResult =
+    | AdvancedError
+    | Chat
+
+# LeaveFromChat ...
+union LeaveFromChatResult =
+    | AdvancedError
+    | Chat
+

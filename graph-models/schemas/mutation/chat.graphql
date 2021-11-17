@@ -1,0 +1,53 @@
+type ChatMutation
+
+extend type Mutation {
+    chat_mutation: ChatMutation!
+}
+
+extend type ChatMutation {
+    create_chat(input: CreateChatInput!): CreateChatResult!
+    update_chat(chat_id: ID!, input: UpdateChatInput!): UpdateChatResult!
+    create_invite(chat_id: ID!, input: CreateInviteInput!): CreateInviteResult!
+    delete_invite(code: String!): DeleteInviteResult!
+    ban_user(user_id: ID!, chat_id: ID!): BanUserResult!
+}
+
+# CreateChat ...
+input CreateChatInput {
+    domain: String!
+    name: String!
+    private: Boolean!
+}
+union CreateChatResult =
+    | AdvancedError
+    | Chat
+
+# UpdateChat ...
+input UpdateChatInput {
+    domain: String!
+    name: String!
+    private: Boolean!
+}
+union UpdateChatResult =
+    | AdvancedError
+    | Chat
+
+# CreateInvite ...
+input CreateInviteInput {
+    code: String!
+    aliens: Int
+    exp: Date
+}
+union CreateInviteResult =
+    | AdvancedError
+    | Invite
+
+# DeleteInvite ...
+union DeleteInviteResult =
+    | AdvancedError
+    | Invite
+
+# BanUser ...
+union BanUserResult =
+    | AdvancedError
+    | User

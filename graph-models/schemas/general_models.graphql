@@ -1,0 +1,122 @@
+scalar Date
+
+enum UnitType {
+    CHAT
+    USER
+}
+enum FieldType {
+    EMAIL
+    DATE
+    LINK
+    TEXT
+    NUMERIC
+    SELECTOR
+}
+enum MessageType {
+    SYSTEM
+    USER
+    FORMATTED
+}
+
+input Params {
+    limit: Int = 20
+    offset: Int = 0
+}
+
+type TokenPair {
+    access_token: String!
+    refresh_token: String!
+}
+
+type Unit {
+    id: ID!
+    domain: String!
+    name: String!
+    type: UnitType!
+}
+
+type Chat {
+    unit: Unit!
+    owner: User!
+    rooms: [Room!]
+    private: Boolean!
+    count_members: String!
+    members: [ChatMember!]
+    roles: [Role!]
+    invites: [Invite!]
+    banlist: [User!]
+}
+
+type Room {
+    id: ID!
+    chat: Chat!
+    name: String!
+    parent: Room
+    note: String
+    msg_format: Form
+    private: Boolean!
+    whitelist: [Role!]
+    messages: [Message!]
+}
+
+type Form {
+    fields: [FormField!]!
+}
+
+type FormField {
+    key: String!
+    type: FieldType!
+    optional: Boolean!
+    length: Int
+    items: [String!]
+}
+
+type ChatMember {
+    chat: Chat!
+    user: User!
+    role: Role
+    joined_at: Date!
+}
+
+type RoomModeratorParams {
+    moderate: Boolean!
+    fav_room: ID
+}
+
+type RoleArray {
+    roles: [Role!]
+}
+
+type Role {
+    id: ID!
+    users: [User!]
+    name: String!
+    color: String!
+    visible: Boolean!
+    moderation_rooms: RoomModeratorParams!
+    moderation_chat:Boolean!
+    moderation_roles: Boolean!
+    moderation_members: Boolean!
+
+}
+
+type Message {
+    id: ID!
+    room: Room
+    reply_to: Message
+    author: Unit!
+    body: String!
+    type: MessageType!
+    date: Date!
+}
+
+type Invite {
+    chat: Chat!
+    code: String!
+    aliens: Int
+    exp: Date
+}
+
+type User {
+    unit: Unit!
+}

@@ -1,0 +1,56 @@
+type RoomQuery
+
+extend type Query {
+    room_query: RoomQuery!
+}
+
+extend type RoomQuery {
+    rooms(chat: ID!, params: Params): RoomsResult
+    room(id: ID!): RoomResult
+    room_whitelist(room_id: ID!): RoomWhiteListResult
+    room_form(room_id: ID!): RoomFormResult
+    room_messages(room_id: ID, filter: MessageFilter, params: Params): RoomMessagesResult
+    message_info(id: ID!, chat_id: ID!): MessageInfoResult
+}
+
+# Rooms ...
+type RoomArray {
+    rooms: [Room!]
+}
+union RoomsResult =
+    | AdvancedError
+    | RoomArray
+
+# Room ...
+union RoomResult =
+    | AdvancedError
+    | Room
+
+# RoomWhiteList ...
+union RoomWhiteListResult =
+    | AdvancedError
+    | RoleArray
+
+# RoomForm ...
+union RoomFormResult =
+    | AdvancedError
+    | Form
+
+# RoomMessages ...
+input MessageFilter {
+    text_fragment: String
+    author_id: ID
+    chat_id: ID
+    room_id: ID
+}
+type MessageArray {
+    messages: [Message!]
+}
+union RoomMessagesResult =
+    | AdvancedError
+    | MessageArray
+
+# MessageInfo ...
+union MessageInfoResult =
+    | AdvancedError
+    | Message

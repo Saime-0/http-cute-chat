@@ -29,8 +29,6 @@ union LoginResult =
     | AdvancedError
     | TokenPair
 
-
-
 # RefreshTokens ...
 union RefreshTokensResult =
     | AdvancedError

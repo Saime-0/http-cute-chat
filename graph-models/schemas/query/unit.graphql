@@ -1,0 +1,23 @@
+type UnitQuery
+
+extend type Query {
+    unit_query: UnitQuery!
+}
+
+extend type UnitQuery {
+    units(name_fragment: String!, type: UnitType, params: Params): UnitsResult!
+    unit(id: ID, domain: String): UnitResult!
+}
+
+# Units ...
+type UnitArray {
+    units: [Unit!]
+}
+union UnitsResult =
+    | AdvancedError
+    | UnitArray
+
+# Unit ...
+union UnitResult =
+    | AdvancedError
+    | Unit

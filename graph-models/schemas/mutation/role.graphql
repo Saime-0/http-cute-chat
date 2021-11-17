@@ -1,0 +1,54 @@
+type RoleMutation
+
+extend type Mutation {
+    role_mutation: RoleMutation!
+}
+
+extend type RoleMutation {
+    create_role(room_id: ID!, input: CreateRoleInput!): CreateRoleResult!
+    update_role(role_id: ID!, input: UpdateRoleInput!): UpdateRoleResult!
+    give_role(user_id: ID!, chat_id: ID!, role_id: ID!): GiveRoleResult!
+    take_role(user_id: ID!, chat_id: ID!): TakeRoleResult!
+}
+
+# CreateRole ...
+input RoomModeratorParamsInput {
+    moderate: Boolean!
+    fav_room: ID
+}
+input CreateRoleInput {
+    name: String!
+    color: String!
+    visible: Boolean!
+    moderation_rooms: RoomModeratorParamsInput!
+    moderation_chat:Boolean!
+    moderation_roles: Boolean!
+    moderation_members: Boolean!
+}
+union CreateRoleResult =
+    | AdvancedError
+    | Role
+
+# UpdateRole ...
+input UpdateRoleInput {
+    name: String
+    color: String
+    visible: Boolean
+    moderation_rooms: RoomModeratorParamsInput
+    moderation_chat:Boolean
+    moderation_roles: Boolean
+    moderation_members: Boolean
+}
+union UpdateRoleResult =
+    | AdvancedError
+    | Role
+
+# GiveRole ...
+union GiveRoleResult =
+    | AdvancedError
+    | ChatMember
+
+# TakeRole ...
+union TakeRoleResult =
+    | AdvancedError
+    | ChatMember

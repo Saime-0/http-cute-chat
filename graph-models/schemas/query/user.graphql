@@ -1,0 +1,41 @@
+type UserQuery
+
+extend type Query {
+    user_query: UserQuery!
+}
+
+extend type UserQuery {
+    users(name_fragment: String!, params: Params): UsersResult!
+    user(id: ID, domain: String): UserResult!
+    me: MeResult!
+}
+
+# Users ...
+type UserArray {
+    users: [User!]
+}
+union UsersResult =
+    | AdvancedError
+    | UserArray
+
+# User ...
+union UserResult =
+    | AdvancedError
+    | User
+
+# Me ...
+type UserData {
+    domain: String!
+    name: String!
+    password: String!
+    email: String!
+}
+type Me {
+    user: User!
+    data: UserData!
+    chats: [Chat!]
+    owned_chats: [Chat!]
+}
+union MeResult =
+    | AdvancedError
+    | Me

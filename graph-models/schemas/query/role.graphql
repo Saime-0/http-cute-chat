@@ -1,0 +1,20 @@
+type RoleQuery
+
+extend type Query  {
+    role_extend: RoleQuery
+}
+
+extend type RoleQuery {
+    chat_roles(chat_id: ID!, params: Params): ChatRolesResult
+    chat_role(user_id: ID!, chat_id: ID!): ChatRoleResult
+}
+
+# ChatRoles ...
+union ChatRolesResult =
+    | AdvancedError
+    | RoleArray
+
+# ChatRole ...
+union ChatRoleResult =
+    | AdvancedError
+    | Role
