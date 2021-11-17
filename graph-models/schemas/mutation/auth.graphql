@@ -1,0 +1,40 @@
+type AuthMutation
+
+extend type Mutation {
+    auth_mutation: AuthMutation!
+}
+extend type AuthMutation {
+    register(input: RegisterInput!): RegisterResult!
+    login(input: LoginInput!): LoginResult!
+    refresh_tokes(refresh_token: String!): RefreshTokensResult!
+}
+
+# Register ...
+input RegisterInput {
+    domain: String!
+    name: String!
+    email: String!
+    password: String!
+}
+union RegisterResult =
+    | AdvancedError
+    | User
+
+# Login ...
+input LoginInput {
+    email: String!
+    password: String!
+}
+union LoginResult =
+    | AdvancedError
+    | TokenPair
+
+
+
+# RefreshTokens ...
+union RefreshTokensResult =
+    | AdvancedError
+    | TokenPair
+
+
+
