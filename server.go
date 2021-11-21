@@ -4,12 +4,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-
 	//
+	"github.com/saime-0/http-cute-chat/graph/generated"
+	"github.com/saime-0/http-cute-chat/graph/resolver"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/saime-0/http-cute-chat/graph"
-	"github.com/saime-0/http-cute-chat/graph/generated"
 )
 
 const defaultPort = "8080"
@@ -20,7 +20,7 @@ func main() {
 		port = defaultPort
 	}
 
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{}}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", srv)
