@@ -1,0 +1,11 @@
+extend type Query {
+    chat_roles(chat_id: ID!, params: Params): ChatRolesResult @goField(forceResolver: true)
+
+}
+
+# ChatRoles ...
+union ChatRolesResult =
+    | AdvancedError
+    | RoleArray
+
+

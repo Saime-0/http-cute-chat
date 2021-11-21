@@ -1,4 +1,4 @@
-package v1
+package validator
 
 import (
 	"regexp"
@@ -9,39 +9,39 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
-func validateDomain(domain string) (valid bool) {
+func ValidateDomain(domain string) (valid bool) {
 	if (len(domain) > rules.DomainMaxLength) || (len(domain) < rules.DomainMinLength) {
 		return false
 	}
 	return true
 }
-func validateName(name string) (valid bool) {
+func ValidateName(name string) (valid bool) {
 	if (len(name) > rules.NameMaxLength) || (len(name) < rules.NameMinLength) {
 		return false
 	}
 	return true
 }
-func validatePassword(password string) (valid bool) { // todo
+func ValidatePassword(password string) (valid bool) { // todo
 
 	return len(password) <= rules.MaxPasswordLength && len(password) >= rules.MinPasswordLength
 }
-func validateEmail(email string) (valid bool) { // todo
+func ValidateEmail(email string) (valid bool) { // todo
 	valid, _ = regexp.MatchString(`/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i`, email)
 	return
 }
-func validateAppSettings(settings string) (valid bool) {
+func ValidateAppSettings(settings string) (valid bool) {
 
 	return len(settings) <= rules.AppSettingsMaxLength
 }
-func validateLifetime(lt int64) (valid bool) {
+func ValidateLifetime(lt int64) (valid bool) {
 
 	return lt >= int64(time.Minute) && lt <= rules.Year
 }
-func validateAliens(aliens int) (valid bool) {
+func ValidateAliens(aliens int) (valid bool) {
 
 	return aliens >= 1 && aliens <= 99_999
 }
-func validateLink(link string) (valid bool) {
+func ValidateLink(link string) (valid bool) {
 	valid, _ = regexp.MatchString(`/^((ftp|http|https):\/\/)?(www\.)?([A-Za-zА-Яа-я0-9]{1}[A-Za-zА-Яа-я0-9\-]*\.?)*\.{1}[A-Za-zА-Яа-я0-9-]{2,8}(\/([\w#!:.?+=&%@!\-\/])*)?/`, link)
 	return
 }
@@ -70,7 +70,7 @@ func validateLink(link string) (valid bool) {
 // 	return
 // }
 
-func validateRoomForm(form *models.FormPattern) (valid bool) {
+func ValidateRoomForm(form *models.FormPattern) (valid bool) {
 	for _, field := range form.Fields {
 		if field.Key == "" ||
 			field.Length < 0 {
@@ -96,14 +96,14 @@ func validateRoomForm(form *models.FormPattern) (valid bool) {
 
 		case rules.EmailField:
 			for _, v := range field.Items {
-				if !validateEmail(v) {
+				if !ValidateEmail(v) {
 					return
 				}
 			}
 
 		case rules.LinkField:
 			for _, v := range field.Items {
-				if !validateLink(v) {
+				if !ValidateLink(v) {
 					return
 				}
 			}

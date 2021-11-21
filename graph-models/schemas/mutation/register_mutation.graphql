@@ -1,0 +1,13 @@
+extend type Mutation {
+    register(input: RegisterInput!): RegisterResult! @goField(forceResolver: true)
+}
+# Register ...
+input RegisterInput {
+    domain: String!
+    name: String!
+    email: String!
+    password: String!
+}
+union RegisterResult =
+    | AdvancedError
+    | User

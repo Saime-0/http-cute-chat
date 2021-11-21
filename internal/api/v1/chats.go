@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/api/validator"
 
 	"github.com/gorilla/mux"
 	"github.com/saime-0/http-cute-chat/internal/api/responder"
@@ -61,7 +62,7 @@ func (h *Handler) GetChatByDomain(w http.ResponseWriter, r *http.Request) {
 	user_id := r.Context().Value(rules.UserIDFromToken).(int)
 
 	chat_domain := mux.Vars(r)["chat-domain"]
-	if !validateDomain(chat_domain) {
+	if !validator.ValidateDomain(chat_domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
@@ -161,7 +162,7 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateDomain(chat.Domain) || !validateName(chat.Name) {
+	if !validator.ValidateDomain(chat.Domain) || !validator.ValidateName(chat.Name) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
@@ -528,12 +529,12 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if input_link.LifeTime != 0 && !validateLifetime(input_link.LifeTime) {
+	if input_link.LifeTime != 0 && !validator.ValidateLifetime(input_link.LifeTime) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
 
 		return
 	}
-	if input_link.Aliens != 0 && !validateAliens(input_link.Aliens) {
+	if input_link.Aliens != 0 && !validator.ValidateAliens(input_link.Aliens) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
 
 		return

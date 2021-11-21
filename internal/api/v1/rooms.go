@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/saime-0/http-cute-chat/internal/api/validator"
+
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 
 	"github.com/gorilla/mux"
@@ -373,7 +375,7 @@ func (h *Handler) SetRoomForm(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	if !validateRoomForm(form_pattern) {
+	if !validator.ValidateRoomForm(form_pattern) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 		return

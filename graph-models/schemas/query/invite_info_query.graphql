@@ -1,0 +1,8 @@
+extend type Query {
+    invite_info(code: String!): InviteInfoResult @goField(forceResolver: true)
+}
+
+# InviteInfo ...
+union InviteInfoResult =
+    | AdvancedError
+    | Invite

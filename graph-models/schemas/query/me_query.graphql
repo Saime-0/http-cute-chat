@@ -1,0 +1,20 @@
+extend type Query {
+    me: MeResult! @goField(forceResolver: true)
+}
+
+# Me ...
+type UserData {
+    domain: String!
+    name: String!
+    password: String!
+    email: String!
+}
+type Me {
+    user: User!
+    data: UserData!
+    chats: [Chat!]
+    owned_chats: [Chat!]
+}
+union MeResult =
+    | AdvancedError
+    | Me

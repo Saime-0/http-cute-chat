@@ -1,0 +1,9 @@
+extend type Query {
+    room_form(room_id: ID!): RoomFormResult @goField(forceResolver: true)
+
+}
+
+# RoomForm ...
+union RoomFormResult =
+    | AdvancedError
+    | Form

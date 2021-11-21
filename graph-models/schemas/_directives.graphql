@@ -1,0 +1,14 @@
+directive @goField(
+    forceResolver: Boolean
+    name: String
+) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
+
+directive @isAuth on INPUT_FIELD_DEFINITION
+    | FIELD_DEFINITION
+
+directive @hasChar(char: [Char]) on INPUT_FIELD_DEFINITION
+    | FIELD_DEFINITION
+#directive @notFrozen(char: [Char]) on INPUT_FIELD_DEFINITION
+#    | FIELD_DEFINITION |
+#directive @isMember(char: [Char]) on INPUT_FIELD_DEFINITION
+#    | FIELD_DEFINITION

@@ -1,0 +1,13 @@
+extend type Mutation {
+    create_invite(chat_id: ID!, input: CreateInviteInput!): CreateInviteResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+}
+
+# CreateInvite ...
+input CreateInviteInput {
+    code: String!
+    aliens: Int
+    exp: Int
+}
+union CreateInviteResult =
+    | AdvancedError
+    | Invite

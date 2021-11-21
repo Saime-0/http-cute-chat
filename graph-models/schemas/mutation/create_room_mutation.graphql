@@ -1,0 +1,35 @@
+extend type Mutation {
+    create_room(room_id: ID!, input: CreateRoomInput!): CreateRoomResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+
+}
+
+# CreateRoom ...
+input CreateRoomInput {
+    name: String!
+    parent: ID
+    note: String
+    msg_format: UpdateFormInput
+    restricts: RestrictsInput
+}
+input UpdateFormInput {
+    fields: [FormFieldInput!]!
+}
+input FormFieldInput {
+    key: String!
+    type: FieldType!
+    optional: Boolean!
+    length: Int
+    items: [String!]
+}
+input RestrictsInput {
+    allow_read: PermissionHoldersInput
+    allow_write: PermissionHoldersInput
+}
+input PermissionHoldersInput {
+    roles: [ID!]
+    chars: [Char!]
+    members: [ID!]
+}
+union CreateRoomResult =
+    | AdvancedError
+    | Room

@@ -1,0 +1,13 @@
+extend type Mutation {
+    create_chat(input: CreateChatInput!): CreateChatResult! @goField(forceResolver: true) @isAuth
+}
+
+# CreateChat ...
+input CreateChatInput {
+    domain: String!
+    name: String!
+    private: Boolean!
+}
+union CreateChatResult =
+    | AdvancedError
+    | Chat

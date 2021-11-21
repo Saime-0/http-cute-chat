@@ -1,0 +1,7 @@
+extend type Mutation {
+    join_by_invite(code: String!): Chat! @goField(forceResolver: true) @isAuth
+}
+# JoinByInvite ...
+union JoinByInviteResult =
+    | AdvancedError
+    | Chat

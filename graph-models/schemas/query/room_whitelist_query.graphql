@@ -1,0 +1,9 @@
+extend type Query {
+    room_whitelist(room_id: ID!): RoomWhiteListResult @goField(forceResolver: true)
+
+}
+
+# RoomWhiteList ...
+union RoomWhiteListResult =
+    | AdvancedError
+    | RoleArray

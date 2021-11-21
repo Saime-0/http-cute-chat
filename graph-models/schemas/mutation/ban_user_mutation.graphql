@@ -1,0 +1,8 @@
+extend type Mutation {
+    ban_user(user_id: ID!, chat_id: ID!): BanUserResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+}
+
+# BanUser ...
+union BanUserResult =
+    | AdvancedError
+    | User

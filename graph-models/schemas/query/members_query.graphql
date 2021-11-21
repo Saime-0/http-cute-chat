@@ -1,0 +1,12 @@
+extend type Query {
+    members(chat_id: ID!, user_id: ID): MembersResult @goField(forceResolver: true)
+
+}
+
+# Members ...
+type MemberArray {
+    members: [ChatMember!]
+}
+union MembersResult =
+    | AdvancedError
+    | MemberArray

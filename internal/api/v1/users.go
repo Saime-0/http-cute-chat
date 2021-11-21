@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/saime-0/http-cute-chat/internal/api/validator"
+
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 
 	"github.com/gorilla/mux"
@@ -39,7 +41,7 @@ func (h *Handler) initUsersRoutes(r *mux.Router) {
 func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
 
 	user_domain := mux.Vars(r)["user-domain"]
-	if !validateDomain(user_domain) {
+	if !validator.ValidateDomain(user_domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
@@ -130,19 +132,19 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
-	case !validateDomain(user_data.Domain) && len(user_data.Domain) != 0:
+	case !validator.ValidateDomain(user_data.Domain) && len(user_data.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidDomain)
 		return
 
-	case !validateName(user_data.Name) && len(user_data.Domain) != 0:
+	case !validator.ValidateName(user_data.Name) && len(user_data.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidName)
 		return
 
-	case !validateEmail(user_data.Email) && len(user_data.Domain) != 0:
+	case !validator.ValidateEmail(user_data.Email) && len(user_data.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidEmail)
 		return
 
-	case !validatePassword(user_data.Password) && len(user_data.Domain) != 0:
+	case !validator.ValidatePassword(user_data.Password) && len(user_data.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidPassword)
 		return
 	}
@@ -172,7 +174,7 @@ func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !validateAppSettings(user_settings.AppSettings) {
+	if !validator.ValidateAppSettings(user_settings.AppSettings) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return

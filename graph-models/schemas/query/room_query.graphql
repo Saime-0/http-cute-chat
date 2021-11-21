@@ -1,0 +1,8 @@
+extend type Query {
+    room(id: ID!): RoomResult @goField(forceResolver: true)
+}
+
+# Room ...
+union RoomResult =
+    | AdvancedError
+    | Room

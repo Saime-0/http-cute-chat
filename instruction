@@ -1,0 +1,42 @@
+local.ToUTC > UTC
+[calendar.ToUnix > Unix]
+
+utc.ToLocal < UTC
+[unix.ToReadable < Unix]
+
+----
+
+:Role 
+	Colorful
+	Tagged
+:Char
+	Administrator
+		- moderatoring++
+		- control chat
+		- control roles
+		- read log
+		- control invites
+	Moderator
+		- freeze members
+		- hide/show messages
+		- (un)mute members
+
+----
+
+:Permissions
+	Read:
+		All
+		Picked role
+		Picked char
+		Picked def members
+	Write:
+		All
+		Picked role
+		Picked char
+		Picked def members
+
+----
+
+на query и mutation полях установлена дириктива @isAuth, она нужна для проверки контекста на наличие даннгых пользователя от которого пришел запрос, сами данные попадают в контекст через мидлвеир на "эдпоинте" грапхкуаля, если данные небыли найдены то возвращается ошибка.
+
+некоторые поля при обработке запроса ресольвятся отдельно(@goField), тк одним запросом к базе сложно собрать все в одну структуру. например поле chat.rooms и chat.roles, их не получится собрать в одну структуру сразу тк это разные таблицы в базе данных и они никак не связны между собой

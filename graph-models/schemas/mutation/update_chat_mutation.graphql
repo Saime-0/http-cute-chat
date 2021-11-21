@@ -1,0 +1,13 @@
+extend type Mutation {
+    update_chat(chat_id: ID!, input: UpdateChatInput!): UpdateChatResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+}
+
+# UpdateChat ...
+input UpdateChatInput {
+    domain: String!
+    name: String!
+    private: Boolean!
+}
+union UpdateChatResult =
+    | AdvancedError
+    | Chat

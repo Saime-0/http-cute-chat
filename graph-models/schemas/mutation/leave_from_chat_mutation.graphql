@@ -1,0 +1,8 @@
+extend type Mutation {
+    leave_from_chat(chat_id: ID!): Chat! @goField(forceResolver: true) @isAuth
+}
+
+# LeaveFromChat ...
+union LeaveFromChatResult =
+    | AdvancedError
+    | Chat

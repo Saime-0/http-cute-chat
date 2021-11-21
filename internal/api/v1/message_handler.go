@@ -3,6 +3,8 @@ package v1
 import (
 	"strconv"
 
+	"github.com/saime-0/http-cute-chat/internal/api/validator"
+
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
@@ -26,12 +28,12 @@ func MatchMessageType(input *models.FormCompleted, sample *models.FormPattern) (
 					}
 
 				case rules.EmailField:
-					if !validateEmail(choice.Value) {
+					if !validator.ValidateEmail(choice.Value) {
 						adv_err = rules.ErrInvalidEmail
 					}
 
 				case rules.LinkField:
-					if !validateLink(choice.Value) {
+					if !validator.ValidateLink(choice.Value) {
 						adv_err = rules.ErrInvalidLink
 					}
 

@@ -1,5 +1,3 @@
-scalar Date
-
 enum UnitType {
     CHAT
     USER
@@ -16,6 +14,10 @@ enum MessageType {
     SYSTEM
     USER
     FORMATTED
+}
+enum Char {
+    ADMIN
+    MODER
 }
 
 input Params {
@@ -40,23 +42,28 @@ type Chat {
     owner: User!
     rooms: [Room!]
     private: Boolean!
-    count_members: String!
-    members: [ChatMember!]
-    roles: [Role!]
-    invites: [Invite!]
-    banlist: [User!]
+    count_members: String! @goField(forceResolver: true)
+    members: [ChatMember!] @goField(forceResolver: true)
+    roles: [Role!] @goField(forceResolver: true)
+    invites: [Invite!] @goField(forceResolver: true)
+    banlist: [User!] @goField(forceResolver: true)
+    me_restricts: [MeRestricts!] @goField(forceResolver: true)
 }
-
+type MeRestricts {
+    chat: Chat!@goField(forceResolver: true)
+    frozen: Boolean!
+    muted: Boolean!
+    banned: Boolean!
+}
 type Room {
     id: ID!
-    chat: Chat!
+    chat: Chat! @goField(forceResolver: true)
     name: String!
     parent: Room
     note: String
     msg_format: Form
-    private: Boolean!
-    whitelist: [Role!]
-    messages: [Message!]
+    restricts: Restricts @goField(forceResolver: true)
+    messages: [Message!] @goField(forceResolver: true)
 }
 
 type Form {
@@ -72,15 +79,11 @@ type FormField {
 }
 
 type ChatMember {
-    chat: Chat!
-    user: User!
+    chat: Chat! @goField(forceResolver: true)
+    user: User! @goField(forceResolver: true)
     role: Role
-    joined_at: Date!
-}
-
-type RoomModeratorParams {
-    moderate: Boolean!
-    fav_room: ID
+    char: Char
+    joined_at: Int!
 }
 
 type RoleArray {
@@ -89,34 +92,37 @@ type RoleArray {
 
 type Role {
     id: ID!
-    users: [User!]
+    users: [User!] @goField(forceResolver: true)
     name: String!
     color: String!
-    visible: Boolean!
-    moderation_rooms: RoomModeratorParams!
-    moderation_chat:Boolean!
-    moderation_roles: Boolean!
-    moderation_members: Boolean!
-
 }
 
 type Message {
     id: ID!
-    room: Room
-    reply_to: Message
-    author: Unit!
+    room: Room @goField(forceResolver: true)
+    reply_to: Message @goField(forceResolver: true)
+    author: Unit! @goField(forceResolver: true)
     body: String!
     type: MessageType!
-    date: Date!
+    date: Int!
 }
 
 type Invite {
-    chat: Chat!
+    chat: Chat! @goField(forceResolver: true)
     code: String!
     aliens: Int
-    exp: Date
+    exp: Int
 }
 
 type User {
     unit: Unit!
+}
+type Restricts {
+    allow_read: PermissionHolders
+    allow_write: PermissionHolders
+}
+type PermissionHolders {
+    roles: [Role!] @goField(forceResolver: true)
+    chars: [Char!] @goField(forceResolver: true)
+    members: [ChatMember!] @goField(forceResolver: true)
 }

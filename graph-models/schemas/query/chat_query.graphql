@@ -1,0 +1,10 @@
+extend type Query {
+    chat(id: ID, domain: String): ChatResult @goField(forceResolver: true)
+
+}
+
+# Chat ...
+union ChatResult =
+    | AdvancedError
+    | Chat
+

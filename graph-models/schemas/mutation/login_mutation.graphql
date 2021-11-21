@@ -1,0 +1,12 @@
+extend type Mutation {
+    login(input: LoginInput!): LoginResult! @goField(forceResolver: true)
+}
+
+# Login ...
+input LoginInput {
+    email: String!
+    password: String!
+}
+union LoginResult =
+    | AdvancedError
+    | TokenPair

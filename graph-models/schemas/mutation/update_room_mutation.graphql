@@ -1,0 +1,16 @@
+extend type Mutation {
+    update_room(room_id: ID!, input: UpdateRoomInput!): UpdateRoomResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+
+}
+
+# UpdateRoom ...
+input UpdateRoomInput {
+    name: String
+    parent_id: ID
+    note: String
+    restricts: RestrictsInput
+    msg_format: UpdateFormInput
+}
+union UpdateRoomResult =
+    | AdvancedError
+    | Room

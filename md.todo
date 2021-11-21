@@ -1,0 +1,46 @@
+(#1) cchatus:
+- [x] 📃 controle expire session
+- [ ] 🎨 messages by events
+- [ ] 🎉 vote
+- [ ] 🎉 migrate message between rooms(except formatted)
+- [ ] 🎉 after/before date message
+- [ ] 🎉 remove room,role,chat
+- [ ] 🎉 add role to room whitelist
+----
+*
+local.ToUTC > UTC
+[calendar.ToUnix > Unix]
+
+utc.ToLocal < UTC
+[unix.ToReadable < Unix]
+
+----
+
+:Role 
+	Tagged
+	Colorful
+:Char
+	Administrator
+		- moderatoring++
+		- control chat
+		- control roles
+		- read log
+		- control invites
+	Moderator
+		- freeze members
+		- hide/show messages
+		- (un)mute members
+
+----
+
+:Permissions
+	Read:
+		All
+		Picked role
+		Picked char
+		Picked def members
+	Write:
+		All
+		Picked role
+		Picked char
+		Picked def members

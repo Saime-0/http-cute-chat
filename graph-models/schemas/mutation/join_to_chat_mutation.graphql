@@ -1,0 +1,9 @@
+extend type Mutation {
+    join_to_chat(chat_id: ID!): JoinToChatResult! @goField(forceResolver: true) @isAuth
+
+}
+
+# JoinToChat ...
+union JoinToChatResult =
+    | AdvancedError
+    | Chat

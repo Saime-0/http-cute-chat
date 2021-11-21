@@ -1,0 +1,9 @@
+extend type Mutation {
+    take_role(user_id: ID!, chat_id: ID!): TakeRoleResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+
+}
+
+# TakeRole ...
+union TakeRoleResult =
+    | AdvancedError
+    | ChatMember

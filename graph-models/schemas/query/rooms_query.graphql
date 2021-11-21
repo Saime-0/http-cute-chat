@@ -1,0 +1,11 @@
+extend type Query {
+    rooms(chat: ID!, params: Params): RoomsResult @goField(forceResolver: true)
+
+}
+# Rooms ...
+type RoomArray {
+    rooms: [Room!]
+}
+union RoomsResult =
+    | AdvancedError
+    | RoomArray

@@ -1,0 +1,16 @@
+extend type Mutation {
+    create_role(room_id: ID!, input: CreateRoleInput!): CreateRoleResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+
+}
+# CreateRole ...
+input RoomModeratorParamsInput {
+    moderate: Boolean!
+    fav_room: ID
+}
+input CreateRoleInput {
+    name: String!
+    color: String!
+}
+union CreateRoleResult =
+    | AdvancedError
+    | Role

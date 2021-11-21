@@ -1,0 +1,11 @@
+extend type Query {
+    users(name_fragment: String!, params: Params): UsersResult! @goField(forceResolver: true)
+}
+
+# Users ...
+type UserArray {
+    users: [User!]
+}
+union UsersResult =
+    | AdvancedError
+    | UserArray
