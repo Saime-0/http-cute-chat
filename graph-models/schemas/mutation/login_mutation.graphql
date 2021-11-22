@@ -9,4 +9,5 @@ input LoginInput {
 }
 union LoginResult =
     | AdvancedError
+    | Successful
     | TokenPair

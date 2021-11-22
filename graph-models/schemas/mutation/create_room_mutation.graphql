@@ -1,5 +1,5 @@
 extend type Mutation {
-    create_room(room_id: ID!, input: CreateRoomInput!): CreateRoomResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    create_room(room_id: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 
 }
 
@@ -30,6 +30,3 @@ input PermissionHoldersInput {
     chars: [Char!]
     members: [ID!]
 }
-union CreateRoomResult =
-    | AdvancedError
-    | Room

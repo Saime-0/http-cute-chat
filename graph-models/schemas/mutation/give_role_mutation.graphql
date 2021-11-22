@@ -1,10 +1,4 @@
 extend type Mutation {
-    give_role(user_id: ID!, chat_id: ID!, role_id: ID!): GiveRoleResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
-
+    give_role(user_id: ID!, chat_id: ID!, role_id: ID!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
-
-# GiveRole ...
-union GiveRoleResult =
-    | AdvancedError
-    | ChatMember
 

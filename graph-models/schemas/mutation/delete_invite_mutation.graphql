@@ -1,8 +1,4 @@
 extend type Mutation {
-    delete_invite(code: String!): DeleteInviteResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    delete_invite(code: String!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
 
-# DeleteInvite ...
-union DeleteInviteResult =
-    | AdvancedError
-    | Invite

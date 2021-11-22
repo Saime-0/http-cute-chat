@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *mutationResolver) DeleteInvite(ctx context.Context, code string) (model.DeleteInviteResult, error) {
+func (r *mutationResolver) DeleteInvite(ctx context.Context, code string) (model.MutationResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateChatInput) (model.CreateChatResult, error) {
+func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateChatInput) (model.MutationResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

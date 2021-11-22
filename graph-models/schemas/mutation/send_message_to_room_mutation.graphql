@@ -10,5 +10,6 @@ input CreateMessageInput {
 }
 union SendMessageToRoomResult =
     | AdvancedError
+    | Successful
     | Message
 

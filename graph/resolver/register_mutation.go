@@ -5,13 +5,17 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/api/validator"
+	"fmt"
+	"log"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
+	"github.com/saime-0/http-cute-chat/internal/api/validator"
+	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (model.RegisterResult, error) {
+	fmt.Printf("%#v", input)
 	switch {
 	case !validator.ValidateDomain(input.Domain):
 		return resp.ErrInvalidDomain, nil
@@ -25,6 +29,16 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 	case !validator.ValidatePassword(input.Password):
 		return resp.ErrInvalidPassword, nil
 	}
-
-	// todo: обращение к бд? вывод?
+	id, err := r.Services.Repos.Users.CreateUser(&models.CreateUser{
+		Domain:   input.Domain,
+		Name:     input.Name,
+		Email:    input.Email,
+		Password: input.Password,
+	})
+	if err != nil {
+		log.Println("err user create")
+		return nil, err
+	}
+	log.Println("New user with id", id)
+	return model.Successful{Success: "регистрация прошла успешно"}, nil
 }

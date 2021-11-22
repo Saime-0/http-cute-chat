@@ -26,7 +26,7 @@ func ValidatePassword(password string) (valid bool) { // todo
 	return len(password) <= rules.MaxPasswordLength && len(password) >= rules.MinPasswordLength
 }
 func ValidateEmail(email string) (valid bool) { // todo
-	valid, _ = regexp.MatchString(`/^[A-Z0-9._%+-]+@[A-Z0-9-]+.+.[A-Z]{2,4}$/i`, email)
+	valid, _ = regexp.MatchString(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`, email)
 	return
 }
 func ValidateAppSettings(settings string) (valid bool) {
@@ -43,6 +43,9 @@ func ValidateAliens(aliens int) (valid bool) {
 }
 func ValidateLink(link string) (valid bool) {
 	valid, _ = regexp.MatchString(`/^((ftp|http|https):\/\/)?(www\.)?([A-Za-zА-Яа-я0-9]{1}[A-Za-zА-Яа-я0-9\-]*\.?)*\.{1}[A-Za-zА-Яа-я0-9-]{2,8}(\/([\w#!:.?+=&%@!\-\/])*)?/`, link)
+	return
+}
+func ValidateOffset(link string) (valid bool) {
 	return
 }
 

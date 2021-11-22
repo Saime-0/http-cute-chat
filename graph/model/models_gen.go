@@ -8,10 +8,6 @@ import (
 	"strconv"
 )
 
-type BanUserResult interface {
-	IsBanUserResult()
-}
-
 type ChatResult interface {
 	IsChatResult()
 }
@@ -28,34 +24,6 @@ type ChatsResult interface {
 	IsChatsResult()
 }
 
-type CreateChatResult interface {
-	IsCreateChatResult()
-}
-
-type CreateInviteResult interface {
-	IsCreateInviteResult()
-}
-
-type CreateRoleResult interface {
-	IsCreateRoleResult()
-}
-
-type CreateRoomResult interface {
-	IsCreateRoomResult()
-}
-
-type DeleteInviteResult interface {
-	IsDeleteInviteResult()
-}
-
-type ErrorInterface interface {
-	IsErrorInterface()
-}
-
-type GiveRoleResult interface {
-	IsGiveRoleResult()
-}
-
 type InviteInfoResult interface {
 	IsInviteInfoResult()
 }
@@ -66,10 +34,6 @@ type JoinByInviteResult interface {
 
 type JoinToChatResult interface {
 	IsJoinToChatResult()
-}
-
-type LeaveFromChatResult interface {
-	IsLeaveFromChatResult()
 }
 
 type LoginResult interface {
@@ -86,6 +50,10 @@ type MembersResult interface {
 
 type MessageInfoResult interface {
 	IsMessageInfoResult()
+}
+
+type MutationResult interface {
+	IsMutationResult()
 }
 
 type RefreshTokensResult interface {
@@ -118,10 +86,6 @@ type RoomsResult interface {
 
 type SendMessageToRoomResult interface {
 	IsSendMessageToRoomResult()
-}
-
-type TakeRoleResult interface {
-	IsTakeRoleResult()
 }
 
 type UnitResult interface {
@@ -161,22 +125,12 @@ type AdvancedError struct {
 	Message string `json:"message"`
 }
 
-func (AdvancedError) IsErrorInterface()          {}
-func (AdvancedError) IsBanUserResult()           {}
-func (AdvancedError) IsCreateChatResult()        {}
-func (AdvancedError) IsCreateInviteResult()      {}
-func (AdvancedError) IsCreateRoleResult()        {}
-func (AdvancedError) IsCreateRoomResult()        {}
-func (AdvancedError) IsDeleteInviteResult()      {}
-func (AdvancedError) IsGiveRoleResult()          {}
 func (AdvancedError) IsJoinByInviteResult()      {}
 func (AdvancedError) IsJoinToChatResult()        {}
-func (AdvancedError) IsLeaveFromChatResult()     {}
 func (AdvancedError) IsLoginResult()             {}
 func (AdvancedError) IsRefreshTokensResult()     {}
 func (AdvancedError) IsRegisterResult()          {}
 func (AdvancedError) IsSendMessageToRoomResult() {}
-func (AdvancedError) IsTakeRoleResult()          {}
 func (AdvancedError) IsUpdateChatResult()        {}
 func (AdvancedError) IsUpdateMeDataResult()      {}
 func (AdvancedError) IsUpdateRoleResult()        {}
@@ -198,6 +152,7 @@ func (AdvancedError) IsUnitResult()              {}
 func (AdvancedError) IsUnitsResult()             {}
 func (AdvancedError) IsUserResult()              {}
 func (AdvancedError) IsUsersResult()             {}
+func (AdvancedError) IsMutationResult()          {}
 
 type Chat struct {
 	Unit         *Unit          `json:"unit"`
@@ -212,12 +167,10 @@ type Chat struct {
 	MeRestricts  []*MeRestricts `json:"me_restricts"`
 }
 
-func (Chat) IsCreateChatResult()    {}
-func (Chat) IsJoinByInviteResult()  {}
-func (Chat) IsJoinToChatResult()    {}
-func (Chat) IsLeaveFromChatResult() {}
-func (Chat) IsUpdateChatResult()    {}
-func (Chat) IsChatResult()          {}
+func (Chat) IsJoinByInviteResult() {}
+func (Chat) IsJoinToChatResult()   {}
+func (Chat) IsUpdateChatResult()   {}
+func (Chat) IsChatResult()         {}
 
 type ChatArray struct {
 	Chats []*Chat `json:"chats"`
@@ -232,9 +185,6 @@ type ChatMember struct {
 	Char     *Char `json:"char"`
 	JoinedAt int   `json:"joined_at"`
 }
-
-func (ChatMember) IsGiveRoleResult() {}
-func (ChatMember) IsTakeRoleResult() {}
 
 type CreateChatInput struct {
 	Domain  string `json:"domain"`
@@ -295,9 +245,7 @@ type Invite struct {
 	Exp    *int   `json:"exp"`
 }
 
-func (Invite) IsCreateInviteResult() {}
-func (Invite) IsDeleteInviteResult() {}
-func (Invite) IsInviteInfoResult()   {}
+func (Invite) IsInviteInfoResult() {}
 
 type LoginInput struct {
 	Email    string `json:"email"`
@@ -393,7 +341,6 @@ type Role struct {
 	Color string  `json:"color"`
 }
 
-func (Role) IsCreateRoleResult() {}
 func (Role) IsUpdateRoleResult() {}
 func (Role) IsChatRoleResult()   {}
 
@@ -415,7 +362,6 @@ type Room struct {
 	Messages  []*Message `json:"messages"`
 }
 
-func (Room) IsCreateRoomResult() {}
 func (Room) IsUpdateRoomResult() {}
 func (Room) IsRoomResult()       {}
 
@@ -429,6 +375,18 @@ type RoomModeratorParamsInput struct {
 	Moderate bool   `json:"moderate"`
 	FavRoom  *int64 `json:"fav_room"`
 }
+
+type Successful struct {
+	Success string `json:"success"`
+}
+
+func (Successful) IsJoinByInviteResult()      {}
+func (Successful) IsJoinToChatResult()        {}
+func (Successful) IsLoginResult()             {}
+func (Successful) IsRefreshTokensResult()     {}
+func (Successful) IsRegisterResult()          {}
+func (Successful) IsSendMessageToRoomResult() {}
+func (Successful) IsMutationResult()          {}
 
 type TokenPair struct {
 	AccessToken  string `json:"access_token"`
@@ -487,9 +445,7 @@ type User struct {
 	Unit *Unit `json:"unit"`
 }
 
-func (User) IsBanUserResult()  {}
-func (User) IsRegisterResult() {}
-func (User) IsUserResult()     {}
+func (User) IsUserResult() {}
 
 type UserArray struct {
 	Users []*User `json:"users"`

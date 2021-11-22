@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (*model.Chat, error) {
+func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

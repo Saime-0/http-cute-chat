@@ -10,4 +10,6 @@ input RegisterInput {
 }
 union RegisterResult =
     | AdvancedError
-    | User
+    | Successful
+
+

@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int64) (*model.Chat, error) {
+func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int64) (model.MutationResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

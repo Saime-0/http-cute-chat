@@ -19,11 +19,11 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 func (r *UsersRepo) CreateUser(user_model *models.CreateUser) (id int, err error) {
 	err = r.db.QueryRow(
 		`WITH u AS (
-			INSERT INTO units (domain, name) 
-			VALUES ($1, $2) 
+			INSERT INTO units (domain, name, type) 
+			VALUES ($1, $2, 'USER') 
 			RETURNING id
 			) 
-		INSERT INTO users (id, app_settings, email, password) 
+		INSERT INTO users (id, app_settings, password, email) 
 		SELECT u.id, 'default', $3, $4 
 		FROM u 
 		RETURNING id`,
@@ -32,9 +32,7 @@ func (r *UsersRepo) CreateUser(user_model *models.CreateUser) (id int, err error
 		user_model.Password,
 		user_model.Email,
 	).Scan(&id)
-	if err != nil {
-		return
-	}
+
 	return
 }
 

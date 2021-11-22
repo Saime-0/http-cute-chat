@@ -31,4 +31,8 @@ var (
 		Code:    "InvalidPassword",
 		Message: "invalid password",
 	}
+	ErrNameFragment = &model.AdvancedError{
+		Code:    "NameFragment",
+		Message: "invalid name fragment",
+	}
 )

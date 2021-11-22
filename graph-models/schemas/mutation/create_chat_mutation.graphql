@@ -1,5 +1,5 @@
 extend type Mutation {
-    create_chat(input: CreateChatInput!): CreateChatResult! @goField(forceResolver: true) @isAuth
+    create_chat(input: CreateChatInput!): MutationResult! @goField(forceResolver: true) @isAuth
 }
 
 # CreateChat ...
@@ -8,6 +8,3 @@ input CreateChatInput {
     name: String!
     private: Boolean!
 }
-union CreateChatResult =
-    | AdvancedError
-    | Chat

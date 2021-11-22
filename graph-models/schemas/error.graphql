@@ -1,9 +1,0 @@
-interface ErrorInterface {
-    code: String!
-    message: String!
-}
-
-type AdvancedError implements ErrorInterface {
-    code: String!
-    message: String!
-}

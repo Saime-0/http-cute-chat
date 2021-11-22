@@ -6,4 +6,5 @@ extend type Mutation {
 # JoinToChat ...
 union JoinToChatResult =
     | AdvancedError
+    | Successful
     | Chat

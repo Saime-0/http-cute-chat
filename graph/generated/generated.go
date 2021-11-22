@@ -214,6 +214,10 @@ type ComplexityRoot struct {
 		Rooms func(childComplexity int) int
 	}
 
+	Successful struct {
+		Success func(childComplexity int) int
+	}
+
 	TokenPair struct {
 		AccessToken  func(childComplexity int) int
 		RefreshToken func(childComplexity int) int
@@ -270,21 +274,21 @@ type MessageResolver interface {
 	Author(ctx context.Context, obj *model.Message) (*model.Unit, error)
 }
 type MutationResolver interface {
-	BanUser(ctx context.Context, userID int64, chatID int64) (model.BanUserResult, error)
-	CreateChat(ctx context.Context, input model.CreateChatInput) (model.CreateChatResult, error)
-	CreateInvite(ctx context.Context, chatID int64, input model.CreateInviteInput) (model.CreateInviteResult, error)
-	CreateRole(ctx context.Context, roomID int64, input model.CreateRoleInput) (model.CreateRoleResult, error)
-	CreateRoom(ctx context.Context, roomID int64, input model.CreateRoomInput) (model.CreateRoomResult, error)
-	DeleteInvite(ctx context.Context, code string) (model.DeleteInviteResult, error)
-	GiveRole(ctx context.Context, userID int64, chatID int64, roleID int64) (model.GiveRoleResult, error)
-	JoinByInvite(ctx context.Context, code string) (*model.Chat, error)
+	BanUser(ctx context.Context, userID int64, chatID int64) (model.MutationResult, error)
+	CreateChat(ctx context.Context, input model.CreateChatInput) (model.MutationResult, error)
+	CreateInvite(ctx context.Context, chatID int64, input model.CreateInviteInput) (model.MutationResult, error)
+	CreateRole(ctx context.Context, roomID int64, input model.CreateRoleInput) (model.MutationResult, error)
+	CreateRoom(ctx context.Context, roomID int64, input model.CreateRoomInput) (model.MutationResult, error)
+	DeleteInvite(ctx context.Context, code string) (model.MutationResult, error)
+	GiveRole(ctx context.Context, userID int64, chatID int64, roleID int64) (model.MutationResult, error)
+	JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error)
 	JoinToChat(ctx context.Context, chatID int64) (model.JoinToChatResult, error)
-	LeaveFromChat(ctx context.Context, chatID int64) (*model.Chat, error)
+	LeaveFromChat(ctx context.Context, chatID int64) (model.MutationResult, error)
 	Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error)
 	RefreshTokens(ctx context.Context, refreshToken string) (model.RefreshTokensResult, error)
 	Register(ctx context.Context, input model.RegisterInput) (model.RegisterResult, error)
 	SendMessageToRoom(ctx context.Context, room int64, input model.CreateMessageInput) (model.SendMessageToRoomResult, error)
-	TakeRole(ctx context.Context, userID int64, chatID int64) (model.TakeRoleResult, error)
+	TakeRole(ctx context.Context, userID int64, chatID int64) (model.MutationResult, error)
 	UpdateChat(ctx context.Context, chatID int64, input model.UpdateChatInput) (model.UpdateChatResult, error)
 	UpdateMeData(ctx context.Context, input model.UpdateMeDataInput) (model.UpdateMeDataResult, error)
 	UpdateRole(ctx context.Context, roleID int64, input model.UpdateRoleInput) (model.UpdateRoleResult, error)
@@ -1214,6 +1218,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RoomArray.Rooms(childComplexity), true
 
+	case "Successful.success":
+		if e.complexity.Successful.Success == nil {
+			break
+		}
+
+		return e.complexity.Successful.Success(childComplexity), true
+
 	case "TokenPair.access_token":
 		if e.complexity.TokenPair.AccessToken == nil {
 			break
@@ -1383,15 +1394,6 @@ directive @hasChar(char: [Char]) on INPUT_FIELD_DEFINITION
 #    | FIELD_DEFINITION |
 #directive @isMember(char: [Char]) on INPUT_FIELD_DEFINITION
 #    | FIELD_DEFINITION`, BuiltIn: false},
-	{Name: "graph-models/schemas/error.graphql", Input: `interface ErrorInterface {
-    code: String!
-    message: String!
-}
-
-type AdvancedError implements ErrorInterface {
-    code: String!
-    message: String!
-}`, BuiltIn: false},
 	{Name: "graph-models/schemas/general_models.graphql", Input: `enum UnitType {
     CHAT
     USER
@@ -1521,15 +1523,10 @@ type PermissionHolders {
     members: [ChatMember!] @goField(forceResolver: true)
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/ban_user_mutation.graphql", Input: `extend type Mutation {
-    ban_user(user_id: ID!, chat_id: ID!): BanUserResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
-}
-
-# BanUser ...
-union BanUserResult =
-    | AdvancedError
-    | User`, BuiltIn: false},
+    ban_user(user_id: ID!, chat_id: ID!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+}`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/create_chat_mutation.graphql", Input: `extend type Mutation {
-    create_chat(input: CreateChatInput!): CreateChatResult! @goField(forceResolver: true) @isAuth
+    create_chat(input: CreateChatInput!): MutationResult! @goField(forceResolver: true) @isAuth
 }
 
 # CreateChat ...
@@ -1537,13 +1534,9 @@ input CreateChatInput {
     domain: String!
     name: String!
     private: Boolean!
-}
-union CreateChatResult =
-    | AdvancedError
-    | Chat
-`, BuiltIn: false},
+}`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/create_invite_mutation.graphql", Input: `extend type Mutation {
-    create_invite(chat_id: ID!, input: CreateInviteInput!): CreateInviteResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    create_invite(chat_id: ID!, input: CreateInviteInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
 
 # CreateInvite ...
@@ -1552,12 +1545,9 @@ input CreateInviteInput {
     aliens: Int
     exp: Int
 }
-union CreateInviteResult =
-    | AdvancedError
-    | Invite
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/create_role_mutation.graphql", Input: `extend type Mutation {
-    create_role(room_id: ID!, input: CreateRoleInput!): CreateRoleResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    create_role(room_id: ID!, input: CreateRoleInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 
 }
 # CreateRole ...
@@ -1569,12 +1559,9 @@ input CreateRoleInput {
     name: String!
     color: String!
 }
-union CreateRoleResult =
-    | AdvancedError
-    | Role
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/create_room_mutation.graphql", Input: `extend type Mutation {
-    create_room(room_id: ID!, input: CreateRoomInput!): CreateRoomResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    create_room(room_id: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 
 }
 
@@ -1605,36 +1592,24 @@ input PermissionHoldersInput {
     chars: [Char!]
     members: [ID!]
 }
-union CreateRoomResult =
-    | AdvancedError
-    | Room
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/delete_invite_mutation.graphql", Input: `extend type Mutation {
-    delete_invite(code: String!): DeleteInviteResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    delete_invite(code: String!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
 
-# DeleteInvite ...
-union DeleteInviteResult =
-    | AdvancedError
-    | Invite
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/give_role_mutation.graphql", Input: `extend type Mutation {
-    give_role(user_id: ID!, chat_id: ID!, role_id: ID!): GiveRoleResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
-
+    give_role(user_id: ID!, chat_id: ID!, role_id: ID!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
-
-# GiveRole ...
-union GiveRoleResult =
-    | AdvancedError
-    | ChatMember
 
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/join_by_invite_mutation.graphql", Input: `extend type Mutation {
-    join_by_invite(code: String!): Chat! @goField(forceResolver: true) @isAuth
+    join_by_invite(code: String!): JoinByInviteResult! @goField(forceResolver: true) @isAuth
 }
 # JoinByInvite ...
 union JoinByInviteResult =
     | AdvancedError
+    | Successful
     | Chat
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/join_to_chat_mutation.graphql", Input: `extend type Mutation {
@@ -1645,16 +1620,13 @@ union JoinByInviteResult =
 # JoinToChat ...
 union JoinToChatResult =
     | AdvancedError
+    | Successful
     | Chat
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/leave_from_chat_mutation.graphql", Input: `extend type Mutation {
-    leave_from_chat(chat_id: ID!): Chat! @goField(forceResolver: true) @isAuth
+    leave_from_chat(chat_id: ID!): MutationResult! @goField(forceResolver: true) @isAuth
 }
-
-# LeaveFromChat ...
-union LeaveFromChatResult =
-    | AdvancedError
-    | Chat`, BuiltIn: false},
+`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/login_mutation.graphql", Input: `extend type Mutation {
     login(input: LoginInput!): LoginResult! @goField(forceResolver: true)
 }
@@ -1666,6 +1638,7 @@ input LoginInput {
 }
 union LoginResult =
     | AdvancedError
+    | Successful
     | TokenPair`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/refresh_tokens_mutation.graphql", Input: `extend type Mutation {
     refresh_tokens(refresh_token: String!): RefreshTokensResult! @goField(forceResolver: true)
@@ -1674,6 +1647,7 @@ union LoginResult =
 # RefreshTokens ...
 union RefreshTokensResult =
     | AdvancedError
+    | Successful
     | TokenPair
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/register_mutation.graphql", Input: `extend type Mutation {
@@ -1688,7 +1662,10 @@ input RegisterInput {
 }
 union RegisterResult =
     | AdvancedError
-    | User`, BuiltIn: false},
+    | Successful
+
+
+`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/send_message_to_room_mutation.graphql", Input: `extend type Mutation {
     send_message_to_room(room: ID!, input: CreateMessageInput!): SendMessageToRoomResult! @goField(forceResolver: true) @isAuth
 
@@ -1701,18 +1678,15 @@ input CreateMessageInput {
 }
 union SendMessageToRoomResult =
     | AdvancedError
+    | Successful
     | Message
 
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/take_role_mutation.graphql", Input: `extend type Mutation {
-    take_role(user_id: ID!, chat_id: ID!): TakeRoleResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    take_role(user_id: ID!, chat_id: ID!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 
 }
-
-# TakeRole ...
-union TakeRoleResult =
-    | AdvancedError
-    | ChatMember`, BuiltIn: false},
+`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/update_chat_mutation.graphql", Input: `extend type Mutation {
     update_chat(chat_id: ID!, input: UpdateChatInput!): UpdateChatResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
@@ -1971,6 +1945,18 @@ union UsersResult =
     | UserArray
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/query.graphql", Input: `type Query`, BuiltIn: false},
+	{Name: "graph-models/schemas/response.graphql", Input: `type AdvancedError {
+    code: String!
+    message: String!
+}
+
+type Successful {
+    success: String!
+}
+
+union MutationResult =
+    | AdvancedError
+    | Successful`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -4366,10 +4352,10 @@ func (ec *executionContext) _Mutation_ban_user(ctx context.Context, field graphq
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.BanUserResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.BanUserResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4381,9 +4367,9 @@ func (ec *executionContext) _Mutation_ban_user(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.BanUserResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNBanUserResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐBanUserResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_create_chat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4428,10 +4414,10 @@ func (ec *executionContext) _Mutation_create_chat(ctx context.Context, field gra
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.CreateChatResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.CreateChatResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4443,9 +4429,9 @@ func (ec *executionContext) _Mutation_create_chat(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.CreateChatResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNCreateChatResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateChatResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_create_invite(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4500,10 +4486,10 @@ func (ec *executionContext) _Mutation_create_invite(ctx context.Context, field g
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.CreateInviteResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.CreateInviteResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4515,9 +4501,9 @@ func (ec *executionContext) _Mutation_create_invite(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.CreateInviteResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNCreateInviteResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateInviteResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_create_role(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4572,10 +4558,10 @@ func (ec *executionContext) _Mutation_create_role(ctx context.Context, field gra
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.CreateRoleResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.CreateRoleResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4587,9 +4573,9 @@ func (ec *executionContext) _Mutation_create_role(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.CreateRoleResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNCreateRoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateRoleResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_create_room(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4644,10 +4630,10 @@ func (ec *executionContext) _Mutation_create_room(ctx context.Context, field gra
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.CreateRoomResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.CreateRoomResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4659,9 +4645,9 @@ func (ec *executionContext) _Mutation_create_room(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.CreateRoomResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNCreateRoomResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateRoomResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_delete_invite(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4716,10 +4702,10 @@ func (ec *executionContext) _Mutation_delete_invite(ctx context.Context, field g
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.DeleteInviteResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.DeleteInviteResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4731,9 +4717,9 @@ func (ec *executionContext) _Mutation_delete_invite(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.DeleteInviteResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNDeleteInviteResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐDeleteInviteResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_give_role(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4788,10 +4774,10 @@ func (ec *executionContext) _Mutation_give_role(ctx context.Context, field graph
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.GiveRoleResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.GiveRoleResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4803,9 +4789,9 @@ func (ec *executionContext) _Mutation_give_role(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.GiveRoleResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNGiveRoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐGiveRoleResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_join_by_invite(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4850,10 +4836,10 @@ func (ec *executionContext) _Mutation_join_by_invite(ctx context.Context, field 
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Chat); ok {
+		if data, ok := tmp.(model.JoinByInviteResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/saime-0/http-cute-chat/graph/model.Chat`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.JoinByInviteResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4865,9 +4851,9 @@ func (ec *executionContext) _Mutation_join_by_invite(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Chat)
+	res := resTmp.(model.JoinByInviteResult)
 	fc.Result = res
-	return ec.marshalNChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChat(ctx, field.Selections, res)
+	return ec.marshalNJoinByInviteResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐJoinByInviteResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_join_to_chat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -4974,10 +4960,10 @@ func (ec *executionContext) _Mutation_leave_from_chat(ctx context.Context, field
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*model.Chat); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/saime-0/http-cute-chat/graph/model.Chat`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4989,9 +4975,9 @@ func (ec *executionContext) _Mutation_leave_from_chat(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Chat)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChat(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_login(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -5234,10 +5220,10 @@ func (ec *executionContext) _Mutation_take_role(ctx context.Context, field graph
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.TakeRoleResult); ok {
+		if data, ok := tmp.(model.MutationResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.TakeRoleResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5249,9 +5235,9 @@ func (ec *executionContext) _Mutation_take_role(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.TakeRoleResult)
+	res := resTmp.(model.MutationResult)
 	fc.Result = res
-	return ec.marshalNTakeRoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐTakeRoleResult(ctx, field.Selections, res)
+	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_update_chat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6898,6 +6884,41 @@ func (ec *executionContext) _RoomArray_rooms(ctx context.Context, field graphql.
 	res := resTmp.([]*model.Room)
 	fc.Result = res
 	return ec.marshalORoom2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoomᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Successful_success(ctx context.Context, field graphql.CollectedField, obj *model.Successful) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Successful",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Success, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TokenPair_access_token(ctx context.Context, field graphql.CollectedField, obj *model.TokenPair) (ret graphql.Marshaler) {
@@ -9181,29 +9202,6 @@ func (ec *executionContext) unmarshalInputUpdateRoomInput(ctx context.Context, o
 
 // region    ************************** interface.gotpl ***************************
 
-func (ec *executionContext) _BanUserResult(ctx context.Context, sel ast.SelectionSet, obj model.BanUserResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.User:
-		return ec._User(ctx, sel, &obj)
-	case *model.User:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._User(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 func (ec *executionContext) _ChatResult(ctx context.Context, sel ast.SelectionSet, obj model.ChatResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -9296,160 +9294,6 @@ func (ec *executionContext) _ChatsResult(ctx context.Context, sel ast.SelectionS
 	}
 }
 
-func (ec *executionContext) _CreateChatResult(ctx context.Context, sel ast.SelectionSet, obj model.CreateChatResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.Chat:
-		return ec._Chat(ctx, sel, &obj)
-	case *model.Chat:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Chat(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _CreateInviteResult(ctx context.Context, sel ast.SelectionSet, obj model.CreateInviteResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.Invite:
-		return ec._Invite(ctx, sel, &obj)
-	case *model.Invite:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Invite(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _CreateRoleResult(ctx context.Context, sel ast.SelectionSet, obj model.CreateRoleResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.Role:
-		return ec._Role(ctx, sel, &obj)
-	case *model.Role:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Role(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _CreateRoomResult(ctx context.Context, sel ast.SelectionSet, obj model.CreateRoomResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.Room:
-		return ec._Room(ctx, sel, &obj)
-	case *model.Room:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Room(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _DeleteInviteResult(ctx context.Context, sel ast.SelectionSet, obj model.DeleteInviteResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.Invite:
-		return ec._Invite(ctx, sel, &obj)
-	case *model.Invite:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Invite(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _ErrorInterface(ctx context.Context, sel ast.SelectionSet, obj model.ErrorInterface) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _GiveRoleResult(ctx context.Context, sel ast.SelectionSet, obj model.GiveRoleResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.ChatMember:
-		return ec._ChatMember(ctx, sel, &obj)
-	case *model.ChatMember:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._ChatMember(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 func (ec *executionContext) _InviteInfoResult(ctx context.Context, sel ast.SelectionSet, obj model.InviteInfoResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -9484,6 +9328,13 @@ func (ec *executionContext) _JoinByInviteResult(ctx context.Context, sel ast.Sel
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
 	case model.Chat:
 		return ec._Chat(ctx, sel, &obj)
 	case *model.Chat:
@@ -9507,29 +9358,13 @@ func (ec *executionContext) _JoinToChatResult(ctx context.Context, sel ast.Selec
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
-	case model.Chat:
-		return ec._Chat(ctx, sel, &obj)
-	case *model.Chat:
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._Chat(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _LeaveFromChatResult(ctx context.Context, sel ast.SelectionSet, obj model.LeaveFromChatResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
+		return ec._Successful(ctx, sel, obj)
 	case model.Chat:
 		return ec._Chat(ctx, sel, &obj)
 	case *model.Chat:
@@ -9553,6 +9388,13 @@ func (ec *executionContext) _LoginResult(ctx context.Context, sel ast.SelectionS
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
 	case model.TokenPair:
 		return ec._TokenPair(ctx, sel, &obj)
 	case *model.TokenPair:
@@ -9634,6 +9476,29 @@ func (ec *executionContext) _MessageInfoResult(ctx context.Context, sel ast.Sele
 	}
 }
 
+func (ec *executionContext) _MutationResult(ctx context.Context, sel ast.SelectionSet, obj model.MutationResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _RefreshTokensResult(ctx context.Context, sel ast.SelectionSet, obj model.RefreshTokensResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -9645,6 +9510,13 @@ func (ec *executionContext) _RefreshTokensResult(ctx context.Context, sel ast.Se
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
 	case model.TokenPair:
 		return ec._TokenPair(ctx, sel, &obj)
 	case *model.TokenPair:
@@ -9668,13 +9540,13 @@ func (ec *executionContext) _RegisterResult(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
-	case model.User:
-		return ec._User(ctx, sel, &obj)
-	case *model.User:
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._User(ctx, sel, obj)
+		return ec._Successful(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -9806,6 +9678,13 @@ func (ec *executionContext) _SendMessageToRoomResult(ctx context.Context, sel as
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
+	case model.Successful:
+		return ec._Successful(ctx, sel, &obj)
+	case *model.Successful:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Successful(ctx, sel, obj)
 	case model.Message:
 		return ec._Message(ctx, sel, &obj)
 	case *model.Message:
@@ -9813,29 +9692,6 @@ func (ec *executionContext) _SendMessageToRoomResult(ctx context.Context, sel as
 			return graphql.Null
 		}
 		return ec._Message(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
-func (ec *executionContext) _TakeRoleResult(ctx context.Context, sel ast.SelectionSet, obj model.TakeRoleResult) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.ChatMember:
-		return ec._ChatMember(ctx, sel, &obj)
-	case *model.ChatMember:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._ChatMember(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -10029,7 +9885,7 @@ func (ec *executionContext) _UsersResult(ctx context.Context, sel ast.SelectionS
 
 // region    **************************** object.gotpl ****************************
 
-var advancedErrorImplementors = []string{"AdvancedError", "ErrorInterface", "BanUserResult", "CreateChatResult", "CreateInviteResult", "CreateRoleResult", "CreateRoomResult", "DeleteInviteResult", "GiveRoleResult", "JoinByInviteResult", "JoinToChatResult", "LeaveFromChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "TakeRoleResult", "UpdateChatResult", "UpdateMeDataResult", "UpdateRoleResult", "UpdateRoomResult", "ChatResult", "ChatRoleResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MembersResult", "MessageInfoResult", "RoomFormResult", "RoomMessagesResult", "RoomResult", "RoomWhiteListResult", "RoomsResult", "UnitResult", "UnitsResult", "UserResult", "UsersResult"}
+var advancedErrorImplementors = []string{"AdvancedError", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "UpdateChatResult", "UpdateMeDataResult", "UpdateRoleResult", "UpdateRoomResult", "ChatResult", "ChatRoleResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MembersResult", "MessageInfoResult", "RoomFormResult", "RoomMessagesResult", "RoomResult", "RoomWhiteListResult", "RoomsResult", "UnitResult", "UnitsResult", "UserResult", "UsersResult", "MutationResult"}
 
 func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.SelectionSet, obj *model.AdvancedError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, advancedErrorImplementors)
@@ -10061,7 +9917,7 @@ func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var chatImplementors = []string{"Chat", "CreateChatResult", "JoinByInviteResult", "JoinToChatResult", "LeaveFromChatResult", "UpdateChatResult", "ChatResult"}
+var chatImplementors = []string{"Chat", "JoinByInviteResult", "JoinToChatResult", "UpdateChatResult", "ChatResult"}
 
 func (ec *executionContext) _Chat(ctx context.Context, sel ast.SelectionSet, obj *model.Chat) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, chatImplementors)
@@ -10193,7 +10049,7 @@ func (ec *executionContext) _ChatArray(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var chatMemberImplementors = []string{"ChatMember", "GiveRoleResult", "TakeRoleResult"}
+var chatMemberImplementors = []string{"ChatMember"}
 
 func (ec *executionContext) _ChatMember(ctx context.Context, sel ast.SelectionSet, obj *model.ChatMember) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, chatMemberImplementors)
@@ -10320,7 +10176,7 @@ func (ec *executionContext) _FormField(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var inviteImplementors = []string{"Invite", "CreateInviteResult", "DeleteInviteResult", "InviteInfoResult"}
+var inviteImplementors = []string{"Invite", "InviteInfoResult"}
 
 func (ec *executionContext) _Invite(ctx context.Context, sel ast.SelectionSet, obj *model.Invite) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, inviteImplementors)
@@ -11012,7 +10868,7 @@ func (ec *executionContext) _Restricts(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var roleImplementors = []string{"Role", "CreateRoleResult", "UpdateRoleResult", "ChatRoleResult"}
+var roleImplementors = []string{"Role", "UpdateRoleResult", "ChatRoleResult"}
 
 func (ec *executionContext) _Role(ctx context.Context, sel ast.SelectionSet, obj *model.Role) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, roleImplementors)
@@ -11084,7 +10940,7 @@ func (ec *executionContext) _RoleArray(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var roomImplementors = []string{"Room", "CreateRoomResult", "UpdateRoomResult", "RoomResult"}
+var roomImplementors = []string{"Room", "UpdateRoomResult", "RoomResult"}
 
 func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj *model.Room) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, roomImplementors)
@@ -11171,6 +11027,33 @@ func (ec *executionContext) _RoomArray(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = graphql.MarshalString("RoomArray")
 		case "rooms":
 			out.Values[i] = ec._RoomArray_rooms(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var successfulImplementors = []string{"Successful", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "MutationResult"}
+
+func (ec *executionContext) _Successful(ctx context.Context, sel ast.SelectionSet, obj *model.Successful) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, successfulImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Successful")
+		case "success":
+			out.Values[i] = ec._Successful_success(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11280,7 +11163,7 @@ func (ec *executionContext) _UnitArray(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var userImplementors = []string{"User", "BanUserResult", "RegisterResult", "UserResult"}
+var userImplementors = []string{"User", "UserResult"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
@@ -11623,16 +11506,6 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) marshalNBanUserResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐBanUserResult(ctx context.Context, sel ast.SelectionSet, v model.BanUserResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._BanUserResult(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -11687,29 +11560,9 @@ func (ec *executionContext) unmarshalNCreateChatInput2githubᚗcomᚋsaimeᚑ0�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNCreateChatResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateChatResult(ctx context.Context, sel ast.SelectionSet, v model.CreateChatResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._CreateChatResult(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNCreateInviteInput2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateInviteInput(ctx context.Context, v interface{}) (model.CreateInviteInput, error) {
 	res, err := ec.unmarshalInputCreateInviteInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNCreateInviteResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateInviteResult(ctx context.Context, sel ast.SelectionSet, v model.CreateInviteResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._CreateInviteResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNCreateMessageInput2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateMessageInput(ctx context.Context, v interface{}) (model.CreateMessageInput, error) {
@@ -11722,39 +11575,9 @@ func (ec *executionContext) unmarshalNCreateRoleInput2githubᚗcomᚋsaimeᚑ0�
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNCreateRoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateRoleResult(ctx context.Context, sel ast.SelectionSet, v model.CreateRoleResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._CreateRoleResult(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNCreateRoomInput2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateRoomInput(ctx context.Context, v interface{}) (model.CreateRoomInput, error) {
 	res, err := ec.unmarshalInputCreateRoomInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNCreateRoomResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCreateRoomResult(ctx context.Context, sel ast.SelectionSet, v model.CreateRoomResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._CreateRoomResult(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNDeleteInviteResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐDeleteInviteResult(ctx context.Context, sel ast.SelectionSet, v model.DeleteInviteResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._DeleteInviteResult(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFieldType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐFieldType(ctx context.Context, v interface{}) (model.FieldType, error) {
@@ -11847,16 +11670,6 @@ func (ec *executionContext) unmarshalNFormFieldInput2ᚖgithubᚗcomᚋsaimeᚑ0
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNGiveRoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐGiveRoleResult(ctx context.Context, sel ast.SelectionSet, v model.GiveRoleResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._GiveRoleResult(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {
 	res, err := graphql.UnmarshalInt64(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -11895,6 +11708,16 @@ func (ec *executionContext) marshalNInvite2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑ
 		return graphql.Null
 	}
 	return ec._Invite(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNJoinByInviteResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐJoinByInviteResult(ctx context.Context, sel ast.SelectionSet, v model.JoinByInviteResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._JoinByInviteResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNJoinToChatResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐJoinToChatResult(ctx context.Context, sel ast.SelectionSet, v model.JoinToChatResult) graphql.Marshaler {
@@ -11960,6 +11783,16 @@ func (ec *executionContext) unmarshalNMessageType2githubᚗcomᚋsaimeᚑ0ᚋhtt
 
 func (ec *executionContext) marshalNMessageType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMessageType(ctx context.Context, sel ast.SelectionSet, v model.MessageType) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx context.Context, sel ast.SelectionSet, v model.MutationResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MutationResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRefreshTokensResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRefreshTokensResult(ctx context.Context, sel ast.SelectionSet, v model.RefreshTokensResult) graphql.Marshaler {
@@ -12030,16 +11863,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNTakeRoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐTakeRoleResult(ctx context.Context, sel ast.SelectionSet, v model.TakeRoleResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._TakeRoleResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNUnit2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐUnit(ctx context.Context, sel ast.SelectionSet, v model.Unit) graphql.Marshaler {
