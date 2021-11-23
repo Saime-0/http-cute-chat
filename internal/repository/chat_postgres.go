@@ -17,7 +17,7 @@ func NewChatsRepo(db *sql.DB) *ChatsRepo {
 	}
 }
 
-func (r *ChatsRepo) CreateChat(owner_id int, chat_model *models.CreateChat) (id int, err error) {
+func (r *ChatsRepo) CreateChat(ownerId int, chatModel *models.CreateChat) (id int, err error) {
 	// todo: add owner to chat members
 	err = r.db.QueryRow(
 		`WITH u AS (
@@ -29,10 +29,10 @@ func (r *ChatsRepo) CreateChat(owner_id int, chat_model *models.CreateChat) (id 
 		SELECT u.id, $3, $4
 		FROM u 
 		RETURNING id`,
-		chat_model.Domain,
-		chat_model.Name,
-		owner_id,
-		chat_model.Private,
+		chatModel.Domain,
+		chatModel.Name,
+		ownerId,
+		chatModel.Private,
 	).Scan(&id)
 
 	return
@@ -59,13 +59,13 @@ func (r *ChatsRepo) GetChatByDomain(domain string) (chat models.ChatInfo, err er
 	}
 	return
 }
-func (r *ChatsRepo) GetChatByID(chat_id int) (chat models.ChatInfo, err error) {
+func (r *ChatsRepo) GetChatByID(chatId int) (chat models.ChatInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
 		WHERE units.id = $1`,
-		chat_id,
+		chatId,
 	).Scan(
 		&chat.ID,
 		&chat.OwnerID,
@@ -75,18 +75,18 @@ func (r *ChatsRepo) GetChatByID(chat_id int) (chat models.ChatInfo, err error) {
 	if err != nil {
 		return
 	}
-	chat.CountMembers, err = r.GetCountChatMembers(chat_id)
+	chat.CountMembers, err = r.GetCountChatMembers(chatId)
 	if err != nil {
 		return
 	}
 	return
 }
-func (r *ChatsRepo) GetCountChatMembers(chat_id int) (count int, err error) {
+func (r *ChatsRepo) GetCountChatMembers(chatId int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM chat_members  
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	).Scan(&count)
 
 	return
@@ -124,7 +124,7 @@ func (r *ChatsRepo) GetChatsByNameFragment(name string, offset int) (chats model
 	return
 
 }
-func (r *ChatsRepo) GetChatMembers(chat_id int) (members models.ListUserInfo, err error) {
+func (r *ChatsRepo) GetChatMembers(chatId int) (members models.ListUserInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, domain, name
 		FROM units
@@ -133,7 +133,7 @@ func (r *ChatsRepo) GetChatMembers(chat_id int) (members models.ListUserInfo, er
 			FROM chat_members
 			WHERE chat_id = $1
 			)`,
-		chat_id,
+		chatId,
 	)
 	if err != nil {
 		return
@@ -152,13 +152,13 @@ func (r *ChatsRepo) GetChatMembers(chat_id int) (members models.ListUserInfo, er
 	return
 }
 
-func (r *ChatsRepo) GetChatDataByID(chat_id int) (chat models.ChatData, err error) {
+func (r *ChatsRepo) GetChatDataByID(chatId int) (chat models.ChatData, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id, chats.owner_id, units.domain, units.name, chats.private
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
 		WHERE units.id = $1`,
-		chat_id,
+		chatId,
 	).Scan(
 		&chat.ID,
 		&chat.OwnerID,
@@ -170,26 +170,26 @@ func (r *ChatsRepo) GetChatDataByID(chat_id int) (chat models.ChatData, err erro
 	return
 }
 
-func (r *ChatsRepo) UpdateChatData(chat_id int, input_model *models.UpdateChatData) (err error) {
-	if input_model.Domain != "" {
+func (r *ChatsRepo) UpdateChatData(chatId int, inputModel *models.UpdateChatData) (err error) {
+	if inputModel.Domain != "" {
 		err = r.db.QueryRow(
 			`UPDATE units
 			SET domain = $2
 			WHERE id = $1`,
-			chat_id,
-			input_model.Domain,
+			chatId,
+			inputModel.Domain,
 		).Err()
 		if err != nil {
 			return
 		}
 	}
-	if input_model.Name != "" {
+	if inputModel.Name != "" {
 		err = r.db.QueryRow(
 			`UPDATE units
 			SET name = $2
 			WHERE id = $1`,
-			chat_id,
-			input_model.Name,
+			chatId,
+			inputModel.Name,
 		).Err()
 		if err != nil {
 			return
@@ -200,43 +200,43 @@ func (r *ChatsRepo) UpdateChatData(chat_id int, input_model *models.UpdateChatDa
 		`UPDATE users
 		SET private = $2
 		WHERE id = $1`,
-		chat_id,
-		input_model.Private,
+		chatId,
+		inputModel.Private,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) UserIsChatOwner(user_id int, chat_id int) bool {
-	is_owner := false
+func (r *ChatsRepo) UserIsChatOwner(userId int, chatId int) bool {
+	isOwner := false
 	err := r.db.QueryRow(
 		`SELECT EXISTS(SELECT 1 FROM chats WHERE id = $1 AND owner_id = $2)`,
-		chat_id,
-		user_id,
-	).Scan(&is_owner)
-	if err != nil || !is_owner {
-		return is_owner
+		chatId,
+		userId,
+	).Scan(&isOwner)
+	if err != nil || !isOwner {
+		return isOwner
 	}
-	return is_owner
+	return isOwner
 }
-func (r *ChatsRepo) UserIsChatMember(user_id int, chat_id int) bool {
-	is_member := false
+func (r *ChatsRepo) UserIsChatMember(userId int, chatId int) bool {
+	isMember := false
 	err := r.db.QueryRow(
 		`SELECT EXISTS(SELECT 1 FROM chat_members WHERE user_id = $1 AND chat_id = $2)`,
-		user_id,
-		chat_id,
-	).Scan(&is_member)
-	if err != nil || !is_member {
-		return is_member
+		userId,
+		chatId,
+	).Scan(&isMember)
+	if err != nil || !isMember {
+		return isMember
 	}
-	return is_member
+	return isMember
 }
-func (r *ChatsRepo) AddUserToChat(user_id int, chat_id int) (err error) {
+func (r *ChatsRepo) AddUserToChat(userId int, chatId int) (err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO chat_members (user_id, chat_id, joined_at)
 		VALUES ($1, $2, $3)`,
-		user_id,
-		chat_id,
+		userId,
+		chatId,
 		time.Now().UTC().Unix(),
 	).Err()
 	if err != nil {
@@ -246,7 +246,7 @@ func (r *ChatsRepo) AddUserToChat(user_id int, chat_id int) (err error) {
 }
 
 // migrate from UsersRepo
-func (r *ChatsRepo) GetChatsOwnedUser(user_id int, offset int) (chats models.ListChatInfo, err error) {
+func (r *ChatsRepo) GetChatsOwnedUser(userId int, offset int) (chats models.ListChatInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
@@ -259,7 +259,7 @@ func (r *ChatsRepo) GetChatsOwnedUser(user_id int, offset int) (chats models.Lis
 			LIMIT 20
 			OFFSET $2
 			)`,
-		user_id,
+		userId,
 		offset,
 	)
 	if err != nil {
@@ -283,7 +283,7 @@ func (r *ChatsRepo) GetChatsOwnedUser(user_id int, offset int) (chats models.Lis
 	return
 }
 
-func (r *ChatsRepo) GetChatsInvolvedUser(user_id int, offset int) (chats models.ListChatInfo, err error) {
+func (r *ChatsRepo) GetChatsInvolvedUser(userId int, offset int) (chats models.ListChatInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id, chats.owner_id, units.domain,units.name
 		FROM units INNER JOIN chats 
@@ -295,7 +295,7 @@ func (r *ChatsRepo) GetChatsInvolvedUser(user_id int, offset int) (chats models.
 			LIMIT 20
 			OFFSET $2
 			)`,
-		user_id,
+		userId,
 		offset,
 	)
 	if err != nil {
@@ -319,7 +319,7 @@ func (r *ChatsRepo) GetChatsInvolvedUser(user_id int, offset int) (chats models.
 	return
 }
 
-func (r *ChatsRepo) GetCountUserChats(user_id int) (count int, err error) {
+func (r *ChatsRepo) GetCountUserChats(userId int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM units INNER JOIN chats 
@@ -329,35 +329,35 @@ func (r *ChatsRepo) GetCountUserChats(user_id int) (count int, err error) {
 			FROM chat_members
 			WHERE user_id = $1
 			)`,
-		user_id,
+		userId,
 	).Scan(&count)
 	return
 }
 
-func (r *ChatsRepo) GetCountRooms(chat_id int) (count int, err error) {
+func (r *ChatsRepo) GetCountRooms(chatId int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM rooms
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	).Scan(&count)
 	return
 }
 
-func (r *ChatsRepo) ChatExistsByID(chat_id int) (exists bool) {
+func (r *ChatsRepo) ChatExistsByID(chatId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM chats
 			WHERE id = $1
 		)`,
-		chat_id,
+		chatId,
 	).Scan(&exists)
 
 	return
 }
 
-func (r *ChatsRepo) ChatExistsByDomain(chat_domain string) (exists bool) {
+func (r *ChatsRepo) ChatExistsByDomain(chatDomain string) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
@@ -366,39 +366,39 @@ func (r *ChatsRepo) ChatExistsByDomain(chat_domain string) (exists bool) {
 			ON chats.id = units.id
 			WHERE units.domain = $1
 		)`,
-		chat_domain,
+		chatDomain,
 	).Scan(&exists)
 
 	return
 }
 
-func (r *ChatsRepo) RemoveUserFromChat(user_id int, chat_id int) (err error) {
+func (r *ChatsRepo) RemoveUserFromChat(userId int, chatId int) (err error) {
 	err = r.db.QueryRow(
 		`DELETE FROM chat_members
 		WHERE user_id = $1 AND chat_id = $2`,
-		user_id,
-		chat_id,
+		userId,
+		chatId,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) GetCountLinks(chat_id int) (count int, err error) {
+func (r *ChatsRepo) GetCountLinks(chatId int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM invite_links  
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	).Scan(&count)
 
 	return
 }
-func (r *ChatsRepo) GetChatLinks(chat_id int) (links models.InviteLinks, err error) {
+func (r *ChatsRepo) GetChatLinks(chatId int) (links models.InviteLinks, err error) {
 	rows, err := r.db.Query(
 		`SELECT code, aliens, exp
 		FROM invite_links
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	)
 	if err != nil {
 		return
@@ -450,14 +450,14 @@ func (r *ChatsRepo) DeleteInviteLinkByCode(code string) (err error) {
 	return
 }
 
-func (r *ChatsRepo) CreateInviteLink(link_model *models.CreateInviteLink) (link models.InviteLink, err error) {
+func (r *ChatsRepo) CreateInviteLink(linkModel *models.CreateInviteLink) (link models.InviteLink, err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO invite_links (chat_id, aliens, exp) 
 		VALUES ($1, $2, $3)
 		RETURNING code, aliens, exp`,
-		link_model.ChatID,
-		link_model.Aliens,
-		link_model.Exp,
+		linkModel.ChatID,
+		linkModel.Aliens,
+		linkModel.Exp,
 	).Scan(
 		&link.Code,
 		&link.Aliens,
@@ -488,7 +488,7 @@ func (r *ChatsRepo) InviteLinkIsRelevant(code string) (relevant bool) {
 	return
 }
 
-func (r *ChatsRepo) AddUserByCode(code string, user_id int) (chat_id int, err error) {
+func (r *ChatsRepo) AddUserByCode(code string, userId int) (chatId int, err error) {
 
 	err = r.db.QueryRow(
 		`WITH l AS (
@@ -500,60 +500,60 @@ func (r *ChatsRepo) AddUserByCode(code string, user_id int) (chat_id int, err er
 		INSERT INTO chat_members (user_id, chat_id)
 		VALUES ($2, l.chat_id)`,
 		code,
-		user_id,
-	).Scan(&chat_id)
+		userId,
+	).Scan(&chatId)
 
 	return
 }
 
-func (r *ChatsRepo) ChatIsPrivate(chat_id int) (private bool) {
+func (r *ChatsRepo) ChatIsPrivate(chatId int) (private bool) {
 	r.db.QueryRow(
 		`SELECT private
 		FROM chats
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	).Scan(&private)
 
 	return
 }
 
-func (r *ChatsRepo) BanUserInChat(user_id int, chat_id int) (err error) {
+func (r *ChatsRepo) BanUserInChat(userId int, chatId int) (err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO chat_banlist (chat_id, user_id)
 		VALUES ($1, $2)`,
-		chat_id,
-		user_id,
+		chatId,
+		userId,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) UnbanUserInChat(user_id int, chat_id int) (err error) {
+func (r *ChatsRepo) UnbanUserInChat(userId int, chatId int) (err error) {
 	err = r.db.QueryRow(
 		`DELETE FROM chat_banlist
 		WHERE chat_id = $1 AND user_id = $2`,
-		chat_id,
-		user_id,
+		chatId,
+		userId,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) UserIsBannedInChat(user_id int, chat_id int) (banned bool) {
+func (r *ChatsRepo) UserIsBannedInChat(userId int, chatId int) (banned bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM chat_banlist
 			WHERE chat_id = $1 AND user_id = $2
 		)`,
-		chat_id,
-		user_id,
+		chatId,
+		userId,
 	).Scan(&banned)
 
 	return
 }
 
-func (r *ChatsRepo) GetChatBanlist(chat_id int) (users models.ListUserInfo, err error) {
+func (r *ChatsRepo) GetChatBanlist(chatId int) (users models.ListUserInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, domain, name
 		FROM units
@@ -562,7 +562,7 @@ func (r *ChatsRepo) GetChatBanlist(chat_id int) (users models.ListUserInfo, err 
 			FROM chat_banlist
 			WHERE chat_id = $1
 			)`,
-		chat_id,
+		chatId,
 	)
 	if err != nil {
 		return
@@ -581,7 +581,7 @@ func (r *ChatsRepo) GetChatBanlist(chat_id int) (users models.ListUserInfo, err 
 	return
 }
 
-func (r *ChatsRepo) GetUserRoleData(user_id int, chat_id int) (role models.RoleData, err error) {
+func (r *ChatsRepo) GetUserRoleData(userId int, chatId int) (role models.RoleData, err error) {
 	err = r.db.QueryRow(
 		`SELECT id, role_name, color, visible, manage_rooms, COALESCE(room_id, 0), manage_chat, manage_roles, manage_members
 		FROM roles 
@@ -590,8 +590,8 @@ func (r *ChatsRepo) GetUserRoleData(user_id int, chat_id int) (role models.RoleD
 			FROM chat_members
 			WHERE user_id = $1 AND chat_id = $2
 		)`,
-		user_id,
-		chat_id,
+		userId,
+		chatId,
 	).Scan(
 		&role.ID,
 		&role.RoleName,
@@ -607,7 +607,7 @@ func (r *ChatsRepo) GetUserRoleData(user_id int, chat_id int) (role models.RoleD
 	return
 }
 
-func (r *ChatsRepo) GetUserRoleInfo(user_id int, chat_id int) (role models.RoleInfo, err error) {
+func (r *ChatsRepo) GetUserRoleInfo(userId int, chatId int) (role models.RoleInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT id, role_name, color
 		FROM roles 
@@ -616,8 +616,8 @@ func (r *ChatsRepo) GetUserRoleInfo(user_id int, chat_id int) (role models.RoleI
 			FROM chat_members
 			WHERE user_id = $1 AND chat_id = $2
 		)`,
-		user_id,
-		chat_id,
+		userId,
+		chatId,
 	).Scan(
 		&role.ID,
 		&role.RoleName,
@@ -627,32 +627,32 @@ func (r *ChatsRepo) GetUserRoleInfo(user_id int, chat_id int) (role models.RoleI
 	return
 }
 
-func (r *ChatsRepo) CreateRoleInChat(chat_id int, role_model *models.CreateRole) (role_id int, err error) {
+func (r *ChatsRepo) CreateRoleInChat(chatId int, roleModel *models.CreateRole) (roleId int, err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO roles
 		(chat_id, role_name, color, visible, manage_rooms, room_id, manage_chat, manage_roles, manage_members)
 		VALUES ($1, $2, $3, $4, $5, NULLIF($6, 0), $7, $8, $9)
 		RETURNING id`,
-		chat_id,
-		role_model.RoleName,
-		role_model.Color,
-		role_model.Visible,
-		role_model.ManageRooms,
-		role_model.RoomID,
-		role_model.ManageChat,
-		role_model.ManageRoles,
-		role_model.ManageMembers,
-	).Scan(&role_id)
+		chatId,
+		roleModel.RoleName,
+		roleModel.Color,
+		roleModel.Visible,
+		roleModel.ManageRooms,
+		roleModel.RoomID,
+		roleModel.ManageChat,
+		roleModel.ManageRoles,
+		roleModel.ManageMembers,
+	).Scan(&roleId)
 
 	return
 }
 
-func (r *ChatsRepo) GetChatRolesData(chat_id int) (roles models.ListRolesData, err error) {
+func (r *ChatsRepo) GetChatRolesData(chatId int) (roles models.ListRolesData, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, role_name, color, visible, manage_rooms, COALESCE(room_id, 0), manage_chat, manage_roles, manage_members
 		FROM roles 
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	)
 	if err != nil {
 		return
@@ -669,12 +669,12 @@ func (r *ChatsRepo) GetChatRolesData(chat_id int) (roles models.ListRolesData, e
 	return
 }
 
-func (r *ChatsRepo) GetChatRolesInfo(chat_id int) (roles models.ListRolesInfo, err error) {
+func (r *ChatsRepo) GetChatRolesInfo(chatId int) (roles models.ListRolesInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, role_name, color
 		FROM roles 
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	)
 	if err != nil {
 		return
@@ -690,91 +690,91 @@ func (r *ChatsRepo) GetChatRolesInfo(chat_id int) (roles models.ListRolesInfo, e
 
 	return
 }
-func (r *ChatsRepo) GetCountChatRoles(chat_id int) (count int, err error) {
+func (r *ChatsRepo) GetCountChatRoles(chatId int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM roles 
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	).Scan(&count)
 
 	return
 }
 
-func (r *ChatsRepo) GiveRole(user_id int, role_id int) (err error) {
+func (r *ChatsRepo) GiveRole(userId int, roleId int) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE chat_members
 		SET role_id = $2
 		WHERE user_id = $1`,
-		user_id,
-		role_id,
+		userId,
+		roleId,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) RoleExistsByID(role_id int, chat_id int) (exists bool) {
+func (r *ChatsRepo) RoleExistsByID(roleId int, chatId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM roles
 			WHERE role_id = $1 AND chat_id = $2
 		)`,
-		role_id,
-		chat_id,
+		roleId,
+		chatId,
 	).Scan(&exists)
 
 	return
 }
 
-func (r *ChatsRepo) UpdateRoleData(role_id int, input_model *models.UpdateRole) (err error) {
+func (r *ChatsRepo) UpdateRoleData(roleId int, inputModel *models.UpdateRole) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE roles
 		SET role_name = $2, color = $3, visible = $4, manage_rooms = $5, room_id =  NULLIF($6, 0), manage_chat, manage_roles, manage_members
 		WHERE id = $1`,
-		role_id,
-		input_model.RoleName,
-		input_model.Color,
-		input_model.Visible,
-		input_model.ManageRooms,
-		input_model.RoomID,
-		input_model.ManageChat,
-		input_model.ManageRoles,
-		input_model.ManageMembers,
+		roleId,
+		inputModel.RoleName,
+		inputModel.Color,
+		inputModel.Visible,
+		inputModel.ManageRooms,
+		inputModel.RoomID,
+		inputModel.ManageChat,
+		inputModel.ManageRoles,
+		inputModel.ManageMembers,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) DeleteRole(role_id int) (err error) {
+func (r *ChatsRepo) DeleteRole(roleId int) (err error) {
 	err = r.db.QueryRow(
 		`DELETE FROM roles
 		WHERE id = $1`,
-		role_id,
+		roleId,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) TakeRole(user_id int, chat_id int) (err error) {
+func (r *ChatsRepo) TakeRole(userId int, chatId int) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE chat_members
 		SET role_id = NULL
 		WHERE user_id = $1`,
-		user_id,
-		chat_id,
+		userId,
+		chatId,
 	).Err()
 
 	return
 }
 
-func (r *ChatsRepo) GetMemberInfo(user_id int, chat_id int) (user models.MemberInfo, err error) {
+func (r *ChatsRepo) GetMemberInfo(userId int, chatId int) (user models.MemberInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT role_id, joined_at
 		FROM chat_members
 		WHERE user_id = $1 AND chat_id = $2`,
-		user_id,
-		chat_id,
+		userId,
+		chatId,
 	).Scan(
 		&user.RoleID,
 		&user.JoinedAt,

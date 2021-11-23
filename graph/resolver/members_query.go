@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) Members(ctx context.Context, chatID int64, userID *int64) (model.MembersResult, error) {
+func (r *queryResolver) Members(ctx context.Context, chatID int, userID *int) (model.MembersResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

@@ -136,25 +136,25 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		BanUser           func(childComplexity int, userID int64, chatID int64) int
+		BanUser           func(childComplexity int, userID int, chatID int) int
 		CreateChat        func(childComplexity int, input model.CreateChatInput) int
-		CreateInvite      func(childComplexity int, chatID int64, input model.CreateInviteInput) int
-		CreateRole        func(childComplexity int, roomID int64, input model.CreateRoleInput) int
-		CreateRoom        func(childComplexity int, roomID int64, input model.CreateRoomInput) int
+		CreateInvite      func(childComplexity int, chatID int, input model.CreateInviteInput) int
+		CreateRole        func(childComplexity int, roomID int, input model.CreateRoleInput) int
+		CreateRoom        func(childComplexity int, roomID int, input model.CreateRoomInput) int
 		DeleteInvite      func(childComplexity int, code string) int
-		GiveRole          func(childComplexity int, userID int64, chatID int64, roleID int64) int
+		GiveRole          func(childComplexity int, userID int, chatID int, roleID int) int
 		JoinByInvite      func(childComplexity int, code string) int
-		JoinToChat        func(childComplexity int, chatID int64) int
-		LeaveFromChat     func(childComplexity int, chatID int64) int
+		JoinToChat        func(childComplexity int, chatID int) int
+		LeaveFromChat     func(childComplexity int, chatID int) int
 		Login             func(childComplexity int, input model.LoginInput) int
 		RefreshTokens     func(childComplexity int, refreshToken string) int
 		Register          func(childComplexity int, input model.RegisterInput) int
-		SendMessageToRoom func(childComplexity int, room int64, input model.CreateMessageInput) int
-		TakeRole          func(childComplexity int, userID int64, chatID int64) int
-		UpdateChat        func(childComplexity int, chatID int64, input model.UpdateChatInput) int
+		SendMessageToRoom func(childComplexity int, room int, input model.CreateMessageInput) int
+		TakeRole          func(childComplexity int, userID int, chatID int) int
+		UpdateChat        func(childComplexity int, chatID int, input model.UpdateChatInput) int
 		UpdateMeData      func(childComplexity int, input model.UpdateMeDataInput) int
-		UpdateRole        func(childComplexity int, roleID int64, input model.UpdateRoleInput) int
-		UpdateRoom        func(childComplexity int, roomID int64, input model.UpdateRoomInput) int
+		UpdateRole        func(childComplexity int, roleID int, input model.UpdateRoleInput) int
+		UpdateRoom        func(childComplexity int, roomID int, input model.UpdateRoomInput) int
 	}
 
 	PermissionHolders struct {
@@ -164,22 +164,22 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Chat          func(childComplexity int, id *int64, domain *string) int
-		ChatRole      func(childComplexity int, userID int64, chatID int64) int
-		ChatRoles     func(childComplexity int, chatID int64, params *model.Params) int
+		Chat          func(childComplexity int, id *int, domain *string) int
+		ChatRole      func(childComplexity int, userID int, chatID int) int
+		ChatRoles     func(childComplexity int, chatID int, params *model.Params) int
 		Chats         func(childComplexity int, nameFragment string, params *model.Params) int
 		InviteInfo    func(childComplexity int, code string) int
 		Me            func(childComplexity int) int
-		Members       func(childComplexity int, chatID int64, userID *int64) int
-		MessageInfo   func(childComplexity int, id int64, chatID int64) int
-		Room          func(childComplexity int, id int64) int
-		RoomForm      func(childComplexity int, roomID int64) int
-		RoomMessages  func(childComplexity int, roomID *int64, filter *model.MessageFilter, params *model.Params) int
-		RoomWhitelist func(childComplexity int, roomID int64) int
-		Rooms         func(childComplexity int, chat int64, params *model.Params) int
-		Unit          func(childComplexity int, id *int64, domain *string) int
+		Members       func(childComplexity int, chatID int, userID *int) int
+		MessageInfo   func(childComplexity int, id int, chatID int) int
+		Room          func(childComplexity int, id int) int
+		RoomForm      func(childComplexity int, roomID int) int
+		RoomMessages  func(childComplexity int, roomID *int, filter *model.MessageFilter, params *model.Params) int
+		RoomWhitelist func(childComplexity int, roomID int) int
+		Rooms         func(childComplexity int, chat int, params *model.Params) int
+		Unit          func(childComplexity int, id *int, domain *string) int
 		Units         func(childComplexity int, nameFragment string, typeArg *model.UnitType, params *model.Params) int
-		User          func(childComplexity int, id *int64, domain *string) int
+		User          func(childComplexity int, id *int, domain *string) int
 		Users         func(childComplexity int, nameFragment string, params *model.Params) int
 	}
 
@@ -274,25 +274,25 @@ type MessageResolver interface {
 	Author(ctx context.Context, obj *model.Message) (*model.Unit, error)
 }
 type MutationResolver interface {
-	BanUser(ctx context.Context, userID int64, chatID int64) (model.MutationResult, error)
+	BanUser(ctx context.Context, userID int, chatID int) (model.MutationResult, error)
 	CreateChat(ctx context.Context, input model.CreateChatInput) (model.MutationResult, error)
-	CreateInvite(ctx context.Context, chatID int64, input model.CreateInviteInput) (model.MutationResult, error)
-	CreateRole(ctx context.Context, roomID int64, input model.CreateRoleInput) (model.MutationResult, error)
-	CreateRoom(ctx context.Context, roomID int64, input model.CreateRoomInput) (model.MutationResult, error)
+	CreateInvite(ctx context.Context, chatID int, input model.CreateInviteInput) (model.MutationResult, error)
+	CreateRole(ctx context.Context, roomID int, input model.CreateRoleInput) (model.MutationResult, error)
+	CreateRoom(ctx context.Context, roomID int, input model.CreateRoomInput) (model.MutationResult, error)
 	DeleteInvite(ctx context.Context, code string) (model.MutationResult, error)
-	GiveRole(ctx context.Context, userID int64, chatID int64, roleID int64) (model.MutationResult, error)
+	GiveRole(ctx context.Context, userID int, chatID int, roleID int) (model.MutationResult, error)
 	JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error)
-	JoinToChat(ctx context.Context, chatID int64) (model.JoinToChatResult, error)
-	LeaveFromChat(ctx context.Context, chatID int64) (model.MutationResult, error)
+	JoinToChat(ctx context.Context, chatID int) (model.JoinToChatResult, error)
+	LeaveFromChat(ctx context.Context, chatID int) (model.MutationResult, error)
 	Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error)
 	RefreshTokens(ctx context.Context, refreshToken string) (model.RefreshTokensResult, error)
 	Register(ctx context.Context, input model.RegisterInput) (model.RegisterResult, error)
-	SendMessageToRoom(ctx context.Context, room int64, input model.CreateMessageInput) (model.SendMessageToRoomResult, error)
-	TakeRole(ctx context.Context, userID int64, chatID int64) (model.MutationResult, error)
-	UpdateChat(ctx context.Context, chatID int64, input model.UpdateChatInput) (model.UpdateChatResult, error)
+	SendMessageToRoom(ctx context.Context, room int, input model.CreateMessageInput) (model.SendMessageToRoomResult, error)
+	TakeRole(ctx context.Context, userID int, chatID int) (model.MutationResult, error)
+	UpdateChat(ctx context.Context, chatID int, input model.UpdateChatInput) (model.UpdateChatResult, error)
 	UpdateMeData(ctx context.Context, input model.UpdateMeDataInput) (model.UpdateMeDataResult, error)
-	UpdateRole(ctx context.Context, roleID int64, input model.UpdateRoleInput) (model.UpdateRoleResult, error)
-	UpdateRoom(ctx context.Context, roomID int64, input model.UpdateRoomInput) (model.UpdateRoomResult, error)
+	UpdateRole(ctx context.Context, roleID int, input model.UpdateRoleInput) (model.UpdateRoleResult, error)
+	UpdateRoom(ctx context.Context, roomID int, input model.UpdateRoomInput) (model.UpdateRoomResult, error)
 }
 type PermissionHoldersResolver interface {
 	Roles(ctx context.Context, obj *model.PermissionHolders) ([]*model.Role, error)
@@ -300,22 +300,22 @@ type PermissionHoldersResolver interface {
 	Members(ctx context.Context, obj *model.PermissionHolders) ([]*model.ChatMember, error)
 }
 type QueryResolver interface {
-	Chat(ctx context.Context, id *int64, domain *string) (model.ChatResult, error)
-	ChatRole(ctx context.Context, userID int64, chatID int64) (model.ChatRoleResult, error)
-	ChatRoles(ctx context.Context, chatID int64, params *model.Params) (model.ChatRolesResult, error)
+	Chat(ctx context.Context, id *int, domain *string) (model.ChatResult, error)
+	ChatRole(ctx context.Context, userID int, chatID int) (model.ChatRoleResult, error)
+	ChatRoles(ctx context.Context, chatID int, params *model.Params) (model.ChatRolesResult, error)
 	Chats(ctx context.Context, nameFragment string, params *model.Params) (model.ChatsResult, error)
 	InviteInfo(ctx context.Context, code string) (model.InviteInfoResult, error)
 	Me(ctx context.Context) (model.MeResult, error)
-	Members(ctx context.Context, chatID int64, userID *int64) (model.MembersResult, error)
-	MessageInfo(ctx context.Context, id int64, chatID int64) (model.MessageInfoResult, error)
-	RoomForm(ctx context.Context, roomID int64) (model.RoomFormResult, error)
-	RoomMessages(ctx context.Context, roomID *int64, filter *model.MessageFilter, params *model.Params) (model.RoomMessagesResult, error)
-	Room(ctx context.Context, id int64) (model.RoomResult, error)
-	RoomWhitelist(ctx context.Context, roomID int64) (model.RoomWhiteListResult, error)
-	Rooms(ctx context.Context, chat int64, params *model.Params) (model.RoomsResult, error)
-	Unit(ctx context.Context, id *int64, domain *string) (model.UnitResult, error)
+	Members(ctx context.Context, chatID int, userID *int) (model.MembersResult, error)
+	MessageInfo(ctx context.Context, id int, chatID int) (model.MessageInfoResult, error)
+	RoomForm(ctx context.Context, roomID int) (model.RoomFormResult, error)
+	RoomMessages(ctx context.Context, roomID *int, filter *model.MessageFilter, params *model.Params) (model.RoomMessagesResult, error)
+	Room(ctx context.Context, id int) (model.RoomResult, error)
+	RoomWhitelist(ctx context.Context, roomID int) (model.RoomWhiteListResult, error)
+	Rooms(ctx context.Context, chat int, params *model.Params) (model.RoomsResult, error)
+	Unit(ctx context.Context, id *int, domain *string) (model.UnitResult, error)
 	Units(ctx context.Context, nameFragment string, typeArg *model.UnitType, params *model.Params) (model.UnitsResult, error)
-	User(ctx context.Context, id *int64, domain *string) (model.UserResult, error)
+	User(ctx context.Context, id *int, domain *string) (model.UserResult, error)
 	Users(ctx context.Context, nameFragment string, params *model.Params) (model.UsersResult, error)
 }
 type RoleResolver interface {
@@ -668,7 +668,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.BanUser(childComplexity, args["user_id"].(int64), args["chat_id"].(int64)), true
+		return e.complexity.Mutation.BanUser(childComplexity, args["user_id"].(int), args["chat_id"].(int)), true
 
 	case "Mutation.create_chat":
 		if e.complexity.Mutation.CreateChat == nil {
@@ -692,7 +692,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateInvite(childComplexity, args["chat_id"].(int64), args["input"].(model.CreateInviteInput)), true
+		return e.complexity.Mutation.CreateInvite(childComplexity, args["chat_id"].(int), args["input"].(model.CreateInviteInput)), true
 
 	case "Mutation.create_role":
 		if e.complexity.Mutation.CreateRole == nil {
@@ -704,7 +704,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateRole(childComplexity, args["room_id"].(int64), args["input"].(model.CreateRoleInput)), true
+		return e.complexity.Mutation.CreateRole(childComplexity, args["room_id"].(int), args["input"].(model.CreateRoleInput)), true
 
 	case "Mutation.create_room":
 		if e.complexity.Mutation.CreateRoom == nil {
@@ -716,7 +716,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateRoom(childComplexity, args["room_id"].(int64), args["input"].(model.CreateRoomInput)), true
+		return e.complexity.Mutation.CreateRoom(childComplexity, args["room_id"].(int), args["input"].(model.CreateRoomInput)), true
 
 	case "Mutation.delete_invite":
 		if e.complexity.Mutation.DeleteInvite == nil {
@@ -740,7 +740,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.GiveRole(childComplexity, args["user_id"].(int64), args["chat_id"].(int64), args["role_id"].(int64)), true
+		return e.complexity.Mutation.GiveRole(childComplexity, args["user_id"].(int), args["chat_id"].(int), args["role_id"].(int)), true
 
 	case "Mutation.join_by_invite":
 		if e.complexity.Mutation.JoinByInvite == nil {
@@ -764,7 +764,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.JoinToChat(childComplexity, args["chat_id"].(int64)), true
+		return e.complexity.Mutation.JoinToChat(childComplexity, args["chat_id"].(int)), true
 
 	case "Mutation.leave_from_chat":
 		if e.complexity.Mutation.LeaveFromChat == nil {
@@ -776,7 +776,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LeaveFromChat(childComplexity, args["chat_id"].(int64)), true
+		return e.complexity.Mutation.LeaveFromChat(childComplexity, args["chat_id"].(int)), true
 
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
@@ -824,7 +824,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SendMessageToRoom(childComplexity, args["room"].(int64), args["input"].(model.CreateMessageInput)), true
+		return e.complexity.Mutation.SendMessageToRoom(childComplexity, args["room"].(int), args["input"].(model.CreateMessageInput)), true
 
 	case "Mutation.take_role":
 		if e.complexity.Mutation.TakeRole == nil {
@@ -836,7 +836,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.TakeRole(childComplexity, args["user_id"].(int64), args["chat_id"].(int64)), true
+		return e.complexity.Mutation.TakeRole(childComplexity, args["user_id"].(int), args["chat_id"].(int)), true
 
 	case "Mutation.update_chat":
 		if e.complexity.Mutation.UpdateChat == nil {
@@ -848,7 +848,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateChat(childComplexity, args["chat_id"].(int64), args["input"].(model.UpdateChatInput)), true
+		return e.complexity.Mutation.UpdateChat(childComplexity, args["chat_id"].(int), args["input"].(model.UpdateChatInput)), true
 
 	case "Mutation.update_me_data":
 		if e.complexity.Mutation.UpdateMeData == nil {
@@ -872,7 +872,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateRole(childComplexity, args["role_id"].(int64), args["input"].(model.UpdateRoleInput)), true
+		return e.complexity.Mutation.UpdateRole(childComplexity, args["role_id"].(int), args["input"].(model.UpdateRoleInput)), true
 
 	case "Mutation.update_room":
 		if e.complexity.Mutation.UpdateRoom == nil {
@@ -884,7 +884,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateRoom(childComplexity, args["room_id"].(int64), args["input"].(model.UpdateRoomInput)), true
+		return e.complexity.Mutation.UpdateRoom(childComplexity, args["room_id"].(int), args["input"].(model.UpdateRoomInput)), true
 
 	case "PermissionHolders.chars":
 		if e.complexity.PermissionHolders.Chars == nil {
@@ -917,7 +917,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Chat(childComplexity, args["id"].(*int64), args["domain"].(*string)), true
+		return e.complexity.Query.Chat(childComplexity, args["id"].(*int), args["domain"].(*string)), true
 
 	case "Query.chat_role":
 		if e.complexity.Query.ChatRole == nil {
@@ -929,7 +929,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ChatRole(childComplexity, args["user_id"].(int64), args["chat_id"].(int64)), true
+		return e.complexity.Query.ChatRole(childComplexity, args["user_id"].(int), args["chat_id"].(int)), true
 
 	case "Query.chat_roles":
 		if e.complexity.Query.ChatRoles == nil {
@@ -941,7 +941,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ChatRoles(childComplexity, args["chat_id"].(int64), args["params"].(*model.Params)), true
+		return e.complexity.Query.ChatRoles(childComplexity, args["chat_id"].(int), args["params"].(*model.Params)), true
 
 	case "Query.chats":
 		if e.complexity.Query.Chats == nil {
@@ -984,7 +984,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Members(childComplexity, args["chat_id"].(int64), args["user_id"].(*int64)), true
+		return e.complexity.Query.Members(childComplexity, args["chat_id"].(int), args["user_id"].(*int)), true
 
 	case "Query.message_info":
 		if e.complexity.Query.MessageInfo == nil {
@@ -996,7 +996,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.MessageInfo(childComplexity, args["id"].(int64), args["chat_id"].(int64)), true
+		return e.complexity.Query.MessageInfo(childComplexity, args["id"].(int), args["chat_id"].(int)), true
 
 	case "Query.room":
 		if e.complexity.Query.Room == nil {
@@ -1008,7 +1008,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Room(childComplexity, args["id"].(int64)), true
+		return e.complexity.Query.Room(childComplexity, args["id"].(int)), true
 
 	case "Query.room_form":
 		if e.complexity.Query.RoomForm == nil {
@@ -1020,7 +1020,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.RoomForm(childComplexity, args["room_id"].(int64)), true
+		return e.complexity.Query.RoomForm(childComplexity, args["room_id"].(int)), true
 
 	case "Query.room_messages":
 		if e.complexity.Query.RoomMessages == nil {
@@ -1032,7 +1032,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.RoomMessages(childComplexity, args["room_id"].(*int64), args["filter"].(*model.MessageFilter), args["params"].(*model.Params)), true
+		return e.complexity.Query.RoomMessages(childComplexity, args["room_id"].(*int), args["filter"].(*model.MessageFilter), args["params"].(*model.Params)), true
 
 	case "Query.room_whitelist":
 		if e.complexity.Query.RoomWhitelist == nil {
@@ -1044,7 +1044,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.RoomWhitelist(childComplexity, args["room_id"].(int64)), true
+		return e.complexity.Query.RoomWhitelist(childComplexity, args["room_id"].(int)), true
 
 	case "Query.rooms":
 		if e.complexity.Query.Rooms == nil {
@@ -1056,7 +1056,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Rooms(childComplexity, args["chat"].(int64), args["params"].(*model.Params)), true
+		return e.complexity.Query.Rooms(childComplexity, args["chat"].(int), args["params"].(*model.Params)), true
 
 	case "Query.unit":
 		if e.complexity.Query.Unit == nil {
@@ -1068,7 +1068,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Unit(childComplexity, args["id"].(*int64), args["domain"].(*string)), true
+		return e.complexity.Query.Unit(childComplexity, args["id"].(*int), args["domain"].(*string)), true
 
 	case "Query.units":
 		if e.complexity.Query.Units == nil {
@@ -1092,7 +1092,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.User(childComplexity, args["id"].(*int64), args["domain"].(*string)), true
+		return e.complexity.Query.User(childComplexity, args["id"].(*int), args["domain"].(*string)), true
 
 	case "Query.users":
 		if e.complexity.Query.Users == nil {
@@ -1982,19 +1982,19 @@ func (ec *executionContext) dir_hasChar_args(ctx context.Context, rawArgs map[st
 func (ec *executionContext) field_Mutation_ban_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["user_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["user_id"] = arg0
-	var arg1 int64
+	var arg1 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg1, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg1, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2021,10 +2021,10 @@ func (ec *executionContext) field_Mutation_create_chat_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_create_invite_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2045,10 +2045,10 @@ func (ec *executionContext) field_Mutation_create_invite_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_create_role_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["room_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2069,10 +2069,10 @@ func (ec *executionContext) field_Mutation_create_role_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_create_room_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["room_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2108,28 +2108,28 @@ func (ec *executionContext) field_Mutation_delete_invite_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_give_role_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["user_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["user_id"] = arg0
-	var arg1 int64
+	var arg1 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg1, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg1, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["chat_id"] = arg1
-	var arg2 int64
+	var arg2 int
 	if tmp, ok := rawArgs["role_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role_id"))
-		arg2, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg2, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2156,10 +2156,10 @@ func (ec *executionContext) field_Mutation_join_by_invite_args(ctx context.Conte
 func (ec *executionContext) field_Mutation_join_to_chat_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2171,10 +2171,10 @@ func (ec *executionContext) field_Mutation_join_to_chat_args(ctx context.Context
 func (ec *executionContext) field_Mutation_leave_from_chat_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2231,10 +2231,10 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 func (ec *executionContext) field_Mutation_send_message_to_room_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["room"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2255,19 +2255,19 @@ func (ec *executionContext) field_Mutation_send_message_to_room_args(ctx context
 func (ec *executionContext) field_Mutation_take_role_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["user_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["user_id"] = arg0
-	var arg1 int64
+	var arg1 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg1, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg1, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2279,10 +2279,10 @@ func (ec *executionContext) field_Mutation_take_role_args(ctx context.Context, r
 func (ec *executionContext) field_Mutation_update_chat_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2318,10 +2318,10 @@ func (ec *executionContext) field_Mutation_update_me_data_args(ctx context.Conte
 func (ec *executionContext) field_Mutation_update_role_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["role_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2342,10 +2342,10 @@ func (ec *executionContext) field_Mutation_update_role_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_update_room_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["room_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2381,10 +2381,10 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query_chat_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int64
+	var arg0 *int
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOID2ᚖint64(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2405,19 +2405,19 @@ func (ec *executionContext) field_Query_chat_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Query_chat_role_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["user_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["user_id"] = arg0
-	var arg1 int64
+	var arg1 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg1, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg1, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2429,10 +2429,10 @@ func (ec *executionContext) field_Query_chat_role_args(ctx context.Context, rawA
 func (ec *executionContext) field_Query_chat_roles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2492,19 +2492,19 @@ func (ec *executionContext) field_Query_invite_info_args(ctx context.Context, ra
 func (ec *executionContext) field_Query_members_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["chat_id"] = arg0
-	var arg1 *int64
+	var arg1 *int
 	if tmp, ok := rawArgs["user_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("user_id"))
-		arg1, err = ec.unmarshalOID2ᚖint64(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2516,19 +2516,19 @@ func (ec *executionContext) field_Query_members_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Query_message_info_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["id"] = arg0
-	var arg1 int64
+	var arg1 int
 	if tmp, ok := rawArgs["chat_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-		arg1, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg1, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2540,10 +2540,10 @@ func (ec *executionContext) field_Query_message_info_args(ctx context.Context, r
 func (ec *executionContext) field_Query_room_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2555,10 +2555,10 @@ func (ec *executionContext) field_Query_room_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Query_room_form_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["room_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2570,10 +2570,10 @@ func (ec *executionContext) field_Query_room_form_args(ctx context.Context, rawA
 func (ec *executionContext) field_Query_room_messages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int64
+	var arg0 *int
 	if tmp, ok := rawArgs["room_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
-		arg0, err = ec.unmarshalOID2ᚖint64(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2603,10 +2603,10 @@ func (ec *executionContext) field_Query_room_messages_args(ctx context.Context, 
 func (ec *executionContext) field_Query_room_whitelist_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["room_id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2618,10 +2618,10 @@ func (ec *executionContext) field_Query_room_whitelist_args(ctx context.Context,
 func (ec *executionContext) field_Query_rooms_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int64
+	var arg0 int
 	if tmp, ok := rawArgs["chat"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat"))
-		arg0, err = ec.unmarshalNID2int64(ctx, tmp)
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2642,10 +2642,10 @@ func (ec *executionContext) field_Query_rooms_args(ctx context.Context, rawArgs 
 func (ec *executionContext) field_Query_unit_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int64
+	var arg0 *int
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOID2ᚖint64(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -2699,10 +2699,10 @@ func (ec *executionContext) field_Query_units_args(ctx context.Context, rawArgs 
 func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int64
+	var arg0 *int
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalOID2ᚖint64(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -4059,9 +4059,9 @@ func (ec *executionContext) _Message_id(ctx context.Context, field graphql.Colle
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Message_room(ctx context.Context, field graphql.CollectedField, obj *model.Message) (ret graphql.Marshaler) {
@@ -4326,7 +4326,7 @@ func (ec *executionContext) _Mutation_ban_user(ctx context.Context, field graphq
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().BanUser(rctx, args["user_id"].(int64), args["chat_id"].(int64))
+			return ec.resolvers.Mutation().BanUser(rctx, args["user_id"].(int), args["chat_id"].(int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4460,7 +4460,7 @@ func (ec *executionContext) _Mutation_create_invite(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateInvite(rctx, args["chat_id"].(int64), args["input"].(model.CreateInviteInput))
+			return ec.resolvers.Mutation().CreateInvite(rctx, args["chat_id"].(int), args["input"].(model.CreateInviteInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4532,7 +4532,7 @@ func (ec *executionContext) _Mutation_create_role(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateRole(rctx, args["room_id"].(int64), args["input"].(model.CreateRoleInput))
+			return ec.resolvers.Mutation().CreateRole(rctx, args["room_id"].(int), args["input"].(model.CreateRoleInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4604,7 +4604,7 @@ func (ec *executionContext) _Mutation_create_room(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateRoom(rctx, args["room_id"].(int64), args["input"].(model.CreateRoomInput))
+			return ec.resolvers.Mutation().CreateRoom(rctx, args["room_id"].(int), args["input"].(model.CreateRoomInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4748,7 +4748,7 @@ func (ec *executionContext) _Mutation_give_role(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().GiveRole(rctx, args["user_id"].(int64), args["chat_id"].(int64), args["role_id"].(int64))
+			return ec.resolvers.Mutation().GiveRole(rctx, args["user_id"].(int), args["chat_id"].(int), args["role_id"].(int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4882,7 +4882,7 @@ func (ec *executionContext) _Mutation_join_to_chat(ctx context.Context, field gr
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().JoinToChat(rctx, args["chat_id"].(int64))
+			return ec.resolvers.Mutation().JoinToChat(rctx, args["chat_id"].(int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4944,7 +4944,7 @@ func (ec *executionContext) _Mutation_leave_from_chat(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().LeaveFromChat(rctx, args["chat_id"].(int64))
+			return ec.resolvers.Mutation().LeaveFromChat(rctx, args["chat_id"].(int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -5132,7 +5132,7 @@ func (ec *executionContext) _Mutation_send_message_to_room(ctx context.Context, 
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().SendMessageToRoom(rctx, args["room"].(int64), args["input"].(model.CreateMessageInput))
+			return ec.resolvers.Mutation().SendMessageToRoom(rctx, args["room"].(int), args["input"].(model.CreateMessageInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -5194,7 +5194,7 @@ func (ec *executionContext) _Mutation_take_role(ctx context.Context, field graph
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().TakeRole(rctx, args["user_id"].(int64), args["chat_id"].(int64))
+			return ec.resolvers.Mutation().TakeRole(rctx, args["user_id"].(int), args["chat_id"].(int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -5266,7 +5266,7 @@ func (ec *executionContext) _Mutation_update_chat(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateChat(rctx, args["chat_id"].(int64), args["input"].(model.UpdateChatInput))
+			return ec.resolvers.Mutation().UpdateChat(rctx, args["chat_id"].(int), args["input"].(model.UpdateChatInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -5400,7 +5400,7 @@ func (ec *executionContext) _Mutation_update_role(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateRole(rctx, args["role_id"].(int64), args["input"].(model.UpdateRoleInput))
+			return ec.resolvers.Mutation().UpdateRole(rctx, args["role_id"].(int), args["input"].(model.UpdateRoleInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -5472,7 +5472,7 @@ func (ec *executionContext) _Mutation_update_room(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateRoom(rctx, args["room_id"].(int64), args["input"].(model.UpdateRoomInput))
+			return ec.resolvers.Mutation().UpdateRoom(rctx, args["room_id"].(int), args["input"].(model.UpdateRoomInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -5639,7 +5639,7 @@ func (ec *executionContext) _Query_chat(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Chat(rctx, args["id"].(*int64), args["domain"].(*string))
+		return ec.resolvers.Query().Chat(rctx, args["id"].(*int), args["domain"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5678,7 +5678,7 @@ func (ec *executionContext) _Query_chat_role(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ChatRole(rctx, args["user_id"].(int64), args["chat_id"].(int64))
+		return ec.resolvers.Query().ChatRole(rctx, args["user_id"].(int), args["chat_id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5717,7 +5717,7 @@ func (ec *executionContext) _Query_chat_roles(ctx context.Context, field graphql
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ChatRoles(rctx, args["chat_id"].(int64), args["params"].(*model.Params))
+		return ec.resolvers.Query().ChatRoles(rctx, args["chat_id"].(int), args["params"].(*model.Params))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5869,7 +5869,7 @@ func (ec *executionContext) _Query_members(ctx context.Context, field graphql.Co
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Members(rctx, args["chat_id"].(int64), args["user_id"].(*int64))
+		return ec.resolvers.Query().Members(rctx, args["chat_id"].(int), args["user_id"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5908,7 +5908,7 @@ func (ec *executionContext) _Query_message_info(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MessageInfo(rctx, args["id"].(int64), args["chat_id"].(int64))
+		return ec.resolvers.Query().MessageInfo(rctx, args["id"].(int), args["chat_id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5947,7 +5947,7 @@ func (ec *executionContext) _Query_room_form(ctx context.Context, field graphql.
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RoomForm(rctx, args["room_id"].(int64))
+		return ec.resolvers.Query().RoomForm(rctx, args["room_id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5986,7 +5986,7 @@ func (ec *executionContext) _Query_room_messages(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RoomMessages(rctx, args["room_id"].(*int64), args["filter"].(*model.MessageFilter), args["params"].(*model.Params))
+		return ec.resolvers.Query().RoomMessages(rctx, args["room_id"].(*int), args["filter"].(*model.MessageFilter), args["params"].(*model.Params))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6025,7 +6025,7 @@ func (ec *executionContext) _Query_room(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Room(rctx, args["id"].(int64))
+		return ec.resolvers.Query().Room(rctx, args["id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6064,7 +6064,7 @@ func (ec *executionContext) _Query_room_whitelist(ctx context.Context, field gra
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RoomWhitelist(rctx, args["room_id"].(int64))
+		return ec.resolvers.Query().RoomWhitelist(rctx, args["room_id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6103,7 +6103,7 @@ func (ec *executionContext) _Query_rooms(ctx context.Context, field graphql.Coll
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Rooms(rctx, args["chat"].(int64), args["params"].(*model.Params))
+		return ec.resolvers.Query().Rooms(rctx, args["chat"].(int), args["params"].(*model.Params))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6142,7 +6142,7 @@ func (ec *executionContext) _Query_unit(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Unit(rctx, args["id"].(*int64), args["domain"].(*string))
+		return ec.resolvers.Query().Unit(rctx, args["id"].(*int), args["domain"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6226,7 +6226,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().User(rctx, args["id"].(*int64), args["domain"].(*string))
+		return ec.resolvers.Query().User(rctx, args["id"].(*int), args["domain"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6450,9 +6450,9 @@ func (ec *executionContext) _Role_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Role_users(ctx context.Context, field graphql.CollectedField, obj *model.Role) (ret graphql.Marshaler) {
@@ -6619,9 +6619,9 @@ func (ec *executionContext) _Room_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_chat(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -7021,9 +7021,9 @@ func (ec *executionContext) _Unit_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int64)
+	res := resTmp.(int)
 	fc.Result = res
-	return ec.marshalNID2int64(ctx, field.Selections, res)
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Unit_domain(ctx context.Context, field graphql.CollectedField, obj *model.Unit) (ret graphql.Marshaler) {
@@ -8583,7 +8583,7 @@ func (ec *executionContext) unmarshalInputCreateMessageInput(ctx context.Context
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("reply_to"))
-			it.ReplyTo, err = ec.unmarshalNID2int64(ctx, v)
+			it.ReplyTo, err = ec.unmarshalNID2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8653,7 +8653,7 @@ func (ec *executionContext) unmarshalInputCreateRoomInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parent"))
-			it.Parent, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			it.Parent, err = ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8794,7 +8794,7 @@ func (ec *executionContext) unmarshalInputMessageFilter(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("author_id"))
-			it.AuthorID, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			it.AuthorID, err = ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8802,7 +8802,7 @@ func (ec *executionContext) unmarshalInputMessageFilter(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
-			it.ChatID, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			it.ChatID, err = ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8810,7 +8810,7 @@ func (ec *executionContext) unmarshalInputMessageFilter(ctx context.Context, obj
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
-			it.RoomID, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			it.RoomID, err = ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8868,7 +8868,7 @@ func (ec *executionContext) unmarshalInputPermissionHoldersInput(ctx context.Con
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("roles"))
-			it.Roles, err = ec.unmarshalOID2ᚕint64ᚄ(ctx, v)
+			it.Roles, err = ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8884,7 +8884,7 @@ func (ec *executionContext) unmarshalInputPermissionHoldersInput(ctx context.Con
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("members"))
-			it.Members, err = ec.unmarshalOID2ᚕint64ᚄ(ctx, v)
+			it.Members, err = ec.unmarshalOID2ᚕintᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8993,7 +8993,7 @@ func (ec *executionContext) unmarshalInputRoomModeratorParamsInput(ctx context.C
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fav_room"))
-			it.FavRoom, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			it.FavRoom, err = ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9164,7 +9164,7 @@ func (ec *executionContext) unmarshalInputUpdateRoomInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("parent_id"))
-			it.ParentID, err = ec.unmarshalOID2ᚖint64(ctx, v)
+			it.ParentID, err = ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -11670,13 +11670,13 @@ func (ec *executionContext) unmarshalNFormFieldInput2ᚖgithubᚗcomᚋsaimeᚑ0
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNID2int64(ctx context.Context, v interface{}) (int64, error) {
-	res, err := graphql.UnmarshalInt64(v)
+func (ec *executionContext) unmarshalNID2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNID2int64(ctx context.Context, sel ast.SelectionSet, v int64) graphql.Marshaler {
-	res := graphql.MarshalInt64(v)
+func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -12575,7 +12575,7 @@ func (ec *executionContext) marshalOForm2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcu
 	return ec._Form(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOID2ᚕint64ᚄ(ctx context.Context, v interface{}) ([]int64, error) {
+func (ec *executionContext) unmarshalOID2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -12588,10 +12588,10 @@ func (ec *executionContext) unmarshalOID2ᚕint64ᚄ(ctx context.Context, v inte
 		}
 	}
 	var err error
-	res := make([]int64, len(vSlice))
+	res := make([]int, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNID2int64(ctx, vSlice[i])
+		res[i], err = ec.unmarshalNID2int(ctx, vSlice[i])
 		if err != nil {
 			return nil, err
 		}
@@ -12599,13 +12599,13 @@ func (ec *executionContext) unmarshalOID2ᚕint64ᚄ(ctx context.Context, v inte
 	return res, nil
 }
 
-func (ec *executionContext) marshalOID2ᚕint64ᚄ(ctx context.Context, sel ast.SelectionSet, v []int64) graphql.Marshaler {
+func (ec *executionContext) marshalOID2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
 	ret := make(graphql.Array, len(v))
 	for i := range v {
-		ret[i] = ec.marshalNID2int64(ctx, sel, v[i])
+		ret[i] = ec.marshalNID2int(ctx, sel, v[i])
 	}
 
 	for _, e := range ret {
@@ -12617,19 +12617,19 @@ func (ec *executionContext) marshalOID2ᚕint64ᚄ(ctx context.Context, sel ast.
 	return ret
 }
 
-func (ec *executionContext) unmarshalOID2ᚖint64(ctx context.Context, v interface{}) (*int64, error) {
+func (ec *executionContext) unmarshalOID2ᚖint(ctx context.Context, v interface{}) (*int, error) {
 	if v == nil {
 		return nil, nil
 	}
-	res, err := graphql.UnmarshalInt64(v)
+	res, err := graphql.UnmarshalInt(v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOID2ᚖint64(ctx context.Context, sel ast.SelectionSet, v *int64) graphql.Marshaler {
+func (ec *executionContext) marshalOID2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return graphql.MarshalInt64(*v)
+	return graphql.MarshalInt(*v)
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

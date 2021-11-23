@@ -199,7 +199,7 @@ type CreateInviteInput struct {
 }
 
 type CreateMessageInput struct {
-	ReplyTo int64  `json:"reply_to"`
+	ReplyTo int    `json:"reply_to"`
 	Body    string `json:"body"`
 }
 
@@ -210,7 +210,7 @@ type CreateRoleInput struct {
 
 type CreateRoomInput struct {
 	Name      string           `json:"name"`
-	Parent    *int64           `json:"parent"`
+	Parent    *int             `json:"parent"`
 	Note      *string          `json:"note"`
 	MsgFormat *UpdateFormInput `json:"msg_format"`
 	Restricts *RestrictsInput  `json:"restricts"`
@@ -275,7 +275,7 @@ type MemberArray struct {
 func (MemberArray) IsMembersResult() {}
 
 type Message struct {
-	ID      int64       `json:"id"`
+	ID      int         `json:"id"`
 	Room    *Room       `json:"room"`
 	ReplyTo *Message    `json:"reply_to"`
 	Author  *Unit       `json:"author"`
@@ -295,9 +295,9 @@ func (MessageArray) IsRoomMessagesResult() {}
 
 type MessageFilter struct {
 	TextFragment *string `json:"text_fragment"`
-	AuthorID     *int64  `json:"author_id"`
-	ChatID       *int64  `json:"chat_id"`
-	RoomID       *int64  `json:"room_id"`
+	AuthorID     *int    `json:"author_id"`
+	ChatID       *int    `json:"chat_id"`
+	RoomID       *int    `json:"room_id"`
 }
 
 type Params struct {
@@ -312,9 +312,9 @@ type PermissionHolders struct {
 }
 
 type PermissionHoldersInput struct {
-	Roles   []int64 `json:"roles"`
-	Chars   []Char  `json:"chars"`
-	Members []int64 `json:"members"`
+	Roles   []int  `json:"roles"`
+	Chars   []Char `json:"chars"`
+	Members []int  `json:"members"`
 }
 
 type RegisterInput struct {
@@ -335,7 +335,7 @@ type RestrictsInput struct {
 }
 
 type Role struct {
-	ID    int64   `json:"id"`
+	ID    int     `json:"id"`
 	Users []*User `json:"users"`
 	Name  string  `json:"name"`
 	Color string  `json:"color"`
@@ -352,7 +352,7 @@ func (RoleArray) IsChatRolesResult()     {}
 func (RoleArray) IsRoomWhiteListResult() {}
 
 type Room struct {
-	ID        int64      `json:"id"`
+	ID        int        `json:"id"`
 	Chat      *Chat      `json:"chat"`
 	Name      string     `json:"name"`
 	Parent    *Room      `json:"parent"`
@@ -372,8 +372,8 @@ type RoomArray struct {
 func (RoomArray) IsRoomsResult() {}
 
 type RoomModeratorParamsInput struct {
-	Moderate bool   `json:"moderate"`
-	FavRoom  *int64 `json:"fav_room"`
+	Moderate bool `json:"moderate"`
+	FavRoom  *int `json:"fav_room"`
 }
 
 type Successful struct {
@@ -397,7 +397,7 @@ func (TokenPair) IsLoginResult()         {}
 func (TokenPair) IsRefreshTokensResult() {}
 
 type Unit struct {
-	ID     int64    `json:"id"`
+	ID     int      `json:"id"`
 	Domain string   `json:"domain"`
 	Name   string   `json:"name"`
 	Type   UnitType `json:"type"`
@@ -435,7 +435,7 @@ type UpdateRoleInput struct {
 
 type UpdateRoomInput struct {
 	Name      *string          `json:"name"`
-	ParentID  *int64           `json:"parent_id"`
+	ParentID  *int             `json:"parent_id"`
 	Note      *string          `json:"note"`
 	Restricts *RestrictsInput  `json:"restricts"`
 	MsgFormat *UpdateFormInput `json:"msg_format"`

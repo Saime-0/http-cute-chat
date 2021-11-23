@@ -8,7 +8,7 @@ import "github.com/saime-0/http-cute-chat/internal/api/rules"
 // 	ReplyTo int    `json:"reply_to"`
 // 	Author  int    `json:"author"`
 // 	Body    string `json:"body"`
-// 	Type    int    `json:"type"`
+// 	UnitType    int    `json:"type"`
 // }
 
 // INTERNAL models
@@ -18,7 +18,7 @@ type CreateMessage struct {
 	ReplyTo int    `json:"reply_to"`
 	Author  int    `json:"author"`
 	Body    string `json:"body"`
-	// Type    rules.MessageType `json:"type"`
+	// UnitType    rules.MessageType `json:"type"`
 }
 
 // RESPONSE models

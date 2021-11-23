@@ -17,12 +17,12 @@ import (
 )
 
 const (
-	server_addr = ":8081"
-	host        = "localhost"
-	db_port     = 5432
-	user        = "postgres"
-	password    = "7050"
-	dbname      = "chat_db"
+	serverAddr = ":8081"
+	host       = "localhost"
+	dbPort     = 5432
+	user       = "postgres"
+	password   = "7050"
+	dbname     = "chat_db"
 )
 
 type ApiServer struct {
@@ -32,7 +32,7 @@ type ApiServer struct {
 
 func newApiServer(db *sql.DB, handler http.Handler) *ApiServer {
 	a := &ApiServer{
-		httpServer: NewHttpServer(server_addr, handler),
+		httpServer: NewHttpServer(serverAddr, handler),
 		store:      NewStore(db),
 	}
 	return a
@@ -83,7 +83,7 @@ func Run() {
 
 func initDB() (*sql.DB, error) {
 	// connection string
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, db_port, user, password, dbname)
+	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, dbPort, user, password, dbname)
 
 	// open database
 	db, err := sql.Open("postgres", psqlconn)

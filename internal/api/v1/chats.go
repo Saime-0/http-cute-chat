@@ -59,24 +59,24 @@ func (h *Handler) initChatsRoutes(r *mux.Router) {
 }
 
 func (h *Handler) GetChatByDomain(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_domain := mux.Vars(r)["chat-domain"]
-	if !validator.ValidateDomain(chat_domain) {
+	chatDomain := mux.Vars(r)["chat-domain"]
+	if !validator.ValidateDomain(chatDomain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByDomain(chat_domain) {
+	if !h.Services.Repos.Chats.ChatExistsByDomain(chatDomain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrChatNotFound)
 
 		return
 	}
 
-	chat, err := h.Services.Repos.Chats.GetChatByDomain(chat_domain)
+	chat, err := h.Services.Repos.Chats.GetChatByDomain(chatDomain)
 	finalInspectionDatabase(w, err)
-	if h.Services.Repos.Chats.ChatIsPrivate(chat.ID) && !h.Services.Repos.Chats.UserIsChatMember(user_id, chat.ID) {
+	if h.Services.Repos.Chats.ChatIsPrivate(chat.ID) && !h.Services.Repos.Chats.UserIsChatMember(userId, chat.ID) {
 		responder.Error(w, http.StatusForbidden, rules.ErrNoAccess)
 
 		return
@@ -86,36 +86,36 @@ func (h *Handler) GetChatByDomain(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetChatByID(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrChatNotFound)
 
 		return
 	}
 
-	if h.Services.Repos.Chats.ChatIsPrivate(chat_id) && !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if h.Services.Repos.Chats.ChatIsPrivate(chatId) && !h.Services.Repos.Chats.UserIsChatMember(userId, chatId) {
 		responder.Error(w, http.StatusForbidden, rules.ErrNoAccess)
 
 		return
 	}
 
-	chat, err := h.Services.Repos.Chats.GetChatByID(chat_id)
+	chat, err := h.Services.Repos.Chats.GetChatByID(chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, chat)
 }
 
 func (h *Handler) GetChatsByName(w http.ResponseWriter, r *http.Request) {
-	name_fragment := r.URL.Query().Get("name")
-	if len(name_fragment) > rules.NameMaxLength || len(name_fragment) == 0 {
+	nameFragment := r.URL.Query().Get("name")
+	if len(nameFragment) > rules.NameMaxLength || len(nameFragment) == 0 {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
@@ -127,14 +127,14 @@ func (h *Handler) GetChatsByName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chat_list, err := h.Services.Repos.Chats.GetChatsByNameFragment(name_fragment, offset)
+	chatList, err := h.Services.Repos.Chats.GetChatsByNameFragment(nameFragment, offset)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, chat_list)
+	responder.Respond(w, http.StatusOK, chatList)
 }
 
 func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
 	chat := &models.CreateChat{}
 	err := json.NewDecoder(r.Body).Decode(&chat)
@@ -144,13 +144,13 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count_chats, err := h.Services.Repos.Users.GetCountUserOwnedChats(user_id)
+	countChats, err := h.Services.Repos.Users.GetCountUserOwnedChats(userId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if count_chats >= rules.MaxCountOwnedChats {
+	if countChats >= rules.MaxCountOwnedChats {
 		responder.Error(w, http.StatusBadRequest, rules.ErrLimitHasBeenReached)
 
 		return
@@ -168,35 +168,35 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chat_id, err := h.Services.Repos.Chats.CreateChat(user_id, chat)
+	chatId, err := h.Services.Repos.Chats.CreateChat(userId, chat)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, &models.ChatID{ID: chat_id})
+	responder.Respond(w, http.StatusOK, &models.ChatID{ID: chatId})
 
 }
 
 func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrChatNotFound)
 
 		return
 	}
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRooms) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageRooms) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
@@ -210,14 +210,14 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count_rooms, err := h.Services.Repos.Chats.GetCountRooms(chat_id)
+	countRooms, err := h.Services.Repos.Chats.GetCountRooms(chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
 
-	if count_rooms >= rules.MaxCountRooms {
+	if countRooms >= rules.MaxCountRooms {
 		responder.Error(w, http.StatusBadRequest, rules.ErrLimitHasBeenReached)
 
 		return
@@ -229,193 +229,193 @@ func (h *Handler) CreateRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parent_chat, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room.ParentID)
-	if parent_chat != chat_id {
+	parentChat, _ := h.Services.Repos.Rooms.GetChatIDByRoomID(room.ParentID)
+	if parentChat != chatId {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	room_id, err := h.Services.Repos.Rooms.CreateRoom(chat_id, room)
+	roomId, err := h.Services.Repos.Rooms.CreateRoom(chatId, room)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, &models.RoomID{ID: room_id})
+	responder.Respond(w, http.StatusOK, &models.RoomID{ID: roomId})
 }
 
 func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	if h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if h.Services.Repos.Chats.UserIsChatMember(userId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if h.Services.Repos.Chats.ChatIsPrivate(chat_id) {
+	if h.Services.Repos.Chats.ChatIsPrivate(chatId) {
 		responder.Error(w, http.StatusForbidden, rules.ErrNoAccess)
 
 		return
 	}
 
-	count_chats, err := h.Services.Repos.Chats.GetCountUserChats(user_id)
+	countChats, err := h.Services.Repos.Chats.GetCountUserChats(userId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if count_chats >= rules.MaxUserChats {
+	if countChats >= rules.MaxUserChats {
 		responder.Error(w, http.StatusBadRequest, rules.ErrLimitHasBeenReached)
 
 		return
 	}
 
-	count_members, err := h.Services.Repos.Chats.GetCountChatMembers(chat_id)
+	countMembers, err := h.Services.Repos.Chats.GetCountChatMembers(chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if count_members >= rules.MaxMembersOnChat {
+	if countMembers >= rules.MaxMembersOnChat {
 		responder.Error(w, http.StatusBadRequest, rules.ErrMembersLimitHasBeenReached)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.AddUserToChat(user_id, chat_id)
+	err = h.Services.Repos.Chats.AddUserToChat(userId, chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) RemoveUserFromChat(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.RemoveUserFromChat(user_id, chat_id)
+	err = h.Services.Repos.Chats.RemoveUserFromChat(userId, chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) GetChatData(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	chat_data, err := h.Services.Repos.Chats.GetChatDataByID(chat_id)
+	chatData, err := h.Services.Repos.Chats.GetChatDataByID(chatId)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, chat_data)
+	responder.Respond(w, http.StatusOK, chatData)
 }
 
 func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
-		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(userId, chatId) &&
+		!h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	user_list, err := h.Services.Repos.Chats.GetChatMembers(chat_id)
+	userList, err := h.Services.Repos.Chats.GetChatMembers(chatId)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, user_list)
+	responder.Respond(w, http.StatusOK, userList)
 }
 
 func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) &&
-		!h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(userId, chatId) &&
+		!h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	room_list, err := h.Services.Repos.Rooms.GetChatRooms(chat_id)
+	roomList, err := h.Services.Repos.Rooms.GetChatRooms(chatId)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, room_list)
+	responder.Respond(w, http.StatusOK, roomList)
 }
 
 func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
 	offset, ok := parseOffsetFromQuery(w, r)
 	if !ok {
@@ -423,14 +423,14 @@ func (h *Handler) GetUserOwnedChats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chat_list, err := h.Services.Repos.Chats.GetChatsOwnedUser(user_id, offset)
+	chatList, err := h.Services.Repos.Chats.GetChatsOwnedUser(userId, offset)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, chat_list)
+	responder.Respond(w, http.StatusOK, chatList)
 }
 
 func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
 	offset, ok := parseOffsetFromQuery(w, r)
 	if !ok {
@@ -438,109 +438,109 @@ func (h *Handler) GetUserChats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chat_list, err := h.Services.Repos.Chats.GetChatsInvolvedUser(user_id, offset)
+	chatList, err := h.Services.Repos.Chats.GetChatsInvolvedUser(userId, offset)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, chat_list)
+	responder.Respond(w, http.StatusOK, chatList)
 }
 
 func (h *Handler) UpdateChatData(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	chat_data := &models.UpdateChatData{}
-	err = json.NewDecoder(r.Body).Decode(&chat_data)
+	chatData := &models.UpdateChatData{}
+	err = json.NewDecoder(r.Body).Decode(&chatData)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 		return
 	}
 
-	if h.Services.Repos.Chats.ChatExistsByDomain(chat_data.Domain) {
+	if h.Services.Repos.Chats.ChatExistsByDomain(chatData.Domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOccupiedDomain)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.UpdateChatData(chat_id, chat_data)
+	err = h.Services.Repos.Chats.UpdateChatData(chatId, chatData)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
 	// мб эту часть кода свернуть в функцию, то есть то надо взять ид и знать что существует такой юнит или комната
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 	// до сюда
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	input_link := &models.InviteLinkInput{}
-	err = json.NewDecoder(r.Body).Decode(&input_link)
+	inputLink := &models.InviteLinkInput{}
+	err = json.NewDecoder(r.Body).Decode(&inputLink)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 		return
 	}
 
-	if input_link.LifeTime != 0 && !validator.ValidateLifetime(input_link.LifeTime) {
+	if inputLink.LifeTime != 0 && !validator.ValidateLifetime(inputLink.LifeTime) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
 
 		return
 	}
-	if input_link.Aliens != 0 && !validator.ValidateAliens(input_link.Aliens) {
+	if inputLink.Aliens != 0 && !validator.ValidateAliens(inputLink.Aliens) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOutOfRange)
 
 		return
 	}
 
-	count, err := h.Services.Repos.Chats.GetCountLinks(chat_id)
+	count, err := h.Services.Repos.Chats.GetCountLinks(chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
@@ -554,9 +554,9 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 
 	link, err := h.Services.Repos.Chats.CreateInviteLink(
 		&models.CreateInviteLink{
-			ChatID: chat_id,
-			Aliens: input_link.Aliens,
-			Exp:    input_link.LifeTime + time.Now().UTC().Unix(),
+			ChatID: chatId,
+			Aliens: inputLink.Aliens,
+			Exp:    inputLink.LifeTime + time.Now().UTC().Unix(),
 		},
 	)
 	finalInspectionDatabase(w, err)
@@ -565,321 +565,321 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetInviteLinks(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	links, err := h.Services.Repos.Chats.GetChatLinks(chat_id)
+	links, err := h.Services.Repos.Chats.GetChatLinks(chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, links)
 }
 
 func (h *Handler) DeleteInviteLink(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	link_code := mux.Vars(r)["invite-code"]
-	if !h.Services.Repos.Chats.InviteLinkIsRelevant(link_code) {
+	linkCode := mux.Vars(r)["invite-code"]
+	if !h.Services.Repos.Chats.InviteLinkIsRelevant(linkCode) {
 		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.DeleteInviteLinkByCode(link_code)
+	err = h.Services.Repos.Chats.DeleteInviteLinkByCode(linkCode)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) BanUserInChat(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+	if !h.Services.Repos.Users.UserExistsByID(targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(targetId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageMembers) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageMembers) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	role, err = h.Services.Repos.Chats.GetUserRoleData(target_id, chat_id)
+	role, err = h.Services.Repos.Chats.GetUserRoleData(targetId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if h.Services.Repos.Chats.UserIsChatOwner(target_id, chat_id) || role.ManageRooms {
+	if h.Services.Repos.Chats.UserIsChatOwner(targetId, chatId) || role.ManageRooms {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.BanUserInChat(target_id, chat_id)
+	err = h.Services.Repos.Chats.BanUserInChat(targetId, chatId)
 	finalInspectionDatabase(w, err)
-	err = h.Services.Repos.Chats.RemoveUserFromChat(target_id, chat_id)
+	err = h.Services.Repos.Chats.RemoveUserFromChat(targetId, chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) UnbanUserInChat(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageMembers) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageMembers) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+	if !h.Services.Repos.Users.UserExistsByID(targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsBannedInChat(target_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsBannedInChat(targetId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.UnbanUserInChat(target_id, chat_id)
+	err = h.Services.Repos.Chats.UnbanUserInChat(targetId, chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) GetChatBanlist(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	users, err := h.Services.Repos.Chats.GetChatBanlist(chat_id)
+	users, err := h.Services.Repos.Chats.GetChatBanlist(chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, users)
 }
 
 func (h *Handler) CreateRole(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRooms) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageRooms) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	count_roles, err := h.Services.Repos.Chats.GetCountChatRoles(chat_id)
+	countRoles, err := h.Services.Repos.Chats.GetCountChatRoles(chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if count_roles > rules.MaxRolesInChat {
+	if countRoles > rules.MaxRolesInChat {
 		responder.Error(w, http.StatusBadRequest, rules.ErrLimitHasBeenReached)
 
 		return
 	}
 
-	role_model := &models.CreateRole{}
-	err = json.NewDecoder(r.Body).Decode(&role_model)
+	roleModel := &models.CreateRole{}
+	err = json.NewDecoder(r.Body).Decode(&roleModel)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 		return
 	}
 
-	role_id, err := h.Services.Repos.Chats.CreateRoleInChat(chat_id, role_model)
+	roleId, err := h.Services.Repos.Chats.CreateRoleInChat(chatId, roleModel)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, models.RoleID{ID: role_id})
+	responder.Respond(w, http.StatusOK, models.RoleID{ID: roleId})
 }
 
 func (h *Handler) AddRoleToUser(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRooms) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageRooms) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+	if !h.Services.Repos.Users.UserExistsByID(targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(targetId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.GiveRole(target_id, chat_id) // ! fix role_id?
+	err = h.Services.Repos.Chats.GiveRole(targetId, chatId) // ! fix role_id?
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
@@ -887,29 +887,29 @@ func (h *Handler) AddRoleToUser(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetChatRoles(w http.ResponseWriter, r *http.Request) {
 
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
 	switch {
-	case h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id):
-		roles, err := h.Services.Repos.Chats.GetChatRolesData(chat_id)
+	case h.Services.Repos.Chats.UserIsChatOwner(userId, chatId):
+		roles, err := h.Services.Repos.Chats.GetChatRolesData(chatId)
 		finalInspectionDatabase(w, err)
 
 		responder.Respond(w, http.StatusOK, roles)
 
-	case h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id):
-		roles, err := h.Services.Repos.Chats.GetChatRolesInfo(chat_id)
+	case h.Services.Repos.Chats.UserIsChatMember(userId, chatId):
+		roles, err := h.Services.Repos.Chats.GetChatRolesInfo(chatId)
 		finalInspectionDatabase(w, err)
 
 		responder.Respond(w, http.StatusOK, roles)
@@ -921,48 +921,48 @@ func (h *Handler) GetChatRoles(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUserRole(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	if !h.Services.Repos.Chats.UserIsChatMember(user_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(userId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
 
 		return
 	}
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+	if !h.Services.Repos.Users.UserExistsByID(targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
-	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(targetId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(target_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(targetId, chatId)
 	finalInspectionDatabase(w, err)
 
 	switch {
-	case h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id):
+	case h.Services.Repos.Chats.UserIsChatOwner(userId, chatId):
 		responder.Respond(w, http.StatusOK, role)
 	default:
 		if !role.Visible {
@@ -980,148 +980,148 @@ func (h *Handler) GetUserRole(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateRoleData(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRoles) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageRoles) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	role_id, err := strconv.Atoi(mux.Vars(r)["role-id"])
+	roleId, err := strconv.Atoi(mux.Vars(r)["role-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.RoleExistsByID(role_id, chat_id) {
+	if !h.Services.Repos.Chats.RoleExistsByID(roleId, chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	update_model := &models.UpdateRole{}
-	err = json.NewDecoder(r.Body).Decode(&update_model)
+	updateModel := &models.UpdateRole{}
+	err = json.NewDecoder(r.Body).Decode(&updateModel)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.UpdateRoleData(role_id, update_model)
+	err = h.Services.Repos.Chats.UpdateRoleData(roleId, updateModel)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) RemoveChatRole(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageChat) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageChat) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	role_id, err := strconv.Atoi(mux.Vars(r)["role-id"])
+	roleId, err := strconv.Atoi(mux.Vars(r)["role-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.RoleExistsByID(role_id, chat_id) {
+	if !h.Services.Repos.Chats.RoleExistsByID(roleId, chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.DeleteRole(role_id)
+	err = h.Services.Repos.Chats.DeleteRole(roleId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) TakeUserRole(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	chat_id, err := strconv.Atoi(mux.Vars(r)["chat-id"])
+	chatId, err := strconv.Atoi(mux.Vars(r)["chat-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Chats.ChatExistsByID(chat_id) {
+	if !h.Services.Repos.Chats.ChatExistsByID(chatId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrChatNotFound)
 
 		return
 	}
 
-	role, err := h.Services.Repos.Chats.GetUserRoleData(user_id, chat_id)
+	role, err := h.Services.Repos.Chats.GetUserRoleData(userId, chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if !(h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) || role.ManageRoles) {
+	if !(h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.ManageRoles) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+	if !h.Services.Repos.Users.UserExistsByID(targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
-	if !h.Services.Repos.Chats.UserIsChatMember(target_id, chat_id) {
+	if !h.Services.Repos.Chats.UserIsChatMember(targetId, chatId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserIsNotChatMember)
 
 		return
 	}
 
-	err = h.Services.Repos.Chats.TakeRole(target_id, chat_id)
+	err = h.Services.Repos.Chats.TakeRole(targetId, chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)

@@ -8,6 +8,12 @@ const Year int64 = 31536000
 // 	RenameRoomEvent MessageEventType = "RenameRoomEvent"
 // 	Re
 // )
+type UnitType string
+
+const (
+	User UnitType = "USER"
+	Chat UnitType = "CHAT"
+)
 
 type FieldType string
 

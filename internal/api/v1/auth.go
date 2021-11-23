@@ -71,23 +71,23 @@ func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_id, err := h.Services.Repos.Users.GetUserIdByInput(user)
+	userId, err := h.Services.Repos.Users.GetUserIdByInput(user)
 	if err != nil {
 		// todo: uncorrected input
 		panic(err)
 	}
-	token_pair, session := GenerateNewSession(user_id, r)
-	sessions_count, err := h.Services.Repos.Auth.CreateNewUserRefreshSession(user_id, session)
+	tokenPair, session := GenerateNewSession(userId, r)
+	sessionsCount, err := h.Services.Repos.Auth.CreateNewUserRefreshSession(userId, session)
 	if err != nil {
 		panic(err)
 	}
-	if sessions_count > 5 {
-		err = h.Services.Repos.Auth.DeleteOldestSession(user_id)
+	if sessionsCount > 5 {
+		err = h.Services.Repos.Auth.DeleteOldestSession(userId)
 		if err != nil {
 			panic(err)
 		}
 	}
-	responder.Respond(w, http.StatusOK, token_pair)
+	responder.Respond(w, http.StatusOK, tokenPair)
 }
 
 func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
@@ -96,36 +96,36 @@ func (h *Handler) AuthRefresh(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-	session_id, user_id, err := h.Services.Repos.Auth.FindSessionByComparedToken(rtoken.RefreshToken)
+	sessionId, userId, err := h.Services.Repos.Auth.FindSessionByComparedToken(rtoken.RefreshToken)
 	if err != nil {
 		panic(err)
 	}
-	token_pair, session := GenerateNewSession(user_id, r)
-	err = h.Services.Repos.Auth.UpdateRefreshSession(session_id, session)
+	tokenPair, session := GenerateNewSession(userId, r)
+	err = h.Services.Repos.Auth.UpdateRefreshSession(sessionId, session)
 	if err != nil {
 		panic(err)
 	}
-	responder.Respond(w, http.StatusOK, token_pair)
+	responder.Respond(w, http.StatusOK, tokenPair)
 }
 
-func GenerateNewSession(user_id int, r *http.Request) (token_pair *models.FreshTokenPair, session *models.RefreshSession) {
-	refresh_token := gotp.RandomSecret(rules.RefreshTokenLength)
+func GenerateNewSession(userId int, r *http.Request) (tokenPair *models.FreshTokenPair, session *models.RefreshSession) {
+	refreshToken := gotp.RandomSecret(rules.RefreshTokenLength)
 	session = &models.RefreshSession{
-		RefreshToken: refresh_token,
+		RefreshToken: refreshToken,
 		UserAgent:    r.UserAgent(),
 		Exp:          time.Now().Unix() + int64(time.Hour),
 		CreatedAt:    time.Now().Unix(),
 	}
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		ExpiresAt: session.Exp,
-		Subject:   strconv.Itoa(user_id),
+		Subject:   strconv.Itoa(userId),
 	}).SignedString([]byte(os.Getenv("SECRET_SIGNING_KEY")))
 	if err != nil {
 		panic(err)
 	}
-	token_pair = &models.FreshTokenPair{
+	tokenPair = &models.FreshTokenPair{
 		AccessToken:  token,
-		RefreshToken: refresh_token,
+		RefreshToken: refreshToken,
 	}
 	return
 }

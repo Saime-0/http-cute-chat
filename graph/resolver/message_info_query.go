@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) MessageInfo(ctx context.Context, id int64, chatID int64) (model.MessageInfoResult, error) {
+func (r *queryResolver) MessageInfo(ctx context.Context, id int, chatID int) (model.MessageInfoResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

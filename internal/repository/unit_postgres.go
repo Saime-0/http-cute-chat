@@ -14,32 +14,32 @@ func NewUnitsRepo(db *sql.DB) *UnitsRepo {
 	}
 }
 
-func (r *UnitsRepo) GetDomainByID(unit_id int) (domain string, err error) {
+func (r *UnitsRepo) GetDomainByID(unitId int) (domain string, err error) {
 	return
 }
-func (r *UnitsRepo) GetIDByDomain(unit_domain string) (id int, err error) {
+func (r *UnitsRepo) GetIDByDomain(unitDomain string) (id int, err error) {
 	return
 }
 
-func (r *UnitsRepo) UnitExistsByID(unit_id int) (exists bool) {
+func (r *UnitsRepo) UnitExistsByID(unitId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
 			FROM units 
 			WHERE id = $1
 			)`,
-		unit_id,
+		unitId,
 	).Scan(&exists)
 	return
 }
-func (r *UnitsRepo) UnitExistsByDomain(unit_domain string) (exists bool) {
+func (r *UnitsRepo) UnitExistsByDomain(unitDomain string) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
 			FROM units
 			WHERE domain = $1
 			)`,
-		unit_domain,
+		unitDomain,
 	).Scan(&exists)
 	return
 }

@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *mutationResolver) GiveRole(ctx context.Context, userID int64, chatID int64, roleID int64) (model.MutationResult, error) {
+func (r *mutationResolver) GiveRole(ctx context.Context, userID int, chatID int, roleID int) (model.MutationResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

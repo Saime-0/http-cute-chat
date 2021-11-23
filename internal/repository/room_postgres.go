@@ -18,27 +18,27 @@ func NewRoomsRepo(db *sql.DB) *RoomsRepo {
 	}
 }
 
-func (r *RoomsRepo) RoomExistsByID(room_id int) (is_exists bool) {
+func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 	err := r.db.QueryRow(
 		`SELECT EXISTS(SELECT 1 FROM rooms WHERE id=$1)`,
-		room_id,
-	).Scan(&is_exists)
-	if err != nil || !is_exists {
+		roomId,
+	).Scan(&isExists)
+	if err != nil || !isExists {
 		return
 	}
 	return
 }
 
-func (r *RoomsRepo) CreateRoom(chat_id int, room_model *models.CreateRoom) (room_id int, err error) {
-	if room_model.ParentID != 0 {
-		parent_room_is_child := false
+func (r *RoomsRepo) CreateRoom(chatId int, roomModel *models.CreateRoom) (roomId int, err error) {
+	if roomModel.ParentID != 0 {
+		parentRoomIsChild := false
 		err = r.db.QueryRow(
 			`SELECT EXISTS(SELECT 1 FROM rooms WHERE parent_id IS NOT NULL)`,
-		).Scan(&parent_room_is_child)
+		).Scan(&parentRoomIsChild)
 		if err != nil {
 			return
 		}
-		if parent_room_is_child {
+		if parentRoomIsChild {
 			return 0, errors.New("parent's room with a child")
 		}
 	}
@@ -46,24 +46,24 @@ func (r *RoomsRepo) CreateRoom(chat_id int, room_model *models.CreateRoom) (room
 		`INSERT INTO rooms (chat_id, parent_id, name, note, private)
 		VALUES ($1, NULLIF($2, 0), $3, $4, $5)
 		RETURNING id`,
-		chat_id,
-		room_model.ParentID,
-		room_model.Name,
-		room_model.Note,
-		room_model.Private,
-	).Scan(&room_id)
+		chatId,
+		roomModel.ParentID,
+		roomModel.Name,
+		roomModel.Note,
+		roomModel.Private,
+	).Scan(&roomId)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (r *RoomsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err error) {
+func (r *RoomsRepo) GetChatRooms(chatId int) (rooms models.ListRoomInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, COALESCE(parent_id, 0), name, note, private
 		FROM rooms
 		WHERE chat_id = $1`,
-		chat_id,
+		chatId,
 	)
 	if err != nil {
 		return
@@ -82,12 +82,12 @@ func (r *RoomsRepo) GetChatRooms(chat_id int) (rooms models.ListRoomInfo, err er
 	return
 }
 
-func (r *RoomsRepo) GetRoom(room_id int) (room models.RoomInfo, err error) {
+func (r *RoomsRepo) GetRoom(roomId int) (room models.RoomInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT id, COALESCE(parent_id, 0), name, note, private
 		FROM rooms
 		WHERE id = $1`,
-		room_id,
+		roomId,
 	).Scan(
 		&room.ID,
 		&room.ParentID,
@@ -99,27 +99,27 @@ func (r *RoomsRepo) GetRoom(room_id int) (room models.RoomInfo, err error) {
 	return
 }
 
-func (r *RoomsRepo) UpdateRoomData(room_id int, room_model *models.UpdateRoomData) (err error) {
-	if room_model.Name != "" {
+func (r *RoomsRepo) UpdateRoomData(roomId int, roomModel *models.UpdateRoomData) (err error) {
+	if roomModel.Name != "" {
 		err = r.db.QueryRow(
 			`UPDATE rooms
 			SET name = $2, private = $3
 			WHERE id = $1`,
-			room_id,
-			room_model.Name,
+			roomId,
+			roomModel.Name,
 		).Err()
 		if err != nil {
 			return
 		}
 	}
-	if room_model.Note != "" {
+	if roomModel.Note != "" {
 		err = r.db.QueryRow(
 			`UPDATE rooms
 			SET note = $2, private = $3
 			WHERE id = $1`,
-			room_id,
-			room_model.Note,
-			room_model.Private,
+			roomId,
+			roomModel.Note,
+			roomModel.Private,
 		).Err()
 		if err != nil {
 			return
@@ -129,37 +129,37 @@ func (r *RoomsRepo) UpdateRoomData(room_id int, room_model *models.UpdateRoomDat
 	return
 }
 
-func (r *RoomsRepo) GetChatIDByRoomID(room_id int) (chat_id int, err error) {
+func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {
 	err = r.db.QueryRow(
 		`SELECT chat_id
 		FROM rooms
 		WHERE id = $1`,
-		room_id,
-	).Scan(&chat_id)
+		roomId,
+	).Scan(&chatId)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (r *RoomsRepo) RoomIsPrivate(room_id int) (private bool) {
+func (r *RoomsRepo) RoomIsPrivate(roomId int) (private bool) {
 	r.db.QueryRow(
 		`SELECT private
 		FROM rooms
 		WHERE id = $1`,
-		room_id,
+		roomId,
 	).Scan(&private)
 
 	return
 }
 
-func (r *RoomsRepo) GetRoomForm(room_id int) (form models.FormPattern, err error) {
+func (r *RoomsRepo) GetRoomForm(roomId int) (form models.FormPattern, err error) {
 	var format string
 	err = r.db.QueryRow(
 		`SELECT COALESCE(msg_format, '')
 		FROM rooms
 		WHERE room_id = $1`,
-		room_id,
+		roomId,
 	).Scan(&format)
 	if err != nil {
 		return
@@ -170,27 +170,27 @@ func (r *RoomsRepo) GetRoomForm(room_id int) (form models.FormPattern, err error
 	return
 }
 
-func (r *RoomsRepo) UpdateRoomForm(room_id int, format string) (err error) {
+func (r *RoomsRepo) UpdateRoomForm(roomId int, format string) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE rooms
 		SET msg_format = NULLIF($2, '')
 		WHERE id = $1`,
-		room_id,
+		roomId,
 		format,
 	).Err()
 
 	return
 }
 
-func (r *RoomsRepo) RoomFormIsSet(room_id int) (is_set bool) {
+func (r *RoomsRepo) RoomFormIsSet(roomId int) (isSet bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM rooms
 			WHERE id = $1 AND msg_format IS NOT NULL
 		)`,
-		room_id,
-	).Scan(&is_set)
+		roomId,
+	).Scan(&isSet)
 
 	return
 }

@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *mutationResolver) SendMessageToRoom(ctx context.Context, room int64, input model.CreateMessageInput) (model.SendMessageToRoomResult, error) {
+func (r *mutationResolver) SendMessageToRoom(ctx context.Context, room int, input model.CreateMessageInput) (model.SendMessageToRoomResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

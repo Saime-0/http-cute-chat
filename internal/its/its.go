@@ -8,3 +8,7 @@ const (
 	Moder
 	Member
 )
+
+func List(somes ...Someone) []Someone {
+	return somes
+}

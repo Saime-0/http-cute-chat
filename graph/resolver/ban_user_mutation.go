@@ -5,19 +5,23 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/pipeline"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/its"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *mutationResolver) BanUser(ctx context.Context, userID int64, chatID int64) (model.MutationResult, error) {
-	pl := pipeline.NewPipeline(ctx, r.Services.Repos)
-
-	if pl.UserIs(its.Owner, its.Admin) ||
-		pl.UserExists() ||
-		pl.ChatExists() {
-
+func (r *mutationResolver) BanUser(ctx context.Context, userID int, chatID int) (model.MutationResult, error) {
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.UserExists(userID) ||
+		pl.ChatExists(chatID) ||
+		pl.UserIs(userID, chatID, its.List(its.Member)) {
+		return pl.Err, nil
 	}
-
+	err := r.Services.Repos.Chats.BanUserInChat(userID, chatID)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), err
+	}
+	return resp.Success("пользователь успешно забанен"), nil
 }

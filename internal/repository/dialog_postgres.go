@@ -16,21 +16,21 @@ func NewDialogsRepo(db *sql.DB) *DialogsRepo {
 	}
 }
 
-func (r *DialogsRepo) GetDialogIDBetweenUsers(user1_id int, user2_id int) (dialog_id int, err error) {
+func (r *DialogsRepo) GetDialogIDBetweenUsers(user1Id int, user2Id int) (dialogId int, err error) {
 	err = r.db.QueryRow(
 		`SELECT id
 		FROM dialogs
 		WHERE user1 = $1 AND user2 = $2 OR user1 = $2 AND user2 = $1`,
-		user1_id,
-		user2_id,
-	).Scan(&dialog_id)
+		user1Id,
+		user2Id,
+	).Scan(&dialogId)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (r *DialogsRepo) GetCompanions(user_id int) (users models.ListUserInfo, err error) {
+func (r *DialogsRepo) GetCompanions(userId int) (users models.ListUserInfo, err error) {
 	rows, err := r.db.Query(
 		`SELECT units.id,units.domain,units.name 
 		FROM units INNER JOIN users 
@@ -44,7 +44,7 @@ func (r *DialogsRepo) GetCompanions(user_id int) (users models.ListUserInfo, err
 			FROM dialogs
 			WHERE user2 = $1
 		)`,
-		user_id,
+		userId,
 	)
 	if err != nil {
 		return
@@ -63,26 +63,26 @@ func (r *DialogsRepo) GetCompanions(user_id int) (users models.ListUserInfo, err
 	return
 }
 
-func (r *DialogsRepo) DialogExistsBetweenUsers(user1_id int, user2_id int) (exits bool) {
+func (r *DialogsRepo) DialogExistsBetweenUsers(user1Id int, user2Id int) (exits bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
 			FROM dialogs 
 			WHERE user1 = $1 AND user2 = $2 OR user1 = $2 AND user2 = $1
 			)`,
-		user1_id,
-		user2_id,
+		user1Id,
+		user2Id,
 	).Scan(&exits)
 	return
 }
-func (r *DialogsRepo) CreateDialogBetweenUser(user1_id int, user2_id int) (dialog_id int, err error) {
+func (r *DialogsRepo) CreateDialogBetweenUser(user1Id int, user2Id int) (dialogId int, err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO dialogs (user1, user2)
 		VALUES ($1, $2)
 		RETURNING id`,
-		user1_id,
-		user2_id,
-	).Scan(&dialog_id)
+		user1Id,
+		user2Id,
+	).Scan(&dialogId)
 	if err != nil {
 		return
 	}

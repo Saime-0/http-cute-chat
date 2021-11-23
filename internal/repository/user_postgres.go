@@ -16,7 +16,7 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 	}
 }
 
-func (r *UsersRepo) CreateUser(user_model *models.CreateUser) (id int, err error) {
+func (r *UsersRepo) CreateUser(userModel *models.CreateUser) (id int, err error) {
 	err = r.db.QueryRow(
 		`WITH u AS (
 			INSERT INTO units (domain, name, type) 
@@ -27,22 +27,22 @@ func (r *UsersRepo) CreateUser(user_model *models.CreateUser) (id int, err error
 		SELECT u.id, 'default', $3, $4 
 		FROM u 
 		RETURNING id`,
-		user_model.Domain,
-		user_model.Name,
-		user_model.Password,
-		user_model.Email,
+		userModel.Domain,
+		userModel.Name,
+		userModel.Password,
+		userModel.Email,
 	).Scan(&id)
 
 	return
 }
 
-func (r *UsersRepo) GetUserData(user_id int) (user models.UserData, err error) {
+func (r *UsersRepo) GetUserData(userId int) (user models.UserData, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id, units.domain, units.name, users.email
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.id = $1`,
-		user_id,
+		userId,
 	).Scan(
 		&user.ID,
 		&user.Domain,
@@ -55,29 +55,29 @@ func (r *UsersRepo) GetUserData(user_id int) (user models.UserData, err error) {
 	return
 }
 
-func (r *UsersRepo) UserExistsByInput(input_model *models.UserInput) (exists bool) {
+func (r *UsersRepo) UserExistsByInput(inputModel *models.UserInput) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM users
 			WHERE email = $1 AND password = $2
 			)`,
-		input_model.Email,
-		input_model.Password,
+		inputModel.Email,
+		inputModel.Password,
 	).Scan(&exists)
 
 	return
 
 }
 
-func (r *UsersRepo) GetUserIdByInput(input_model *models.UserInput) (id int, err error) {
+func (r *UsersRepo) GetUserIdByInput(inputModel *models.UserInput) (id int, err error) {
 	err = r.db.QueryRow(
 		`SELECT units.id
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE users.email = $1 AND users.password = $2`,
-		input_model.Email,
-		input_model.Password,
+		inputModel.Email,
+		inputModel.Password,
 	).Scan(&id)
 	if err != nil {
 		return
@@ -149,13 +149,13 @@ func (r *UsersRepo) GetUsersByNameFragment(fragment string, offset int) (users m
 	return
 }
 
-func (r *UsersRepo) GetUserSettings(user_id int) (settings models.UserSettings, err error) {
+func (r *UsersRepo) GetUserSettings(userId int) (settings models.UserSettings, err error) {
 	err = r.db.QueryRow(
 		`SELECT users.app_settings
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
 		WHERE units.id = $1`,
-		user_id,
+		userId,
 	).Scan(
 		&settings.AppSettings,
 	)
@@ -165,50 +165,50 @@ func (r *UsersRepo) GetUserSettings(user_id int) (settings models.UserSettings, 
 	return
 }
 
-func (r *UsersRepo) UpdateUserData(user_id int, user_model *models.UpdateUserData) (err error) {
-	if user_model.Domain != "" {
+func (r *UsersRepo) UpdateUserData(userId int, userModel *models.UpdateUserData) (err error) {
+	if userModel.Domain != "" {
 		err = r.db.QueryRow(
 			`UPDATE units
 			SET domain = $2
 			WHERE id = $1`,
-			user_id,
-			user_model.Domain,
+			userId,
+			userModel.Domain,
 		).Err()
 		if err != nil {
 			return
 		}
 	}
-	if user_model.Name != "" {
+	if userModel.Name != "" {
 		err = r.db.QueryRow(
 			`UPDATE units
 			SET name = $2
 			WHERE id = $1`,
-			user_id,
-			user_model.Name,
+			userId,
+			userModel.Name,
 		).Err()
 		if err != nil {
 			return
 		}
 	}
-	if user_model.Email != "" {
+	if userModel.Email != "" {
 		err = r.db.QueryRow(
-			`UPDATE user
+			`UPDATE users
 			SET email = $2
 			WHERE id = $1`,
-			user_id,
-			user_model.Email,
+			userId,
+			userModel.Email,
 		).Err()
 		if err != nil {
 			return
 		}
 	}
-	if user_model.Password != "" {
+	if userModel.Password != "" {
 		err = r.db.QueryRow(
-			`UPDATE units
+			`UPDATE users
 			SET password = $2
 			WHERE id = $1`,
-			user_id,
-			user_model.Password,
+			userId,
+			userModel.Password,
 		).Err()
 		if err != nil {
 			return
@@ -217,13 +217,13 @@ func (r *UsersRepo) UpdateUserData(user_id int, user_model *models.UpdateUserDat
 	return
 }
 
-func (r *UsersRepo) UpdateUserSettings(user_id int, settings_model *models.UpdateUserSettings) error {
+func (r *UsersRepo) UpdateUserSettings(userId int, settingsModel *models.UpdateUserSettings) error {
 	err := r.db.QueryRow(
 		`UPDATE users
 		SET app_settings = $1
 		WHERE id = $2`,
-		settings_model.AppSettings,
-		user_id,
+		settingsModel.AppSettings,
+		userId,
 	).Err()
 	if err != nil {
 		return err
@@ -231,30 +231,30 @@ func (r *UsersRepo) UpdateUserSettings(user_id int, settings_model *models.Updat
 	return nil
 }
 
-func (r *UsersRepo) GetCountUserOwnedChats(user_id int) (count int, err error) {
+func (r *UsersRepo) GetCountUserOwnedChats(userId int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM chats 
 		WHERE owner_id = $1`,
-		user_id,
+		userId,
 	).Scan(&count)
 	return
 }
 
-func (r *UsersRepo) UserExistsByID(user_id int) (exists bool) {
+func (r *UsersRepo) UserExistsByID(userId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM users
 			WHERE id = $1
 		)`,
-		user_id,
+		userId,
 	).Scan(&exists)
 
 	return
 }
 
-func (r *UsersRepo) UserExistsByDomain(user_domain string) (exists bool) {
+func (r *UsersRepo) UserExistsByDomain(userDomain string) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
@@ -263,7 +263,7 @@ func (r *UsersRepo) UserExistsByDomain(user_domain string) (exists bool) {
 			ON users.id = units.id
 			WHERE units.domain = $1
 		)`,
-		user_domain,
+		userDomain,
 	).Scan(&exists)
 
 	return

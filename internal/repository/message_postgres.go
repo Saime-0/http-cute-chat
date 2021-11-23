@@ -17,20 +17,20 @@ func NewMessagesRepo(db *sql.DB) *MessagesRepo {
 	}
 }
 
-func (r *MessagesRepo) MessageExistsByID(message_id int) (exists bool) {
+func (r *MessagesRepo) MessageExistsByID(messageId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM messages
 			WHERE id = $1
 			)`,
-		message_id,
+		messageId,
 	).Scan(&exists)
 
 	return
 }
 
-func (r *MessagesRepo) MessageAvailableOnDialog(message_id int, dialog_id int) (exists bool) {
+func (r *MessagesRepo) MessageAvailableOnDialog(messageId int, dialogId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
@@ -39,14 +39,14 @@ func (r *MessagesRepo) MessageAvailableOnDialog(message_id int, dialog_id int) (
 			ON messages.id = dialog_msg_pool.message_id
 			WHERE dialog_id = $1 AND message_id = $2
 			)`,
-		dialog_id,
-		message_id,
+		dialogId,
+		messageId,
 	).Scan(&exists)
 
 	return
 }
 
-func (r *MessagesRepo) MessageAvailableOnRoom(message_id int, room_id int) (exists bool) {
+func (r *MessagesRepo) MessageAvailableOnRoom(messageId int, roomId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
@@ -55,22 +55,22 @@ func (r *MessagesRepo) MessageAvailableOnRoom(message_id int, room_id int) (exis
 			ON messages.id = room_msg_pool.message_id
 			WHERE room_id = $1 AND message_id = $2
 			)`,
-		room_id,
-		message_id,
+		roomId,
+		messageId,
 	).Scan(&exists)
 
 	return
 }
 
-func (r *MessagesRepo) GetMessageFromDialog(message_id int, dialog_id int) (message models.MessageInfo, err error) {
+func (r *MessagesRepo) GetMessageFromDialog(messageId int, dialogId int) (message models.MessageInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT messages.id, COALESCE(messages.reply_to, 0), messages.author, messages.body, messages.type
 		FROM messages
 		INNER JOIN dialog_msg_pool
 		ON messages.id = dialog_msg_pool.message_id
 		WHERE dialog_id = $1 AND message_id = $2`,
-		dialog_id,
-		message_id,
+		dialogId,
+		messageId,
 	).Scan(
 		&message.ID,
 		&message.ReplyTo,
@@ -82,15 +82,15 @@ func (r *MessagesRepo) GetMessageFromDialog(message_id int, dialog_id int) (mess
 	return
 }
 
-func (r *MessagesRepo) GetMessageFromRoom(message_id int, room_id int) (message models.MessageInfo, err error) {
+func (r *MessagesRepo) GetMessageFromRoom(messageId int, roomId int) (message models.MessageInfo, err error) {
 	err = r.db.QueryRow(
 		`SELECT messages.id, COALESCE(messages.reply_to, 0), messages.author, messages.body, messages.type
 		FROM messages
 		INNER JOIN room_msg_pool
 		ON messages.id = room_msg_pool.message_id
 		WHERE room_id = $1 AND message_id = $2`,
-		room_id,
-		message_id,
+		roomId,
+		messageId,
 	).Scan(
 		&message.ID,
 		&message.ReplyTo,
@@ -102,7 +102,7 @@ func (r *MessagesRepo) GetMessageFromRoom(message_id int, room_id int) (message 
 	return
 }
 
-func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int, offset int) (messages models.MessagesList, err error) {
+func (r *MessagesRepo) GetMessagesFromDialog(dialogId int, offset int) (messages models.MessagesList, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, COALESCE(reply_to, 0), author, body, type
 		FROM messages
@@ -113,7 +113,7 @@ func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int, offset int) (message
 			LIMIT 20
 			OFFSET $2
 			)`,
-		dialog_id,
+		dialogId,
 		offset,
 	)
 	if err != nil {
@@ -134,7 +134,7 @@ func (r *MessagesRepo) GetMessagesFromDialog(dialog_id int, offset int) (message
 	return
 }
 
-func (r *MessagesRepo) GetMessagesFromRoom(room_id int, created_after int, offset int) (messages models.MessagesList, err error) {
+func (r *MessagesRepo) GetMessagesFromRoom(roomId int, createdAfter int, offset int) (messages models.MessagesList, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, COALESCE(reply_to, 0), author, body, type
 		FROM messages
@@ -145,9 +145,9 @@ func (r *MessagesRepo) GetMessagesFromRoom(room_id int, created_after int, offse
 			LIMIT 20
 			OFFSET $2
 			)`,
-		room_id,
+		roomId,
 		offset,
-		created_after,
+		createdAfter,
 	)
 	if err != nil {
 		return
@@ -165,7 +165,7 @@ func (r *MessagesRepo) GetMessagesFromRoom(room_id int, created_after int, offse
 	return
 }
 
-func (r *MessagesRepo) CreateMessageInDialog(dialog_id int, message_model *models.CreateMessage) (message_id int, err error) {
+func (r *MessagesRepo) CreateMessageInDialog(dialogId int, messageModel *models.CreateMessage) (messageId int, err error) {
 	err = r.db.QueryRow(
 		`WITH m AS (
 			INSERT INTO messages (reply_to, author, body, type)
@@ -176,19 +176,19 @@ func (r *MessagesRepo) CreateMessageInDialog(dialog_id int, message_model *model
 		SELECT $1, m.id
 		FROM m
 		RETURNING message_id`,
-		dialog_id,
-		message_model.ReplyTo,
-		message_model.Author,
-		message_model.Body,
+		dialogId,
+		messageModel.ReplyTo,
+		messageModel.Author,
+		messageModel.Body,
 		rules.UserMsg,
-	).Scan(&message_id)
+	).Scan(&messageId)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func (r *MessagesRepo) CreateMessageInRoom(room_id int, msg_type rules.MessageType, message_model *models.CreateMessage) (message_id int, err error) {
+func (r *MessagesRepo) CreateMessageInRoom(roomId int, msgType rules.MessageType, messageModel *models.CreateMessage) (messageId int, err error) {
 	err = r.db.QueryRow(
 		`WITH m AS (
 			INSERT INTO messages (reply_to, author, body, type)
@@ -199,12 +199,12 @@ func (r *MessagesRepo) CreateMessageInRoom(room_id int, msg_type rules.MessageTy
 		SELECT $1, m.id
 		FROM m
 		RETURNING message_id`,
-		room_id,
-		message_model.ReplyTo,
-		message_model.Author,
-		message_model.Body,
-		msg_type,
-	).Scan(&message_id)
+		roomId,
+		messageModel.ReplyTo,
+		messageModel.Author,
+		messageModel.Body,
+		msgType,
+	).Scan(&messageId)
 	if err != nil {
 		return
 	}

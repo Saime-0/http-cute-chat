@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) ChatRoles(ctx context.Context, chatID int64, params *model.Params) (model.ChatRolesResult, error) {
+func (r *queryResolver) ChatRoles(ctx context.Context, chatID int, params *model.Params) (model.ChatRolesResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

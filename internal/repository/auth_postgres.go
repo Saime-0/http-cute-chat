@@ -16,15 +16,15 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 	}
 }
 
-func (r *AuthRepo) CreateNewUserRefreshSession(user_id int, session_model *models.RefreshSession) (sessions_count int, err error) {
+func (r *AuthRepo) CreateNewUserRefreshSession(userId int, sessionModel *models.RefreshSession) (sessionsCount int, err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, exp, created_at)
 		VALUES ($1, $2, $3, $4, $5)`,
-		user_id,
-		session_model.RefreshToken,
-		session_model.UserAgent,
-		session_model.Exp,
-		session_model.CreatedAt,
+		userId,
+		sessionModel.RefreshToken,
+		sessionModel.UserAgent,
+		sessionModel.Exp,
+		sessionModel.CreatedAt,
 	).Err()
 	if err != nil {
 		return
@@ -33,43 +33,43 @@ func (r *AuthRepo) CreateNewUserRefreshSession(user_id int, session_model *model
 		`SELECT count(*)
 		FROM refresh_sessions
 		WHERE user_id = $1`,
-		user_id,
-	).Scan(&sessions_count)
+		userId,
+	).Scan(&sessionsCount)
 
 	return
 }
-func (r *AuthRepo) DeleteOldestSession(user_id int) (err error) {
+func (r *AuthRepo) DeleteOldestSession(userId int) (err error) {
 	err = r.db.QueryRow(
 		`DELETE FROM refresh_sessions 
 		WHERE ctid IN(SELECT ctid FROM refresh_sessions WHERE user_id=$1 LIMIT 1)`,
-		user_id,
+		userId,
 	).Err()
 
 	return
 }
-func (r *AuthRepo) FindSessionByComparedToken(token string) (session_id int, user_id int, err error) {
+func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, userId int, err error) {
 	err = r.db.QueryRow(
 		`SELECT id, user_id
 		FROM refresh_sessions
 		WHERE refresh_token = $1`,
 		token,
 	).Scan(
-		&session_id,
-		&user_id,
+		&sessionId,
+		&userId,
 	)
 
 	return
 }
-func (r *AuthRepo) UpdateRefreshSession(session_id int, session_model *models.RefreshSession) (err error) {
+func (r *AuthRepo) UpdateRefreshSession(sessionId int, sessionModel *models.RefreshSession) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE refresh_sessions
 		SET refresh_token = $2, user_agent = $3, exp = $4, created_at = $5
 		WHERE id = $1`,
-		session_id,
-		session_model.RefreshToken,
-		session_model.UserAgent,
-		session_model.Exp,
-		session_model.CreatedAt,
+		sessionId,
+		sessionModel.RefreshToken,
+		sessionModel.UserAgent,
+		sessionModel.Exp,
+		sessionModel.CreatedAt,
 	).Err()
 
 	return nil

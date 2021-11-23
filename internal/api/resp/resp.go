@@ -9,30 +9,25 @@ import "github.com/saime-0/http-cute-chat/graph/model"
 //	// Err     error  `json:"-"`
 //}
 
-var (
-	ErrInternalSeverError = &model.AdvancedError{
-		Code:    "InternalServerError",
-		Message: "internal server error",
+func Success(msg string) model.Successful {
+	return model.Successful{
+		Success: msg,
 	}
+}
+func Error(code ErrCode, msg string) *model.AdvancedError {
+	return &model.AdvancedError{
+		Code:    string(code),
+		Message: msg,
+	}
+}
 
-	ErrInvalidName = &model.AdvancedError{
-		Code:    "InvalidUserName",
-		Message: "invalid name",
-	}
-	ErrInvalidDomain = &model.AdvancedError{
-		Code:    "InvalidDomain",
-		Message: "invalid domain",
-	}
-	ErrInvalidEmail = &model.AdvancedError{
-		Code:    "InvalidEmail",
-		Message: "invalid email",
-	}
-	ErrInvalidPassword = &model.AdvancedError{
-		Code:    "InvalidPassword",
-		Message: "invalid password",
-	}
-	ErrNameFragment = &model.AdvancedError{
-		Code:    "NameFragment",
-		Message: "invalid name fragment",
-	}
+type ErrCode string
+
+const (
+	ErrInternalServerError ErrCode = "InternalServerError"
+	ErrBadRequest          ErrCode = "BadRequest"
+	ErrNotFound            ErrCode = "NotFound"
+	ErrNoAccess            ErrCode = "NoAccess"
 )
+
+// todo лог запросов с типом результата ответа(если ощибка то полностю ошибку)

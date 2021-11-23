@@ -1,9 +1,15 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/saime-0/http-cute-chat/graph/directive"
+	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/middleware"
 	"github.com/saime-0/http-cute-chat/internal/service"
 	"log"
 	"net/http"
@@ -20,7 +26,7 @@ const defaultPort = "8080"
 
 const (
 	host     = "localhost"
-	db_port  = 5432
+	dbPort   = 5432
 	user     = "postgres"
 	password = "7050"
 	dbname   = "chat_db"
@@ -43,20 +49,29 @@ func main() {
 		}
 	}(db)
 	services := service.NewServices(db)
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &resolver.Resolver{
-		Services: services,
-	}}))
-
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{
+		Resolvers: &resolver.Resolver{
+			Services: services,
+		},
+		Directives: generated.DirectiveRoot{
+			HasChar: func(ctx context.Context, obj interface{}, next graphql.Resolver, char []*model.Char) (res interface{}, err error) {
+				return next(ctx)
+			},
+			IsAuth: directive.IsAuth,
+		},
+	}))
+	router := mux.NewRouter()
+	router.Use(middleware.CheckAuth)
+	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	router.Handle("/query", srv)
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
 
 func initDB() (*sql.DB, error) {
 	// connection string
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, db_port, user, password, dbname)
+	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, dbPort, user, password, dbname)
 
 	// open database
 	db, err := sql.Open("postgres", psqlconn)

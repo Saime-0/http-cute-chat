@@ -26,36 +26,36 @@ func (h *Handler) initDialogsRoutes(r *mux.Router) {
 }
 
 func (h *Handler) SendMessageToUser(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if target_id == user_id {
+	if targetId == userId {
 		responder.Error(w, http.StatusBadRequest, rules.ErrDialogWithYourself)
 
 		return
 	}
 
-	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+	if !h.Services.Repos.Users.UserExistsByID(targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	var dialog_id int
-	if !h.Services.Repos.Dialogs.DialogExistsBetweenUsers(user_id, target_id) {
-		dialog_id, err = h.Services.Repos.Dialogs.CreateDialogBetweenUser(user_id, target_id)
+	var dialogId int
+	if !h.Services.Repos.Dialogs.DialogExistsBetweenUsers(userId, targetId) {
+		dialogId, err = h.Services.Repos.Dialogs.CreateDialogBetweenUser(userId, targetId)
 		if err != nil {
 			responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 			panic(err)
 		}
 	} else {
-		dialog_id, err = h.Services.Repos.Dialogs.GetDialogIDBetweenUsers(user_id, target_id)
+		dialogId, err = h.Services.Repos.Dialogs.GetDialogIDBetweenUsers(userId, targetId)
 		if err != nil {
 			responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 			panic(err)
@@ -70,33 +70,33 @@ func (h *Handler) SendMessageToUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message.Author = user_id
-	message_id, err := h.Services.Repos.Messages.CreateMessageInDialog(dialog_id, message)
+	message.Author = userId
+	messageId, err := h.Services.Repos.Messages.CreateMessageInDialog(dialogId, message)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, &models.MessageID{ID: message_id})
+	responder.Respond(w, http.StatusOK, &models.MessageID{ID: messageId})
 }
 
 func (h *Handler) GetListCompanions(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	user_list, err := h.Services.Repos.Dialogs.GetCompanions(user_id)
+	userList, err := h.Services.Repos.Dialogs.GetCompanions(userId)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, user_list)
+	responder.Respond(w, http.StatusOK, userList)
 }
 
 func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if target_id == user_id {
+	if targetId == userId {
 		responder.Error(w, http.StatusBadRequest, rules.ErrDialogWithYourself)
 
 		return
@@ -108,85 +108,85 @@ func (h *Handler) GetListDialogMessages(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if !h.Services.Repos.Users.UserExistsByID(target_id) {
+	if !h.Services.Repos.Users.UserExistsByID(targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	var dialog_id int
-	if !h.Services.Repos.Dialogs.DialogExistsBetweenUsers(user_id, target_id) {
-		dialog_id, err = h.Services.Repos.Dialogs.CreateDialogBetweenUser(user_id, target_id)
+	var dialogId int
+	if !h.Services.Repos.Dialogs.DialogExistsBetweenUsers(userId, targetId) {
+		dialogId, err = h.Services.Repos.Dialogs.CreateDialogBetweenUser(userId, targetId)
 		if err != nil {
 			responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 			panic(err)
 		}
 	} else {
-		dialog_id, err = h.Services.Repos.Dialogs.GetDialogIDBetweenUsers(user_id, target_id)
+		dialogId, err = h.Services.Repos.Dialogs.GetDialogIDBetweenUsers(userId, targetId)
 		if err != nil {
 			responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 			panic(err)
 		}
 	}
 
-	message_list, err := h.Services.Repos.Messages.GetMessagesFromDialog(dialog_id, offset)
+	messageList, err := h.Services.Repos.Messages.GetMessagesFromDialog(dialogId, offset)
 	if err != nil {
 		panic(err)
 	}
 
-	responder.Respond(w, http.StatusOK, message_list)
+	responder.Respond(w, http.StatusOK, messageList)
 }
 
 func (h *Handler) GetDialogMessage(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	target_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	targetId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if target_id == user_id {
+	if targetId == userId {
 		responder.Error(w, http.StatusBadRequest, rules.ErrDialogWithYourself)
 
 		return
 	}
 
-	if !h.Services.Repos.Users.UserExistsByID(user_id) {
+	if !h.Services.Repos.Users.UserExistsByID(userId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrUserNotFound)
 
 		return
 	}
 
-	message_id, err := strconv.Atoi(mux.Vars(r)["message-id"])
+	messageId, err := strconv.Atoi(mux.Vars(r)["message-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	var dialog_id int
-	if !h.Services.Repos.Dialogs.DialogExistsBetweenUsers(user_id, target_id) {
+	var dialogId int
+	if !h.Services.Repos.Dialogs.DialogExistsBetweenUsers(userId, targetId) {
 		responder.Error(w, http.StatusNotFound, rules.ErrDialogNotFound)
 
 		return
 	}
 
-	dialog_id, err = h.Services.Repos.Dialogs.GetDialogIDBetweenUsers(user_id, target_id)
+	dialogId, err = h.Services.Repos.Dialogs.GetDialogIDBetweenUsers(userId, targetId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
 
-	if !h.Services.Repos.Messages.MessageAvailableOnDialog(message_id, dialog_id) {
+	if !h.Services.Repos.Messages.MessageAvailableOnDialog(messageId, dialogId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrNoAccess)
 
 		return
 	}
 
-	message, err := h.Services.Repos.Messages.GetMessageFromDialog(message_id, dialog_id)
+	message, err := h.Services.Repos.Messages.GetMessageFromDialog(messageId, dialogId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, message)

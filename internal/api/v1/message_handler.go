@@ -14,9 +14,9 @@ func MatchMessageType(input *models.FormCompleted, sample *models.FormPattern) (
 	for _, field := range sample.Fields {
 		for _, choice := range input.Input {
 			if choice.Key == field.Key {
-				var adv_err *rules.AdvancedError
+				var advErr *rules.AdvancedError
 				if len(choice.Value) > field.Length && field.Length > 0 {
-					adv_err = rules.ErrChoiceValueLength
+					advErr = rules.ErrChoiceValueLength
 				}
 				switch field.Type {
 				case rules.TextField:
@@ -24,29 +24,29 @@ func MatchMessageType(input *models.FormCompleted, sample *models.FormPattern) (
 
 				case rules.DateField:
 					if _, err := strconv.ParseInt(choice.Value, 10, 64); err != nil {
-						adv_err = rules.ErrInvalidChoiceDate
+						advErr = rules.ErrInvalidChoiceDate
 					}
 
 				case rules.EmailField:
 					if !validator.ValidateEmail(choice.Value) {
-						adv_err = rules.ErrInvalidEmail
+						advErr = rules.ErrInvalidEmail
 					}
 
 				case rules.LinkField:
 					if !validator.ValidateLink(choice.Value) {
-						adv_err = rules.ErrInvalidLink
+						advErr = rules.ErrInvalidLink
 					}
 
 				case rules.NumericField:
 					if _, err := strconv.Atoi(choice.Value); err != nil {
-						adv_err = rules.ErrInvalidChoiceValue
+						advErr = rules.ErrInvalidChoiceValue
 					}
 
 				default:
-					adv_err = rules.ErrDataRetrieved
+					advErr = rules.ErrDataRetrieved
 				}
-				if adv_err != nil {
-					return models.FormCompleted{}, adv_err
+				if advErr != nil {
+					return models.FormCompleted{}, advErr
 				}
 				if len(field.Items) != 0 {
 					contains := func(arr []string, str string) bool {

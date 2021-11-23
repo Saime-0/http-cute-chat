@@ -40,20 +40,20 @@ func (h *Handler) initUsersRoutes(r *mux.Router) {
 // GetUserByDomain ...
 func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
 
-	user_domain := mux.Vars(r)["user-domain"]
-	if !validator.ValidateDomain(user_domain) {
+	userDomain := mux.Vars(r)["user-domain"]
+	if !validator.ValidateDomain(userDomain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	if !h.Services.Repos.Users.UserExistsByDomain(user_domain) {
+	if !h.Services.Repos.Users.UserExistsByDomain(userDomain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserNotFound)
 
 		return
 	}
 
-	user, err := h.Services.Repos.Users.GetUserByDomain(user_domain)
+	user, err := h.Services.Repos.Users.GetUserByDomain(userDomain)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, user)
@@ -62,19 +62,19 @@ func (h *Handler) GetUserByDomain(w http.ResponseWriter, r *http.Request) {
 // GetUserByID ...
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 
-	user_id, err := strconv.Atoi(mux.Vars(r)["user-id"])
+	userId, err := strconv.Atoi(mux.Vars(r)["user-id"])
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
-	if !h.Services.Repos.Users.UserExistsByID(user_id) {
+	if !h.Services.Repos.Users.UserExistsByID(userId) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrUserNotFound)
 
 		return
 	}
 
-	user, err := h.Services.Repos.Users.GetUserByID(user_id)
+	user, err := h.Services.Repos.Users.GetUserByID(userId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, user)
@@ -103,8 +103,8 @@ func (h *Handler) GetUserSettings(w http.ResponseWriter, r *http.Request) {
 // GetUsersByName ...
 func (h *Handler) GetUsersByName(w http.ResponseWriter, r *http.Request) {
 
-	name_fragment := r.URL.Query().Get("name")
-	if len(name_fragment) > rules.NameMaxLength || len(name_fragment) == 0 {
+	nameFragment := r.URL.Query().Get("name")
+	if len(nameFragment) > rules.NameMaxLength || len(nameFragment) == 0 {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
@@ -115,16 +115,16 @@ func (h *Handler) GetUsersByName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user_list, err := h.Services.Repos.Users.GetUsersByNameFragment(name_fragment, offset)
+	userList, err := h.Services.Repos.Users.GetUsersByNameFragment(nameFragment, offset)
 	finalInspectionDatabase(w, err)
 
-	responder.Respond(w, http.StatusOK, user_list)
+	responder.Respond(w, http.StatusOK, userList)
 }
 
 // UpdateUserData ...
 func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
-	user_data := &models.UpdateUserData{}
-	err := json.NewDecoder(r.Body).Decode(&user_data)
+	userData := &models.UpdateUserData{}
+	err := json.NewDecoder(r.Body).Decode(&userData)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
@@ -132,24 +132,24 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
-	case !validator.ValidateDomain(user_data.Domain) && len(user_data.Domain) != 0:
+	case !validator.ValidateDomain(userData.Domain) && len(userData.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidDomain)
 		return
 
-	case !validator.ValidateName(user_data.Name) && len(user_data.Domain) != 0:
+	case !validator.ValidateName(userData.Name) && len(userData.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidName)
 		return
 
-	case !validator.ValidateEmail(user_data.Email) && len(user_data.Domain) != 0:
+	case !validator.ValidateEmail(userData.Email) && len(userData.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidEmail)
 		return
 
-	case !validator.ValidatePassword(user_data.Password) && len(user_data.Domain) != 0:
+	case !validator.ValidatePassword(userData.Password) && len(userData.Domain) != 0:
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidPassword)
 		return
 	}
 
-	if h.Services.Repos.Users.UserExistsByDomain(user_data.Domain) {
+	if h.Services.Repos.Users.UserExistsByDomain(userData.Domain) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrOccupiedDomain)
 
 		return
@@ -157,7 +157,7 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Services.Repos.Users.UpdateUserData(
 		r.Context().Value(rules.UserIDFromToken).(int),
-		user_data,
+		userData,
 	)
 	finalInspectionDatabase(w, err)
 
@@ -166,15 +166,15 @@ func (h *Handler) UpdateUserData(w http.ResponseWriter, r *http.Request) {
 
 // UpdateUserSettings ...
 func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
-	user_settings := &models.UpdateUserSettings{}
-	err := json.NewDecoder(r.Body).Decode(&user_settings)
+	userSettings := &models.UpdateUserSettings{}
+	err := json.NewDecoder(r.Body).Decode(&userSettings)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
 
 		return
 	}
 
-	if !validator.ValidateAppSettings(user_settings.AppSettings) {
+	if !validator.ValidateAppSettings(userSettings.AppSettings) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
@@ -182,7 +182,7 @@ func (h *Handler) UpdateUserSettings(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Services.Repos.Users.UpdateUserSettings(
 		r.Context().Value(rules.UserIDFromToken).(int),
-		user_settings,
+		userSettings,
 	)
 	finalInspectionDatabase(w, err)
 

@@ -56,8 +56,8 @@ func checkAuth(next http.Handler) http.Handler {
 			})
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-				user_id, _ := strconv.Atoi(claims["sub"].(string))
-				ctx := context.WithValue(r.Context(), rules.UserIDFromToken, user_id)
+				userId, _ := strconv.Atoi(claims["sub"].(string))
+				ctx := context.WithValue(r.Context(), rules.UserIDFromToken, userId)
 				// Access context values in handlers like this
 				// props, _ := r.Context().Value("props").(jwt.MapClaims)
 				next.ServeHTTP(w, r.WithContext(ctx))
@@ -101,7 +101,7 @@ func parseOffsetFromQuery(w http.ResponseWriter, r *http.Request) (offset int, o
 // мб скомбинировать pipline и обычные проверки?
 
 // todo
-func UserHaveAccessToManageRoom(user_id int, room_id int) (have bool) {
+func UserHaveAccessToManageRoom(userId int, roomId int) (have bool) {
 	// get user role
 	return // role.RoomManage == true && (room_id == nil || room_id == role.RoomID)
 }

@@ -23,67 +23,67 @@ func (h *Handler) initInviteRoutes(r *mux.Router) {
 }
 
 func (h *Handler) JoinToChatByCode(w http.ResponseWriter, r *http.Request) {
-	user_id := r.Context().Value(rules.UserIDFromToken).(int)
+	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
-	link_code := mux.Vars(r)["invite-code"]
-	if !h.Services.Repos.Chats.InviteLinkIsRelevant(link_code) {
+	linkCode := mux.Vars(r)["invite-code"]
+	if !h.Services.Repos.Chats.InviteLinkIsRelevant(linkCode) {
 		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
 
 		return
 	}
 
-	l, err := h.Services.Repos.Chats.FindInviteLinkByCode(link_code)
+	l, err := h.Services.Repos.Chats.FindInviteLinkByCode(linkCode)
 	if err != nil {
 		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
 
 		return
 	}
 
-	if h.Services.Repos.Chats.UserIsChatMember(user_id, l.ChatID) {
+	if h.Services.Repos.Chats.UserIsChatMember(userId, l.ChatID) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrInvalidValue)
 
 		return
 	}
 
-	count_chats, err := h.Services.Repos.Chats.GetCountUserChats(user_id)
+	countChats, err := h.Services.Repos.Chats.GetCountUserChats(userId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if count_chats >= rules.MaxUserChats {
+	if countChats >= rules.MaxUserChats {
 		responder.Error(w, http.StatusBadRequest, rules.ErrLimitHasBeenReached)
 
 		return
 	}
 
-	count_members, err := h.Services.Repos.Chats.GetCountChatMembers(l.ChatID)
+	countMembers, err := h.Services.Repos.Chats.GetCountChatMembers(l.ChatID)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
 		panic(err)
 	}
-	if count_members >= rules.MaxMembersOnChat {
+	if countMembers >= rules.MaxMembersOnChat {
 		responder.Error(w, http.StatusBadRequest, rules.ErrMembersLimitHasBeenReached)
 
 		return
 	}
 
-	_, err = h.Services.Repos.Chats.AddUserByCode(link_code, user_id)
+	_, err = h.Services.Repos.Chats.AddUserByCode(linkCode, userId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
 }
 
 func (h *Handler) GetChatByCode(w http.ResponseWriter, r *http.Request) {
-	link_code := mux.Vars(r)["invite-code"]
-	if !h.Services.Repos.Chats.InviteLinkIsRelevant(link_code) {
+	linkCode := mux.Vars(r)["invite-code"]
+	if !h.Services.Repos.Chats.InviteLinkIsRelevant(linkCode) {
 		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
 
 		return
 	}
 
-	l, err := h.Services.Repos.Chats.FindInviteLinkByCode(link_code)
+	l, err := h.Services.Repos.Chats.FindInviteLinkByCode(linkCode)
 	if err != nil {
 		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
 

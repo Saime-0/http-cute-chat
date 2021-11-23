@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) RoomForm(ctx context.Context, roomID int64) (model.RoomFormResult, error) {
+func (r *queryResolver) RoomForm(ctx context.Context, roomID int) (model.RoomFormResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

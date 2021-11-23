@@ -5,7 +5,7 @@ package models
 // 	ID       int    `json:"id"`
 // 	ChatID   int    `json:"chat_id"`
 // 	ParentID int    `json:"parent_id"`
-// 	Name     string `json:"name"`
+// 	Key     string `json:"name"`
 // 	Note     string `json:"note"`
 // 	Private  bool   `json:"private"`
 // }

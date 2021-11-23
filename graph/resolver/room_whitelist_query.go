@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) RoomWhitelist(ctx context.Context, roomID int64) (model.RoomWhiteListResult, error) {
+func (r *queryResolver) RoomWhitelist(ctx context.Context, roomID int) (model.RoomWhiteListResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

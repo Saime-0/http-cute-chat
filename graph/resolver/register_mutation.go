@@ -5,9 +5,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
-	"log"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
 	"github.com/saime-0/http-cute-chat/internal/api/validator"
@@ -15,30 +12,29 @@ import (
 )
 
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (model.RegisterResult, error) {
-	fmt.Printf("%#v", input)
 	switch {
 	case !validator.ValidateDomain(input.Domain):
-		return resp.ErrInvalidDomain, nil
+		return resp.Error(resp.ErrBadRequest, "домен не соответствует требованиям"), nil
 
 	case !validator.ValidateName(input.Name):
-		return resp.ErrInvalidName, nil
+		return resp.Error(resp.ErrBadRequest, "имя не соответствует требованиям"), nil
 
 	case !validator.ValidateEmail(input.Email):
-		return resp.ErrInvalidEmail, nil
+		return resp.Error(resp.ErrBadRequest, "имеил не соответствует требованиям"), nil
 
 	case !validator.ValidatePassword(input.Password):
-		return resp.ErrInvalidPassword, nil
+		return resp.Error(resp.ErrBadRequest, "пароль не соответствует требованиям"), nil
 	}
-	id, err := r.Services.Repos.Users.CreateUser(&models.CreateUser{
+
+	_, err := r.Services.Repos.Users.CreateUser(&models.CreateUser{
 		Domain:   input.Domain,
 		Name:     input.Name,
 		Email:    input.Email,
 		Password: input.Password,
 	})
 	if err != nil {
-		log.Println("err user create")
-		return nil, err
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
-	log.Println("New user with id", id)
-	return model.Successful{Success: "регистрация прошла успешно"}, nil
+
+	return resp.Success("пользователь создан"), nil
 }

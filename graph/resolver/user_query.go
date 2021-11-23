@@ -9,7 +9,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) User(ctx context.Context, id *int64, domain *string) (model.UserResult, error) {
+func (r *queryResolver) User(ctx context.Context, id *int, domain *string) (model.UserResult, error) {
 	return model.User{Unit: &model.Unit{
 		ID:     0,
 		Domain: "afh",
