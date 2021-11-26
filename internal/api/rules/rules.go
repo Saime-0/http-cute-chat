@@ -2,12 +2,28 @@ package rules
 
 const Year int64 = 31536000
 
-// type MessageEventType string
+type AllowActionType string
 
-// const (
-// 	RenameRoomEvent MessageEventType = "RenameRoomEvent"
-// 	Re
-// )
+const (
+	AllowRead  AllowActionType = "READ"
+	AllowWrite AllowActionType = "WRITE"
+)
+
+type AllowGroupType string
+
+const (
+	AllowUsers AllowGroupType = "USERS"
+	AllowChars AllowGroupType = "CHARS"
+	AllowRoles AllowGroupType = "ROLES"
+)
+
+type CharType string
+
+const (
+	Admin CharType = "ADMIN"
+	Moder CharType = "MODER"
+)
+
 type UnitType string
 
 const (
@@ -18,33 +34,33 @@ const (
 type FieldType string
 
 const (
-	EmailField    FieldType = "email"
-	DateField     FieldType = "date"
-	LinkField     FieldType = "link"
-	TextField     FieldType = "text"
-	NumericField  FieldType = "numeric"
-	SelectorField FieldType = "selector"
+	EmailField    FieldType = "EMAIL"
+	DateField     FieldType = "DATE"
+	LinkField     FieldType = "LINK"
+	TextField     FieldType = "TEXT"
+	NumericField  FieldType = "NUMERIC"
+	SelectorField FieldType = "SELECTOR"
 	// EventField FieldType = "event"
 )
 
 type MessageType string
 
 const (
-	SystemMsg    MessageType = "system"
-	UserMsg      MessageType = "user"
-	FormattedMsg MessageType = "formatted"
+	SystemMsg    MessageType = "SYSTEM"
+	UserMsg      MessageType = "USER"
+	FormattedMsg MessageType = "FORMATTED"
 )
 
 type BindKeys string
 
 const (
-	BindUserDomain BindKeys = "user-domain"
-	BindChatDomain BindKeys = "chat-domain"
-	BindUserID     BindKeys = "user-id"
-	BindChatID     BindKeys = "chat-id"
-	BindRoomID     BindKeys = "room-id"
-	BindMessageID  BindKeys = "message-id"
-	BindInviteCode BindKeys = "invite-code"
+	BindUserDomain BindKeys = "USER-DOMAIN"
+	BindChatDomain BindKeys = "CHAT-DOMAIN"
+	BindUserID     BindKeys = "USER-ID"
+	BindChatID     BindKeys = "CHAT-ID"
+	BindRoomID     BindKeys = "ROOM-ID"
+	BindMessageID  BindKeys = "MESSAGE-ID"
+	BindInviteCode BindKeys = "INVITE-CODE"
 )
 
 type ContextKeys int
@@ -79,6 +95,7 @@ const (
 	LimitOnShowChats         = 20
 	LimitOnShowDialogs       = 20
 	LimitOnShowMembers       = 20
+	MaxLimit                 = 20
 	MinPasswordLength        = 6
 	MaxPasswordLength        = 32
 	MaxInviteLinks           = 3

@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
+	"strconv"
 )
 
 type RoomsRepo struct {
@@ -158,7 +159,7 @@ func (r *RoomsRepo) GetRoomForm(roomId int) (form models.FormPattern, err error)
 	err = r.db.QueryRow(
 		`SELECT COALESCE(msg_format, '')
 		FROM rooms
-		WHERE room_id = $1`,
+		WHERE id = $1`,
 		roomId,
 	).Scan(&format)
 	if err != nil {
@@ -191,6 +192,69 @@ func (r *RoomsRepo) RoomFormIsSet(roomId int) (isSet bool) {
 		)`,
 		roomId,
 	).Scan(&isSet)
+
+	return
+}
+
+func (r *RoomsRepo) GetAllows(room_id int) (allows models.Allows, err error) {
+	rows, err := r.db.Query(
+		`SELECT action_type, group_type, value
+	FROM allows
+	WHERE room_id = $1`,
+		room_id)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	allows = models.Allows{
+		Read:  models.AllowHolders{},
+		Write: models.AllowHolders{},
+	}
+	for rows.Next() {
+		d := models.AllowsDB{}
+		if err = rows.Scan(&d.Action, &d.Group, &d.Value); err != nil {
+			return
+		}
+
+		matchAction := func() *models.AllowHolders {
+			switch d.Action {
+			case rules.AllowRead:
+				return &allows.Read
+			case rules.AllowWrite:
+				return &allows.Write
+			default:
+				panic("GetAllows lose action matching")
+			}
+		}
+		h := matchAction()
+		switch d.Group {
+		case rules.AllowChars:
+			switch d.Value {
+			case string(rules.Admin):
+				h.Chars = append(h.Chars, rules.Admin)
+			case string(rules.Moder):
+				h.Chars = append(h.Chars, rules.Moder)
+			default:
+				panic("GetAllows not identify value type")
+			}
+		case rules.AllowRoles:
+			value, err := strconv.Atoi(d.Value)
+			if err != nil {
+				panic("GetAllows int was expected but an error was found")
+			}
+			h.Roles = append(h.Roles, value)
+		case rules.AllowUsers:
+			value, err := strconv.Atoi(d.Value)
+			if err != nil {
+				panic("GetAllows int was expected but an error was found")
+			}
+			h.Users = append(h.Users, value)
+		default:
+			panic("GetAllows not identify group type")
+		}
+
+	}
 
 	return
 }

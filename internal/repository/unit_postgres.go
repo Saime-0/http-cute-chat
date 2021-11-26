@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
 
 type UnitsRepo struct {
@@ -21,25 +22,27 @@ func (r *UnitsRepo) GetIDByDomain(unitDomain string) (id int, err error) {
 	return
 }
 
-func (r *UnitsRepo) UnitExistsByID(unitId int) (exists bool) {
+func (r *UnitsRepo) UnitExistsByID(unitId int, unitType rules.UnitType) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
 			FROM units 
-			WHERE id = $1
+			WHERE id = $1 AND type = $2
 			)`,
 		unitId,
+		unitType,
 	).Scan(&exists)
 	return
 }
-func (r *UnitsRepo) UnitExistsByDomain(unitDomain string) (exists bool) {
+func (r *UnitsRepo) UnitExistsByDomain(unitDomain string, unitType rules.UnitType) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
 			FROM units
-			WHERE domain = $1
+			WHERE domain = $1 AND type = $2
 			)`,
 		unitDomain,
+		unitType,
 	).Scan(&exists)
 	return
 }

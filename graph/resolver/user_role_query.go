@@ -13,19 +13,23 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *mutationResolver) BanUser(ctx context.Context, userID int, chatID int) (model.MutationResult, error) {
+func (r *queryResolver) UserRole(ctx context.Context, userID int, chatID int) (model.UserRoleResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	if pl.ChatExists(chatID) ||
-		pl.UserIs(clientID, chatID, its.List(its.Owner, its.Admin)) ||
+		pl.UserIs(chatID, clientID, its.List(its.Member)) ||
 		pl.UserExists(userID) ||
-		pl.UserIs(userID, chatID, its.List(its.Member)) {
+		pl.UserIs(chatID, userID, its.List(its.Member)) {
 		return pl.Err, nil
 	}
-
-	if r.Services.Repos.Chats.AddToBanlist(userID, chatID) != nil ||
-		r.Services.Repos.Chats.RemoveUserFromChat(userID, chatID) != nil {
+	role, err := r.Services.Repos.Chats.UserRole(userID, chatID)
+	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
-	return resp.Success("пользователь успешно забанен"), nil
+	return model.Role{
+		ID:    role.ID,
+		Users: nil, // forced
+		Name:  role.Name,
+		Color: role.Color,
+	}, nil
 }

@@ -11,7 +11,15 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *chatResolver) CountMembers(ctx context.Context, obj *model.Chat) (string, error) {
+func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (*model.User, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) ([]*model.Room, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *chatResolver) CountMembers(ctx context.Context, obj *model.Chat) (int, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 

@@ -8,16 +8,18 @@ import (
 )
 
 type Pipeline struct {
-	Ctx   context.Context
-	Repos *repository.Repositories
-	Err   *model.AdvancedError
+	Ctx      context.Context
+	repos    *repository.Repositories
+	overcook overcooker
+	Err      *model.AdvancedError
 }
 
 func NewPipeline(ctx context.Context, repos *repository.Repositories) *Pipeline {
 	// надо бы какую нибудь штуку придумуть для возврата значений из  обработчиков
 	return &Pipeline{
-		Ctx:   ctx,
-		Repos: repos,
-		Err:   nil,
+		Ctx:      ctx,
+		repos:    repos,
+		overcook: overcooker{},
+		Err:      nil,
 	}
 }

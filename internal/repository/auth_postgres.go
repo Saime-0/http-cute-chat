@@ -18,7 +18,7 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 
 func (r *AuthRepo) CreateNewUserRefreshSession(userId int, sessionModel *models.RefreshSession) (sessionsCount int, err error) {
 	err = r.db.QueryRow(
-		`INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, exp, created_at)
+		`INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at, created_at)
 		VALUES ($1, $2, $3, $4, $5)`,
 		userId,
 		sessionModel.RefreshToken,
@@ -63,7 +63,7 @@ func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, user
 func (r *AuthRepo) UpdateRefreshSession(sessionId int, sessionModel *models.RefreshSession) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE refresh_sessions
-		SET refresh_token = $2, user_agent = $3, exp = $4, created_at = $5
+		SET refresh_token = $2, user_agent = $3, expires_at = $4, created_at = $5
 		WHERE id = $1`,
 		sessionId,
 		sessionModel.RefreshToken,

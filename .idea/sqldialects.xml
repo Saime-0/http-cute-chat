@@ -2,7 +2,9 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/internal/repository/message_postgres.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/internal/repository/unit_postgres.go" dialect="GenericSQL" />
     <file url="file://$PROJECT_DIR$/internal/repository/user_postgres.go" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/migrations/20210923213515_postgresql.up.sql" dialect="PostgreSQL" />
+    <file url="PROJECT" dialect="PostgreSQL" />
   </component>
 </project>

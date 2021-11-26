@@ -39,10 +39,10 @@ type Unit {
 
 type Chat {
     unit: Unit!
-    owner: User!
-    rooms: [Room!]
+    owner: User! @goField(forceResolver: true)
+    rooms: [Room!] @goField(forceResolver: true)
     private: Boolean!
-    count_members: String! @goField(forceResolver: true)
+    count_members: Int! @goField(forceResolver: true)
     members: [ChatMember!] @goField(forceResolver: true)
     roles: [Role!] @goField(forceResolver: true)
     invites: [Invite!] @goField(forceResolver: true)
@@ -125,4 +125,9 @@ type PermissionHolders {
     roles: [Role!] @goField(forceResolver: true)
     chars: [Char!] @goField(forceResolver: true)
     members: [ChatMember!] @goField(forceResolver: true)
+}
+
+input FindByDomainOrID {
+    id: Int
+    domain: String
 }

@@ -70,8 +70,8 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	//- private and !room_id and (!manage or !nil)
-	//- !(room.Private && (role.ManageRooms && role.RoomID == 0 || role.RoomID == room_id) || !room.Private || h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) && )
-	//if !h.Services.Repos.Chats.UserIsChatOwner(user_id, chat_id) && room.Private && role.RoomID != room_id && (!role.ManageRooms || role.RoomID != 0) {
+	//- !(room.Private && (role.ManageRooms && role.RoomID == 0 || role.RoomID == room_id) || !room.Private || h.Services.repos.Chats.UserIsChatOwner(user_id, chat_id) && )
+	//if !h.Services.repos.Chats.UserIsChatOwner(user_id, chat_id) && room.Private && role.RoomID != room_id && (!role.ManageRooms || role.RoomID != 0) {
 	if !(!room.Private || h.Services.Repos.Chats.UserIsChatOwner(userId, chatId) || role.RoomID == roomId || role.ManageRooms && role.RoomID == 0) {
 		responder.Error(w, http.StatusBadRequest, rules.ErrPrivateRoom)
 

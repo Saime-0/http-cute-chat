@@ -689,7 +689,7 @@ func (h *Handler) BanUserInChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Services.Repos.Chats.BanUserInChat(targetId, chatId)
+	err = h.Services.Repos.Chats.AddToBanlist(targetId, chatId)
 	finalInspectionDatabase(w, err)
 	err = h.Services.Repos.Chats.RemoveUserFromChat(targetId, chatId)
 	finalInspectionDatabase(w, err)
@@ -742,7 +742,7 @@ func (h *Handler) UnbanUserInChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Services.Repos.Chats.UnbanUserInChat(targetId, chatId)
+	err = h.Services.Repos.Chats.RemoveFromBanlist(targetId, chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)
@@ -909,7 +909,7 @@ func (h *Handler) GetChatRoles(w http.ResponseWriter, r *http.Request) {
 		responder.Respond(w, http.StatusOK, roles)
 
 	case h.Services.Repos.Chats.UserIsChatMember(userId, chatId):
-		roles, err := h.Services.Repos.Chats.GetChatRolesInfo(chatId)
+		roles, err := h.Services.Repos.Chats.ChatRoles(chatId)
 		finalInspectionDatabase(w, err)
 
 		responder.Respond(w, http.StatusOK, roles)

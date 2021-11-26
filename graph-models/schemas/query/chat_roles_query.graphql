@@ -1,5 +1,5 @@
 extend type Query {
-    chat_roles(chat_id: ID!, params: Params): ChatRolesResult @goField(forceResolver: true)
+    chat_roles(chat_id: ID!): ChatRolesResult @goField(forceResolver: true)
 
 }
 

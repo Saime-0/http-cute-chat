@@ -57,7 +57,8 @@ func main() {
 			HasChar: func(ctx context.Context, obj interface{}, next graphql.Resolver, char []*model.Char) (res interface{}, err error) {
 				return next(ctx)
 			},
-			IsAuth: directive.IsAuth,
+			IsAuth:     directive.IsAuth,
+			InputUnion: directive.InputUnion,
 		},
 	}))
 	router := mux.NewRouter()

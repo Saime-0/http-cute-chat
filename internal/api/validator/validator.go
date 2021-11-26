@@ -45,8 +45,14 @@ func ValidateLink(link string) (valid bool) {
 	valid, _ = regexp.MatchString(`/^((ftp|http|https):\/\/)?(www\.)?([A-Za-zА-Яа-я0-9]{1}[A-Za-zА-Яа-я0-9\-]*\.?)*\.{1}[A-Za-zА-Яа-я0-9-]{2,8}(\/([\w#!:.?+=&%@!\-\/])*)?/`, link)
 	return
 }
-func ValidateOffset(link string) (valid bool) {
-	return
+func ValidateOffset(offset int) (valid bool) {
+	return offset >= 0
+}
+func ValidateLimit(limit int) (valid bool) {
+	return limit >= 1 && limit <= 20
+}
+func ValidateNameFragment(fragment string) (valid bool) {
+	return len(fragment) >= 1 && len(fragment) <= rules.NameMaxLength
 }
 
 // func handleDatabaseError(err error) error {

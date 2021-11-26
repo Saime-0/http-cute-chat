@@ -12,10 +12,6 @@ type ChatResult interface {
 	IsChatResult()
 }
 
-type ChatRoleResult interface {
-	IsChatRoleResult()
-}
-
 type ChatRolesResult interface {
 	IsChatRolesResult()
 }
@@ -116,6 +112,10 @@ type UserResult interface {
 	IsUserResult()
 }
 
+type UserRoleResult interface {
+	IsUserRoleResult()
+}
+
 type UsersResult interface {
 	IsUsersResult()
 }
@@ -136,7 +136,6 @@ func (AdvancedError) IsUpdateMeDataResult()      {}
 func (AdvancedError) IsUpdateRoleResult()        {}
 func (AdvancedError) IsUpdateRoomResult()        {}
 func (AdvancedError) IsChatResult()              {}
-func (AdvancedError) IsChatRoleResult()          {}
 func (AdvancedError) IsChatRolesResult()         {}
 func (AdvancedError) IsChatsResult()             {}
 func (AdvancedError) IsInviteInfoResult()        {}
@@ -151,6 +150,7 @@ func (AdvancedError) IsRoomsResult()             {}
 func (AdvancedError) IsUnitResult()              {}
 func (AdvancedError) IsUnitsResult()             {}
 func (AdvancedError) IsUserResult()              {}
+func (AdvancedError) IsUserRoleResult()          {}
 func (AdvancedError) IsUsersResult()             {}
 func (AdvancedError) IsMutationResult()          {}
 
@@ -159,7 +159,7 @@ type Chat struct {
 	Owner        *User          `json:"owner"`
 	Rooms        []*Room        `json:"rooms"`
 	Private      bool           `json:"private"`
-	CountMembers string         `json:"count_members"`
+	CountMembers int            `json:"count_members"`
 	Members      []*ChatMember  `json:"members"`
 	Roles        []*Role        `json:"roles"`
 	Invites      []*Invite      `json:"invites"`
@@ -214,6 +214,11 @@ type CreateRoomInput struct {
 	Note      *string          `json:"note"`
 	MsgFormat *UpdateFormInput `json:"msg_format"`
 	Restricts *RestrictsInput  `json:"restricts"`
+}
+
+type FindByDomainOrID struct {
+	ID     *int    `json:"id"`
+	Domain *string `json:"domain"`
 }
 
 type Form struct {
@@ -342,7 +347,7 @@ type Role struct {
 }
 
 func (Role) IsUpdateRoleResult() {}
-func (Role) IsChatRoleResult()   {}
+func (Role) IsUserRoleResult()   {}
 
 type RoleArray struct {
 	Roles []*Role `json:"roles"`

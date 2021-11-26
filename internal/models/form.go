@@ -22,28 +22,3 @@ type FormChoice struct {
 type FormCompleted struct {
 	Input []FormChoice `json:"input"`
 }
-
-var (
-	UserMsgPattern = &FormPattern{
-		Fields: []FormField{
-			{
-				Key:      "",
-				Type:     "",
-				Optional: false,
-				Length:   0,
-				Items:    []string{},
-			},
-		},
-	}
-	SystemMsgPattern = &FormPattern{
-		Fields: []FormField{
-			{
-				Key:      "event",
-				Type:     "",
-				Optional: false,
-				Length:   0,
-				Items:    []string{},
-			},
-		},
-	}
-)

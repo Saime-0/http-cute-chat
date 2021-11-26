@@ -15,6 +15,7 @@ CREATE TABLE users (
 	password varchar(32) not null,
 	email varchar(256) not null unique
 );
+
 CREATE TABLE chats (
 	id bigint primary key references units (id) not null,
 	owner_id bigint references users (id) not null,
