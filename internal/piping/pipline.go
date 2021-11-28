@@ -12,14 +12,17 @@ type Pipeline struct {
 	repos    *repository.Repositories
 	overcook overcooker
 	Err      *model.AdvancedError
+	Can      Can
 }
 
 func NewPipeline(ctx context.Context, repos *repository.Repositories) *Pipeline {
 	// надо бы какую нибудь штуку придумуть для возврата значений из  обработчиков
-	return &Pipeline{
+	p := &Pipeline{
 		Ctx:      ctx,
 		repos:    repos,
 		overcook: overcooker{},
 		Err:      nil,
 	}
+	p.Can.pl = p
+	return p
 }

@@ -18,6 +18,7 @@ enum MessageType {
 enum Char {
     ADMIN
     MODER
+    NONE
 }
 
 input Params {

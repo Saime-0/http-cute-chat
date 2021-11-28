@@ -22,6 +22,7 @@ type CharType string
 const (
 	Admin CharType = "ADMIN"
 	Moder CharType = "MODER"
+	NONE  CharType = "NONE"
 )
 
 type UnitType string

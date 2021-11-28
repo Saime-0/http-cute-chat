@@ -376,11 +376,6 @@ type RoomArray struct {
 
 func (RoomArray) IsRoomsResult() {}
 
-type RoomModeratorParamsInput struct {
-	Moderate bool `json:"moderate"`
-	FavRoom  *int `json:"fav_room"`
-}
-
 type Successful struct {
 	Success string `json:"success"`
 }
@@ -472,16 +467,18 @@ type Char string
 const (
 	CharAdmin Char = "ADMIN"
 	CharModer Char = "MODER"
+	CharNone  Char = "NONE"
 )
 
 var AllChar = []Char{
 	CharAdmin,
 	CharModer,
+	CharNone,
 }
 
 func (e Char) IsValid() bool {
 	switch e {
-	case CharAdmin, CharModer:
+	case CharAdmin, CharModer, CharNone:
 		return true
 	}
 	return false

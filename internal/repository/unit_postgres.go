@@ -46,3 +46,14 @@ func (r *UnitsRepo) UnitExistsByDomain(unitDomain string, unitType rules.UnitTyp
 	).Scan(&exists)
 	return
 }
+func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1 
+			FROM units
+			WHERE domain = $1
+			)`,
+		domain,
+	).Scan(&free)
+	return
+}

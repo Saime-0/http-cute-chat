@@ -5,11 +5,10 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/its"
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
@@ -17,7 +16,7 @@ func (r *queryResolver) ChatRoles(ctx context.Context, chatID int) (model.ChatRo
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	if pl.ChatExists(chatID) ||
-		pl.UserIs(chatID, clientID, its.List(its.Member)) {
+		pl.IsMember(clientID, chatID) {
 		return pl.Err, nil
 	}
 

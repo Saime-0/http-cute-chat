@@ -132,14 +132,8 @@ type Response struct {
 }
 
 type CreateRole struct {
-	RoleName      string `json:"role_name"`
-	Color         string `json:"color"`
-	Visible       bool   `json:"visible"`
-	ManageRooms   bool   `json:"manage_rooms"`
-	RoomID        int    `json:"room_id"`
-	ManageChat    bool   `json:"manage_chat"`
-	ManageRoles   bool   `json:"manage_roles"`
-	ManageMembers bool   `json:"manage_members"`
+	Name  string `json:"role_name"`
+	Color string `json:"color"`
 }
 type UpdateRole struct {
 	RoleName      string `json:"role_name"`
@@ -162,10 +156,11 @@ type RoleID struct {
 }
 
 type CreateRoom struct {
-	Name     string `json:"name"`
-	ParentID int    `json:"parent_id"`
-	Note     string `json:"note"`
-	Private  bool   `json:"private"`
+	Name      string      `json:"name"`
+	ParentID  int         `json:"parent_id"`
+	Note      string      `json:"note"`
+	MsgFormat FormPattern `json:"msg_format"`
+	Restricts Allows      `json:"restricts"`
 }
 type UpdateRoomData struct {
 	Name    string `json:"name"`

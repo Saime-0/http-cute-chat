@@ -9,7 +9,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/its"
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
@@ -17,9 +16,10 @@ func (r *mutationResolver) BanUser(ctx context.Context, userID int, chatID int) 
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	if pl.ChatExists(chatID) ||
-		pl.UserIs(clientID, chatID, its.List(its.Owner, its.Admin)) ||
+		pl.IsMember(clientID, chatID) ||
+		pl.Can.Ban(clientID, chatID) ||
 		pl.UserExists(userID) ||
-		pl.UserIs(userID, chatID, its.List(its.Member)) {
+		pl.IsMember(userID, chatID) {
 		return pl.Err, nil
 	}
 

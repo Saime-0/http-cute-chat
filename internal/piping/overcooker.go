@@ -5,7 +5,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
-// depricated
+// deprecated
 type overcooker struct{}
 
 func (o *overcooker) Chat(before *models.Chat) model.Chat {

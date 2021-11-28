@@ -1,4 +1,5 @@
 CREATE TYPE unit_type  AS ENUM ('USER', 'CHAT');
+CREATE TYPE char_type  AS ENUM ('ADMIN', 'MODER', 'NONE');
 CREATE TYPE message_type  AS ENUM ('SYSTEM', 'USER', 'FORMATTED');
 CREATE TYPE action_type  AS ENUM ('READ', 'WRITE');
 CREATE TYPE group_type  AS ENUM ('USERS', 'CHARS', 'ROLES');

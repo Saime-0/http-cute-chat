@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
 func (r *queryResolver) Chats(ctx context.Context, nameFragment string, params *model.Params) (model.ChatsResult, error) {
@@ -23,6 +23,29 @@ func (r *queryResolver) Chats(ctx context.Context, nameFragment string, params *
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
-	// 27.11 1:33
-	// todo: конвертировать чаты в чаты би лайк gql
+
+	m := model.ChatArray{
+		Chats: []*model.Chat{},
+	}
+	for _, chat := range chats {
+		m.Chats = append(m.Chats, &model.Chat{
+			Unit: &model.Unit{
+				ID:     chat.ID,
+				Domain: chat.Domain,
+				Name:   chat.Name,
+				Type:   model.UnitTypeChat,
+			},
+			Owner:        nil, // forced
+			Rooms:        nil, // forced
+			Private:      chat.Private,
+			CountMembers: 0,   // forced
+			Members:      nil, // forced
+			Roles:        nil, // forced
+			Invites:      nil, // forced
+			Banlist:      nil, // forced
+			MeRestricts:  nil, // forced
+		})
+	}
+
+	return m, nil
 }

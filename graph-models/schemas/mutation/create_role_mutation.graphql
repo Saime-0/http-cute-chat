@@ -1,12 +1,8 @@
 extend type Mutation {
-    create_role(room_id: ID!, input: CreateRoleInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    create_role(chat_id: ID!, input: CreateRoleInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 
 }
 # CreateRole ...
-input RoomModeratorParamsInput {
-    moderate: Boolean!
-    fav_room: ID
-}
 input CreateRoleInput {
     name: String!
     color: String!

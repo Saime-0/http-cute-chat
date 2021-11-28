@@ -622,18 +622,12 @@ func (r *ChatsRepo) UserRole(userId int, chatId int) (role models.Role, err erro
 func (r *ChatsRepo) CreateRoleInChat(chatId int, roleModel *models.CreateRole) (roleId int, err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO roles
-		(chat_id, role_name, color, visible, manage_rooms, room_id, manage_chat, manage_roles, manage_members)
-		VALUES ($1, $2, $3, $4, $5, NULLIF($6, 0), $7, $8, $9)
+		(chat_id, name, color)
+		VALUES ($1, $2, $3)
 		RETURNING id`,
 		chatId,
-		roleModel.RoleName,
+		roleModel.Name,
 		roleModel.Color,
-		roleModel.Visible,
-		roleModel.ManageRooms,
-		roleModel.RoomID,
-		roleModel.ManageChat,
-		roleModel.ManageRoles,
-		roleModel.ManageMembers,
 	).Scan(&roleId)
 
 	return

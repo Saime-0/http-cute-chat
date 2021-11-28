@@ -1,6 +1,5 @@
 extend type Mutation {
-    create_room(room_id: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
-
+    create_room(chat_id: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
 
 # CreateRoom ...

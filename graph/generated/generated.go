@@ -140,8 +140,8 @@ type ComplexityRoot struct {
 		BanUser           func(childComplexity int, userID int, chatID int) int
 		CreateChat        func(childComplexity int, input model.CreateChatInput) int
 		CreateInvite      func(childComplexity int, chatID int, input model.CreateInviteInput) int
-		CreateRole        func(childComplexity int, roomID int, input model.CreateRoleInput) int
-		CreateRoom        func(childComplexity int, roomID int, input model.CreateRoomInput) int
+		CreateRole        func(childComplexity int, chatID int, input model.CreateRoleInput) int
+		CreateRoom        func(childComplexity int, chatID int, input model.CreateRoomInput) int
 		DeleteInvite      func(childComplexity int, code string) int
 		GiveRole          func(childComplexity int, userID int, chatID int, roleID int) int
 		JoinByInvite      func(childComplexity int, code string) int
@@ -281,8 +281,8 @@ type MutationResolver interface {
 	BanUser(ctx context.Context, userID int, chatID int) (model.MutationResult, error)
 	CreateChat(ctx context.Context, input model.CreateChatInput) (model.MutationResult, error)
 	CreateInvite(ctx context.Context, chatID int, input model.CreateInviteInput) (model.MutationResult, error)
-	CreateRole(ctx context.Context, roomID int, input model.CreateRoleInput) (model.MutationResult, error)
-	CreateRoom(ctx context.Context, roomID int, input model.CreateRoomInput) (model.MutationResult, error)
+	CreateRole(ctx context.Context, chatID int, input model.CreateRoleInput) (model.MutationResult, error)
+	CreateRoom(ctx context.Context, chatID int, input model.CreateRoomInput) (model.MutationResult, error)
 	DeleteInvite(ctx context.Context, code string) (model.MutationResult, error)
 	GiveRole(ctx context.Context, userID int, chatID int, roleID int) (model.MutationResult, error)
 	JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error)
@@ -708,7 +708,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateRole(childComplexity, args["room_id"].(int), args["input"].(model.CreateRoleInput)), true
+		return e.complexity.Mutation.CreateRole(childComplexity, args["chat_id"].(int), args["input"].(model.CreateRoleInput)), true
 
 	case "Mutation.create_room":
 		if e.complexity.Mutation.CreateRoom == nil {
@@ -720,7 +720,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateRoom(childComplexity, args["room_id"].(int), args["input"].(model.CreateRoomInput)), true
+		return e.complexity.Mutation.CreateRoom(childComplexity, args["chat_id"].(int), args["input"].(model.CreateRoomInput)), true
 
 	case "Mutation.delete_invite":
 		if e.complexity.Mutation.DeleteInvite == nil {
@@ -1421,6 +1421,7 @@ enum MessageType {
 enum Char {
     ADMIN
     MODER
+    NONE
 }
 
 input Params {
@@ -1559,22 +1560,17 @@ input CreateInviteInput {
 }
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/create_role_mutation.graphql", Input: `extend type Mutation {
-    create_role(room_id: ID!, input: CreateRoleInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    create_role(chat_id: ID!, input: CreateRoleInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 
 }
 # CreateRole ...
-input RoomModeratorParamsInput {
-    moderate: Boolean!
-    fav_room: ID
-}
 input CreateRoleInput {
     name: String!
     color: String!
 }
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/create_room_mutation.graphql", Input: `extend type Mutation {
-    create_room(room_id: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
-
+    create_room(chat_id: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
 
 # CreateRoom ...
@@ -2059,14 +2055,14 @@ func (ec *executionContext) field_Mutation_create_role_args(ctx context.Context,
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["room_id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
+	if tmp, ok := rawArgs["chat_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
 		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["room_id"] = arg0
+	args["chat_id"] = arg0
 	var arg1 model.CreateRoleInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
@@ -2083,14 +2079,14 @@ func (ec *executionContext) field_Mutation_create_room_args(ctx context.Context,
 	var err error
 	args := map[string]interface{}{}
 	var arg0 int
-	if tmp, ok := rawArgs["room_id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
+	if tmp, ok := rawArgs["chat_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
 		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["room_id"] = arg0
+	args["chat_id"] = arg0
 	var arg1 model.CreateRoomInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
@@ -4542,7 +4538,7 @@ func (ec *executionContext) _Mutation_create_role(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateRole(rctx, args["room_id"].(int), args["input"].(model.CreateRoleInput))
+			return ec.resolvers.Mutation().CreateRole(rctx, args["chat_id"].(int), args["input"].(model.CreateRoleInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -4614,7 +4610,7 @@ func (ec *executionContext) _Mutation_create_room(ctx context.Context, field gra
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateRoom(rctx, args["room_id"].(int), args["input"].(model.CreateRoomInput))
+			return ec.resolvers.Mutation().CreateRoom(rctx, args["chat_id"].(int), args["input"].(model.CreateRoomInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -9004,37 +9000,6 @@ func (ec *executionContext) unmarshalInputRestrictsInput(ctx context.Context, ob
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("allow_write"))
 			it.AllowWrite, err = ec.unmarshalOPermissionHoldersInput2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐPermissionHoldersInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputRoomModeratorParamsInput(ctx context.Context, obj interface{}) (model.RoomModeratorParamsInput, error) {
-	var it model.RoomModeratorParamsInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	for k, v := range asMap {
-		switch k {
-		case "moderate":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("moderate"))
-			it.Moderate, err = ec.unmarshalNBoolean2bool(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "fav_room":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fav_room"))
-			it.FavRoom, err = ec.unmarshalOID2ᚖint(ctx, v)
 			if err != nil {
 				return it, err
 			}
