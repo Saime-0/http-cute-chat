@@ -6,10 +6,19 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
 func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.InviteIsExists(code) || // ?
+		pl.InviteIsRelevant(code) ||
+		pl.GetChatByInvite(code) ||
+		pl.IsNotMember(clientID) {
+		return pl.Err, nil
+	}
 }

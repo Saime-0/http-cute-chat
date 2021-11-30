@@ -39,6 +39,7 @@ type ResolverRoot interface {
 	Chat() ChatResolver
 	ChatMember() ChatMemberResolver
 	Invite() InviteResolver
+	InviteInfo() InviteInfoResolver
 	MeRestricts() MeRestrictsResolver
 	Message() MessageResolver
 	Mutation() MutationResolver
@@ -104,6 +105,12 @@ type ComplexityRoot struct {
 		Exp    func(childComplexity int) int
 	}
 
+	InviteInfo struct {
+		CountMembers func(childComplexity int) int
+		Private      func(childComplexity int) int
+		Unit         func(childComplexity int) int
+	}
+
 	Me struct {
 		Chats      func(childComplexity int) int
 		Data       func(childComplexity int) int
@@ -142,7 +149,7 @@ type ComplexityRoot struct {
 		CreateInvite      func(childComplexity int, chatID int, input model.CreateInviteInput) int
 		CreateRole        func(childComplexity int, chatID int, input model.CreateRoleInput) int
 		CreateRoom        func(childComplexity int, chatID int, input model.CreateRoomInput) int
-		DeleteInvite      func(childComplexity int, code string) int
+		DeleteInvite      func(childComplexity int, chatID int, code string) int
 		GiveRole          func(childComplexity int, userID int, chatID int, roleID int) int
 		JoinByInvite      func(childComplexity int, code string) int
 		JoinToChat        func(childComplexity int, chatID int) int
@@ -269,6 +276,9 @@ type ChatMemberResolver interface {
 type InviteResolver interface {
 	Chat(ctx context.Context, obj *model.Invite) (*model.Chat, error)
 }
+type InviteInfoResolver interface {
+	CountMembers(ctx context.Context, obj *model.InviteInfo) (int, error)
+}
 type MeRestrictsResolver interface {
 	Chat(ctx context.Context, obj *model.MeRestricts) (*model.Chat, error)
 }
@@ -283,7 +293,7 @@ type MutationResolver interface {
 	CreateInvite(ctx context.Context, chatID int, input model.CreateInviteInput) (model.MutationResult, error)
 	CreateRole(ctx context.Context, chatID int, input model.CreateRoleInput) (model.MutationResult, error)
 	CreateRoom(ctx context.Context, chatID int, input model.CreateRoomInput) (model.MutationResult, error)
-	DeleteInvite(ctx context.Context, code string) (model.MutationResult, error)
+	DeleteInvite(ctx context.Context, chatID int, code string) (model.MutationResult, error)
 	GiveRole(ctx context.Context, userID int, chatID int, roleID int) (model.MutationResult, error)
 	JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error)
 	JoinToChat(ctx context.Context, chatID int) (model.JoinToChatResult, error)
@@ -543,6 +553,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Invite.Exp(childComplexity), true
 
+	case "InviteInfo.count_members":
+		if e.complexity.InviteInfo.CountMembers == nil {
+			break
+		}
+
+		return e.complexity.InviteInfo.CountMembers(childComplexity), true
+
+	case "InviteInfo.private":
+		if e.complexity.InviteInfo.Private == nil {
+			break
+		}
+
+		return e.complexity.InviteInfo.Private(childComplexity), true
+
+	case "InviteInfo.unit":
+		if e.complexity.InviteInfo.Unit == nil {
+			break
+		}
+
+		return e.complexity.InviteInfo.Unit(childComplexity), true
+
 	case "Me.chats":
 		if e.complexity.Me.Chats == nil {
 			break
@@ -732,7 +763,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteInvite(childComplexity, args["code"].(string)), true
+		return e.complexity.Mutation.DeleteInvite(childComplexity, args["chat_id"].(int), args["code"].(string)), true
 
 	case "Mutation.give_role":
 		if e.complexity.Mutation.GiveRole == nil {
@@ -1517,7 +1548,11 @@ type Invite {
     aliens: Int
     exp: Int
 }
-
+type InviteInfo {
+    unit: Unit!
+    private: Boolean!
+    count_members: Int! @goField(forceResolver: true)
+}
 type User {
     unit: Unit!
 }
@@ -1602,7 +1637,7 @@ input PermissionHoldersInput {
 }
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/delete_invite_mutation.graphql", Input: `extend type Mutation {
-    delete_invite(code: String!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    delete_invite(chat_id: ID!, code: String!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
 }
 
 `, BuiltIn: false},
@@ -1799,7 +1834,7 @@ union ChatsResult =
 # InviteInfo ...
 union InviteInfoResult =
     | AdvancedError
-    | Invite`, BuiltIn: false},
+    | InviteInfo`, BuiltIn: false},
 	{Name: "graph-models/schemas/query/me_query.graphql", Input: `extend type Query {
     me: MeResult! @goField(forceResolver: true)
 }
@@ -2102,15 +2137,24 @@ func (ec *executionContext) field_Mutation_create_room_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_delete_invite_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["code"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 int
+	if tmp, ok := rawArgs["chat_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
+		arg0, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["code"] = arg0
+	args["chat_id"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["code"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["code"] = arg1
 	return args, nil
 }
 
@@ -3729,6 +3773,111 @@ func (ec *executionContext) _Invite_exp(ctx context.Context, field graphql.Colle
 	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _InviteInfo_unit(ctx context.Context, field graphql.CollectedField, obj *model.InviteInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "InviteInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Unit, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Unit)
+	fc.Result = res
+	return ec.marshalNUnit2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐUnit(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _InviteInfo_private(ctx context.Context, field graphql.CollectedField, obj *model.InviteInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "InviteInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Private, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _InviteInfo_count_members(ctx context.Context, field graphql.CollectedField, obj *model.InviteInfo) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "InviteInfo",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.InviteInfo().CountMembers(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Me_user(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -4682,7 +4831,7 @@ func (ec *executionContext) _Mutation_delete_invite(ctx context.Context, field g
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteInvite(rctx, args["code"].(string))
+			return ec.resolvers.Mutation().DeleteInvite(rctx, args["chat_id"].(int), args["code"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -9288,13 +9437,13 @@ func (ec *executionContext) _InviteInfoResult(ctx context.Context, sel ast.Selec
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
-	case model.Invite:
-		return ec._Invite(ctx, sel, &obj)
-	case *model.Invite:
+	case model.InviteInfo:
+		return ec._InviteInfo(ctx, sel, &obj)
+	case *model.InviteInfo:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._Invite(ctx, sel, obj)
+		return ec._InviteInfo(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -10200,7 +10349,7 @@ func (ec *executionContext) _FormField(ctx context.Context, sel ast.SelectionSet
 	return out
 }
 
-var inviteImplementors = []string{"Invite", "InviteInfoResult"}
+var inviteImplementors = []string{"Invite"}
 
 func (ec *executionContext) _Invite(ctx context.Context, sel ast.SelectionSet, obj *model.Invite) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, inviteImplementors)
@@ -10234,6 +10383,52 @@ func (ec *executionContext) _Invite(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Invite_aliens(ctx, field, obj)
 		case "exp":
 			out.Values[i] = ec._Invite_exp(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var inviteInfoImplementors = []string{"InviteInfo", "InviteInfoResult"}
+
+func (ec *executionContext) _InviteInfo(ctx context.Context, sel ast.SelectionSet, obj *model.InviteInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, inviteInfoImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("InviteInfo")
+		case "unit":
+			out.Values[i] = ec._InviteInfo_unit(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "private":
+			out.Values[i] = ec._InviteInfo_private(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "count_members":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._InviteInfo_count_members(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

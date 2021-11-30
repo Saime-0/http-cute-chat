@@ -1,5 +1,7 @@
 package kit
 
+import "unicode/utf8"
+
 func IntPtr(i int) *int { return &i }
 
 func LeastOne(args ...bool) (discover bool) {
@@ -9,4 +11,9 @@ func LeastOne(args ...bool) (discover bool) {
 		}
 	}
 	return
+}
+
+func TrimFirstRune(s string) string {
+	_, i := utf8.DecodeRuneInString(s)
+	return s[i:]
 }

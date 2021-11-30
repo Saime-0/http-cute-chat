@@ -3,9 +3,11 @@ package repository
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
+	"fmt"
+	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 )
 
@@ -30,31 +32,97 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 	return
 }
 
-func (r *RoomsRepo) CreateRoom(chatId int, roomModel *models.CreateRoom) (roomId int, err error) {
-	if roomModel.ParentID != 0 {
-		parentRoomIsChild := false
-		err = r.db.QueryRow(
-			`SELECT EXISTS(SELECT 1 FROM rooms WHERE parent_id IS NOT NULL)`,
-		).Scan(&parentRoomIsChild)
+func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId int, err error) {
+	var format *string
+	if input.MsgFormat != nil {
+		marshal, err := json.Marshal(*input.MsgFormat)
 		if err != nil {
 			return
 		}
-		if parentRoomIsChild {
-			return 0, errors.New("parent's room with a child")
-		}
+		*format = string(marshal)
 	}
 	err = r.db.QueryRow(
-		`INSERT INTO rooms (chat_id, parent_id, name, note, private)
-		VALUES ($1, NULLIF($2, 0), $3, $4, $5)
+		`INSERT INTO rooms (chat_id, parent_id, name, note, msg_format)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id`,
 		chatId,
-		roomModel.ParentID,
-		roomModel.Name,
-		roomModel.Note,
-		roomModel.Private,
+		input.Parent,
+		input.Name,
+		input.Note,
+		input.MsgFormat,
 	).Scan(&roomId)
 	if err != nil {
 		return
+	}
+	var allows *string
+	if input.Restricts != nil {
+		var allowsDb []models.AllowsDB
+		if input.Restricts.AllowWrite != nil {
+			for _, role := range input.Restricts.AllowWrite.Roles {
+				allowsDb = append(allowsDb, models.AllowsDB{
+					Action: rules.AllowWrite,
+					Group:  rules.AllowRoles,
+					Value:  strconv.Itoa(role),
+				})
+			}
+			for _, char := range input.Restricts.AllowWrite.Chars {
+				allowsDb = append(allowsDb, models.AllowsDB{
+					Action: rules.AllowWrite,
+					Group:  rules.AllowChars,
+					Value:  char.String(),
+				})
+			}
+			for _, member := range input.Restricts.AllowWrite.Members {
+				allowsDb = append(allowsDb, models.AllowsDB{
+					Action: rules.AllowWrite,
+					Group:  rules.AllowChars,
+					Value:  strconv.Itoa(member),
+				})
+			}
+		}
+
+		if input.Restricts.AllowRead != nil {
+			for _, role := range input.Restricts.AllowRead.Roles {
+				allowsDb = append(allowsDb, models.AllowsDB{
+					Action: rules.AllowRead,
+					Group:  rules.AllowRoles,
+					Value:  strconv.Itoa(role),
+				})
+			}
+			for _, char := range input.Restricts.AllowRead.Chars {
+				allowsDb = append(allowsDb, models.AllowsDB{
+					Action: rules.AllowRead,
+					Group:  rules.AllowChars,
+					Value:  char.String(),
+				})
+			}
+			for _, member := range input.Restricts.AllowRead.Members {
+				allowsDb = append(allowsDb, models.AllowsDB{
+					Action: rules.AllowRead,
+					Group:  rules.AllowChars,
+					Value:  strconv.Itoa(member),
+				})
+			}
+		}
+
+		if len(allowsDb) != 0 {
+			for _, allow := range allowsDb {
+				*allows += fmt.Sprintf(",(%d, '%s','%s','%s')", roomId, allow.Action, allow.Group, allow.Value)
+			}
+			*allows = kit.TrimFirstRune(*allows)
+		}
+
+	}
+
+	if allows != nil {
+
+		_, err = r.db.Exec(`INSERT INTO allows 
+    		(room_id, action_type, group_type, value)	
+			VALUES` + *allows)
+		if err != nil {
+			return
+		}
+
 	}
 	return
 }
@@ -255,6 +323,19 @@ func (r *RoomsRepo) GetAllows(room_id int) (allows models.Allows, err error) {
 		}
 
 	}
+
+	return
+}
+
+func (r *RoomsRepo) HasParent(roomId int) (has bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+			SELECT 1 
+			FROM rooms 
+			WHERE id = $1 AND parent_id IS NOT NULL 
+    	)`,
+		roomId,
+	).Scan(&has)
 
 	return
 }

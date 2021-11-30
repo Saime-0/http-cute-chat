@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"time"
 
@@ -432,7 +433,7 @@ func (r *ChatsRepo) GetChatLinks(chatId int) (links models.InviteLinks, err erro
 
 	return
 }
-func (r *ChatsRepo) LinkExistsByCode(code string) (exists bool) {
+func (r *ChatsRepo) InviteExistsByCode(code string) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
@@ -485,7 +486,7 @@ func (r *ChatsRepo) CreateInviteLink(linkModel *models.CreateInviteLink) (link m
 	return
 }
 
-func (r *ChatsRepo) InviteLinkIsRelevant(code string) (relevant bool) {
+func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
@@ -666,28 +667,15 @@ func (r *ChatsRepo) GetCountChatRoles(chatId int) (count int, err error) {
 	return
 }
 
-func (r *ChatsRepo) GiveRole(userId int, roleId int) (err error) {
+func (r *ChatsRepo) GiveRole(userId, chatId, roleId int) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE chat_members
-		SET role_id = $2
-		WHERE user_id = $1`,
+		SET role_id = $3
+		WHERE user_id = $1 AND chat_id = $2`,
 		userId,
+		chatId,
 		roleId,
 	).Err()
-
-	return
-}
-
-func (r *ChatsRepo) RoleExistsByID(roleId int, chatId int) (exists bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
-			SELECT 1
-			FROM roles
-			WHERE role_id = $1 AND chat_id = $2
-		)`,
-		roleId,
-		chatId,
-	).Scan(&exists)
 
 	return
 }
@@ -743,6 +731,55 @@ func (r *ChatsRepo) GetMemberInfo(userId int, chatId int) (user models.MemberInf
 	).Scan(
 		&user.RoleID,
 		&user.JoinedAt,
+	)
+
+	return
+}
+
+func (r *ChatsRepo) HasInvite(chatId int, code string) (has bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+		SELECT 1 
+		FROM invite_links
+		WHERE chat_id = $1 AND code = $2
+		)`,
+		chatId,
+		code,
+	).Scan(&has)
+
+	return
+}
+
+func (r *ChatsRepo) RoleExistsByID(chatId, roleId int) (exists bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+		SELECT 1 
+		FROM roles
+		WHERE chat_id = $1 AND id = $2
+		)`,
+		chatId,
+		roleId,
+	).Scan(&exists)
+
+	return
+}
+
+func (r *ChatsRepo) InviteInfo(code string) (info model.InviteInfo, err error) {
+	err = r.db.QueryRow(
+		`SELECT units.id, units.domain, units.name, units.type, chats.private
+		FROM units INNER JOIN chats
+		ON units.id = chats.id
+		WHERE units.id IN (
+		    SELECT chat_id
+		    FROM invite_links
+		    WHERE code = $1
+		)`,
+	).Scan(
+		&info.Unit.ID,
+		&info.Unit.Domain,
+		&info.Unit.Name,
+		&info.Unit.Type,
+		&info.Private,
 	)
 
 	return

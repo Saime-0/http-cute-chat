@@ -232,3 +232,35 @@ func (p *Pipeline) RoomExists(roomId int) (fail bool) {
 	}
 	return
 }
+
+func (p *Pipeline) IsNotChild(roomId int) (fail bool) {
+	if p.repos.Rooms.HasParent(roomId) {
+		p.Err = resp.Error(resp.ErrBadRequest, "комната является веткой")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) HasInvite(chatId int, code string) (fail bool) {
+	if !p.repos.Chats.HasInvite(chatId, code) {
+		p.Err = resp.Error(resp.ErrBadRequest, "такого кода не существует")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) InviteIsRelevant(code string) (fail bool) {
+	if !p.repos.Chats.InviteIsRelevant(code) {
+		p.Err = resp.Error(resp.ErrBadRequest, "инвайт неактуален")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) RoleExists(chatID, roleID int) (fail bool) {
+	if !p.repos.Chats.RoleExistsByID(chatID, roleID) {
+		p.Err = resp.Error(resp.ErrBadRequest, "такой роли не существует")
+		return true
+	}
+	return
+}

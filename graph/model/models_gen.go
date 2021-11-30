@@ -250,7 +250,13 @@ type Invite struct {
 	Exp    *int   `json:"exp"`
 }
 
-func (Invite) IsInviteInfoResult() {}
+type InviteInfo struct {
+	Unit         *Unit `json:"unit"`
+	Private      bool  `json:"private"`
+	CountMembers int   `json:"count_members"`
+}
+
+func (InviteInfo) IsInviteInfoResult() {}
 
 type LoginInput struct {
 	Email    string `json:"email"`

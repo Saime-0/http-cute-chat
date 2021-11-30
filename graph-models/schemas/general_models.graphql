@@ -114,7 +114,11 @@ type Invite {
     aliens: Int
     exp: Int
 }
-
+type InviteInfo {
+    unit: Unit!
+    private: Boolean!
+    count_members: Int! @goField(forceResolver: true)
+}
 type User {
     unit: Unit!
 }

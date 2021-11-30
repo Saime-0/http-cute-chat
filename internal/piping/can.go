@@ -65,3 +65,10 @@ func (c *Can) CreateRoom(uid, cid int) (fail bool) {
 		c.admin(uid, cid),
 	)
 }
+
+func (c *Can) GiveRole(uid, cid int) (fail bool) {
+	return !kit.LeastOne(
+		c.owner(uid, cid),
+		c.admin(uid, cid),
+	)
+}

@@ -42,8 +42,7 @@ CREATE TABLE rooms (
 	parent_id bigint references rooms (id),
 	name varchar(32) not null,
 	note varchar(64),
-	msg_format varchar(8192),
-	private boolean not null
+	msg_format varchar(8192)
 );
 CREATE TABLE roles (
 	id bigserial primary key,

@@ -5,4 +5,4 @@ extend type Query {
 # InviteInfo ...
 union InviteInfoResult =
     | AdvancedError
-    | Invite
+    | InviteInfo

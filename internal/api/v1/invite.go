@@ -26,7 +26,7 @@ func (h *Handler) JoinToChatByCode(w http.ResponseWriter, r *http.Request) {
 	userId := r.Context().Value(rules.UserIDFromToken).(int)
 
 	linkCode := mux.Vars(r)["invite-code"]
-	if !h.Services.Repos.Chats.InviteLinkIsRelevant(linkCode) {
+	if !h.Services.Repos.Chats.InviteIsRelevant(linkCode) {
 		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
 
 		return
@@ -77,7 +77,7 @@ func (h *Handler) JoinToChatByCode(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) GetChatByCode(w http.ResponseWriter, r *http.Request) {
 	linkCode := mux.Vars(r)["invite-code"]
-	if !h.Services.Repos.Chats.InviteLinkIsRelevant(linkCode) {
+	if !h.Services.Repos.Chats.InviteIsRelevant(linkCode) {
 		responder.Error(w, http.StatusNotFound, rules.ErrInviteLinkNotFound)
 
 		return

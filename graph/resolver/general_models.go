@@ -55,6 +55,10 @@ func (r *inviteResolver) Chat(ctx context.Context, obj *model.Invite) (*model.Ch
 	panic(fmt.Errorf("not implemented"))
 }
 
+func (r *inviteInfoResolver) CountMembers(ctx context.Context, obj *model.InviteInfo) (int, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *meRestrictsResolver) Chat(ctx context.Context, obj *model.MeRestricts) (*model.Chat, error) {
 	panic(fmt.Errorf("not implemented"))
 }
@@ -108,6 +112,9 @@ func (r *Resolver) ChatMember() generated.ChatMemberResolver { return &chatMembe
 // Invite returns generated.InviteResolver implementation.
 func (r *Resolver) Invite() generated.InviteResolver { return &inviteResolver{r} }
 
+// InviteInfo returns generated.InviteInfoResolver implementation.
+func (r *Resolver) InviteInfo() generated.InviteInfoResolver { return &inviteInfoResolver{r} }
+
 // MeRestricts returns generated.MeRestrictsResolver implementation.
 func (r *Resolver) MeRestricts() generated.MeRestrictsResolver { return &meRestrictsResolver{r} }
 
@@ -128,8 +135,19 @@ func (r *Resolver) Room() generated.RoomResolver { return &roomResolver{r} }
 type chatResolver struct{ *Resolver }
 type chatMemberResolver struct{ *Resolver }
 type inviteResolver struct{ *Resolver }
+type inviteInfoResolver struct{ *Resolver }
 type meRestrictsResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }
 type permissionHoldersResolver struct{ *Resolver }
 type roleResolver struct{ *Resolver }
 type roomResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *inviteInfoResolver) Members(ctx context.Context, obj *model.InviteInfo) ([]*model.ChatMember, error) {
+	panic(fmt.Errorf("not implemented"))
+}
