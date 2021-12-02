@@ -18,7 +18,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, chatID int, input mod
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.CreateRoom(clientID, chatID) ||
-		pl.CountRoomLimit(chatID) ||
+		pl.RoomsLimit(chatID) ||
 		pl.IsNotChild(*input.Parent) ||
 		input.Parent != nil && pl.RoomExists(*input.Parent) {
 		return pl.Err, nil

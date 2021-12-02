@@ -6,52 +6,146 @@ package resolver
 import (
 	"context"
 	"fmt"
-
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (*model.User, error) {
+func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) ([]*model.Room, error) {
+func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *chatResolver) CountMembers(ctx context.Context, obj *model.Chat) (int, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *chatResolver) CountMembers(ctx context.Context, obj *model.Chat) (model.CountMembersResult, error) {
+	chatID := obj.Unit.ID
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.IsMember(clientID, chatID) ||
+		pl.Can.ObserveCountMembers(clientID, chatID) {
+		return pl.Err, nil
+	}
+	count, err := r.Services.Repos.Chats.CountMembers(chatID)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	return model.IntValue{Value: &count}, nil
 }
 
-func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) ([]*model.ChatMember, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.MembersResult, error) {
+	chatID := obj.Unit.ID
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.IsMember(clientID, chatID) ||
+		pl.Can.ObserveMembers(clientID, chatID) {
+		return pl.Err, nil
+	}
+
+	_members, err := r.Services.Repos.Chats.Members(chatID)
+	if err != nil {
+		println(err.Error())
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	var members model.Members
+	for _, member := range _members.Members {
+		members.Members = append(members.Members, &model.Member{
+			User: &model.User{
+				Unit: &model.Unit{
+					ID:     member.User.Unit.ID,
+					Domain: member.User.Unit.Domain,
+					Name:   member.User.Unit.Name,
+					Type:   model.UnitType(member.User.Unit.Type),
+				},
+			},
+			Role:     nil, // forced
+			Char:     (*model.Char)(&member.Char),
+			JoinedAt: member.JoinedAt,
+		})
+
+	}
+	ctx = context.WithValue(ctx, rules.ChatIDFromChat, chatID)
+	return members, nil
 }
 
-func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) ([]*model.Role, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesResult, error) {
+	chatID := obj.Unit.ID
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.IsMember(clientID, chatID) ||
+		pl.Can.ObserveRoles(clientID, chatID) {
+		return pl.Err, nil
+	}
+	_roles, err := r.Services.Repos.Chats.Roles(chatID)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	var roles model.Roles
+	for _, role := range _roles {
+		roles.Roles = append(roles.Roles, &model.Role{
+			ID:    role.ID,
+			Name:  role.Name,
+			Color: role.Color,
+		})
+	}
+	return roles, nil
 }
 
-func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) ([]*model.Invite, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.InvitesResult, error) {
+	chatID := obj.Unit.ID
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.IsMember(clientID, chatID) ||
+		pl.Can.ObserveInvites(clientID, chatID) {
+		return pl.Err, nil
+	}
+
+	_invites, err := r.Services.Repos.Chats.Invites(chatID)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	var invites model.Invites
+	for _, i := range _invites.Invites {
+		invites.Invites = append(invites.Invites, &model.Invite{
+			Code:      i.Code,
+			Aliens:    &i.Aliens,
+			ExpiresAt: &i.Exp,
+		})
+	}
+	return invites, nil
 }
 
-func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.UsersResult, error) {
+	chatID := obj.Unit.ID
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.IsMember(clientID, chatID) ||
+		pl.Can.ObserveBanlist(clientID, chatID) {
+		return pl.Err, nil
+	}
+
+	banlist, err := r.Services.Repos.Chats.Banlist(chatID)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	var users model.Users
+	for _, user := range banlist.Users {
+		users.Users = append(users.Users, &model.User{
+			Unit: &model.Unit{
+				ID:     user.Unit.ID,
+				Domain: user.Unit.Domain,
+				Name:   user.Unit.Name,
+				Type:   model.UnitType(user.Unit.Type),
+			},
+		})
+	}
+	return users, nil
 }
 
-func (r *chatResolver) MeRestricts(ctx context.Context, obj *model.Chat) ([]*model.MeRestricts, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *chatMemberResolver) Chat(ctx context.Context, obj *model.ChatMember) (*model.Chat, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *chatMemberResolver) User(ctx context.Context, obj *model.ChatMember) (*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *inviteResolver) Chat(ctx context.Context, obj *model.Invite) (*model.Chat, error) {
+func (r *chatResolver) MeRestricts(ctx context.Context, obj *model.Chat) (*model.MeRestrict, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -59,8 +153,20 @@ func (r *inviteInfoResolver) CountMembers(ctx context.Context, obj *model.Invite
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *meRestrictsResolver) Chat(ctx context.Context, obj *model.MeRestricts) (*model.Chat, error) {
+func (r *meRestrictResolver) Chat(ctx context.Context, obj *model.MeRestrict) (*model.Chat, error) {
 	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (*model.Role, error) {
+	chatID := ctx.Value(rules.ChatIDFromChat).(int)
+	println(chatID)
+	//userID := obj.User.Unit.ID
+	//pl := piping.NewPipeline(ctx, r.Services.Repos)
+	//if pl.IsMember(clientID, chatID) ||
+	//	pl.Can.ObserveBanlist(clientID, chatID) {
+	//	return pl.Err, nil
+	//}
+	return nil, nil
 }
 
 func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.Room, error) {
@@ -83,15 +189,11 @@ func (r *permissionHoldersResolver) Chars(ctx context.Context, obj *model.Permis
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *permissionHoldersResolver) Members(ctx context.Context, obj *model.PermissionHolders) ([]*model.ChatMember, error) {
+func (r *permissionHoldersResolver) Members(ctx context.Context, obj *model.PermissionHolders) ([]*model.Member, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *roleResolver) Users(ctx context.Context, obj *model.Role) ([]*model.User, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (*model.Chat, error) {
+func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (model.ChatResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
@@ -106,17 +208,14 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room) ([]*model.
 // Chat returns generated.ChatResolver implementation.
 func (r *Resolver) Chat() generated.ChatResolver { return &chatResolver{r} }
 
-// ChatMember returns generated.ChatMemberResolver implementation.
-func (r *Resolver) ChatMember() generated.ChatMemberResolver { return &chatMemberResolver{r} }
-
-// Invite returns generated.InviteResolver implementation.
-func (r *Resolver) Invite() generated.InviteResolver { return &inviteResolver{r} }
-
 // InviteInfo returns generated.InviteInfoResolver implementation.
 func (r *Resolver) InviteInfo() generated.InviteInfoResolver { return &inviteInfoResolver{r} }
 
-// MeRestricts returns generated.MeRestrictsResolver implementation.
-func (r *Resolver) MeRestricts() generated.MeRestrictsResolver { return &meRestrictsResolver{r} }
+// MeRestrict returns generated.MeRestrictResolver implementation.
+func (r *Resolver) MeRestrict() generated.MeRestrictResolver { return &meRestrictResolver{r} }
+
+// Member returns generated.MemberResolver implementation.
+func (r *Resolver) Member() generated.MemberResolver { return &memberResolver{r} }
 
 // Message returns generated.MessageResolver implementation.
 func (r *Resolver) Message() generated.MessageResolver { return &messageResolver{r} }
@@ -126,28 +225,13 @@ func (r *Resolver) PermissionHolders() generated.PermissionHoldersResolver {
 	return &permissionHoldersResolver{r}
 }
 
-// Role returns generated.RoleResolver implementation.
-func (r *Resolver) Role() generated.RoleResolver { return &roleResolver{r} }
-
 // Room returns generated.RoomResolver implementation.
 func (r *Resolver) Room() generated.RoomResolver { return &roomResolver{r} }
 
 type chatResolver struct{ *Resolver }
-type chatMemberResolver struct{ *Resolver }
-type inviteResolver struct{ *Resolver }
 type inviteInfoResolver struct{ *Resolver }
-type meRestrictsResolver struct{ *Resolver }
+type meRestrictResolver struct{ *Resolver }
+type memberResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }
 type permissionHoldersResolver struct{ *Resolver }
-type roleResolver struct{ *Resolver }
 type roomResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *inviteInfoResolver) Members(ctx context.Context, obj *model.InviteInfo) ([]*model.ChatMember, error) {
-	panic(fmt.Errorf("not implemented"))
-}

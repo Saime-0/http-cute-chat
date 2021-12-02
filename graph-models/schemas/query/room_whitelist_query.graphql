@@ -6,4 +6,4 @@ extend type Query {
 # RoomWhiteList ...
 union RoomWhiteListResult =
     | AdvancedError
-    | RoleArray
+    | Roles

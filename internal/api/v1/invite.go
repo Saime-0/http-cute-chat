@@ -57,7 +57,7 @@ func (h *Handler) JoinToChatByCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	countMembers, err := h.Services.Repos.Chats.GetCountChatMembers(l.ChatID)
+	countMembers, err := h.Services.Repos.Chats.CountMembers(l.ChatID)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 

@@ -21,6 +21,13 @@ enum Char {
     NONE
 }
 
+# Union type be like
+type IntValue {
+    value: Int
+}
+# end
+
+
 input Params {
     limit: Int = 20
     offset: Int = 0
@@ -40,31 +47,37 @@ type Unit {
 
 type Chat {
     unit: Unit!
-    owner: User! @goField(forceResolver: true)
-    rooms: [Room!] @goField(forceResolver: true)
+    owner: UserResult! @goField(forceResolver: true)
+    rooms: RoomsResult @goField(forceResolver: true)
     private: Boolean!
-    count_members: Int! @goField(forceResolver: true)
-    members: [ChatMember!] @goField(forceResolver: true)
-    roles: [Role!] @goField(forceResolver: true)
-    invites: [Invite!] @goField(forceResolver: true)
-    banlist: [User!] @goField(forceResolver: true)
-    me_restricts: [MeRestricts!] @goField(forceResolver: true)
+    count_members: CountMembersResult! @goField(forceResolver: true)
+    members: MembersResult @goField(forceResolver: true)
+    roles: RolesResult @goField(forceResolver: true)
+    invites: InvitesResult @goField(forceResolver: true)
+    banlist: UsersResult @goField(forceResolver: true)
+    me_restricts: MeRestrict @goField(forceResolver: true)
 }
-type MeRestricts {
-    chat: Chat!@goField(forceResolver: true)
+
+type MeRestrict {
+    chat: Chat! @goField(forceResolver: true)
     frozen: Boolean!
     muted: Boolean!
     banned: Boolean!
 }
+
 type Room {
     id: ID!
-    chat: Chat! @goField(forceResolver: true)
+    chat: ChatResult! @goField(forceResolver: true)
     name: String!
     parent: Room
     note: String
     msg_format: Form
     restricts: Restricts @goField(forceResolver: true)
     messages: [Message!] @goField(forceResolver: true)
+}
+
+type Rooms {
+    rooms: [Room!]
 }
 
 type Form {
@@ -79,23 +92,26 @@ type FormField {
     items: [String!]
 }
 
-type ChatMember {
-    chat: Chat! @goField(forceResolver: true)
-    user: User! @goField(forceResolver: true)
-    role: Role
+type Member {
+#    chat: Chat! @goField(forceResolver: true) зач тут чат?
+    user: User! # @goField(forceResolver: true)
+    role: Role @goField(forceResolver: true)
     char: Char
-    joined_at: Int!
+    joined_at: Int64!
 }
 
-type RoleArray {
-    roles: [Role!]
+type Members {
+    members: [Member!]
 }
 
 type Role {
     id: ID!
-    users: [User!] @goField(forceResolver: true)
     name: String!
     color: String!
+}
+
+type Roles {
+    roles: [Role!]
 }
 
 type Message {
@@ -109,11 +125,15 @@ type Message {
 }
 
 type Invite {
-    chat: Chat! @goField(forceResolver: true)
     code: String!
     aliens: Int
-    exp: Int
+    expires_at: Int64
 }
+
+type Invites {
+    invites: [Invite!]
+}
+
 type InviteInfo {
     unit: Unit!
     private: Boolean!
@@ -122,6 +142,11 @@ type InviteInfo {
 type User {
     unit: Unit!
 }
+
+type Users {
+    users: [User!]
+}
+
 type Restricts {
     allow_read: PermissionHolders
     allow_write: PermissionHolders
@@ -129,7 +154,7 @@ type Restricts {
 type PermissionHolders {
     roles: [Role!] @goField(forceResolver: true)
     chars: [Char!] @goField(forceResolver: true)
-    members: [ChatMember!] @goField(forceResolver: true)
+    members: [Member!] @goField(forceResolver: true)
 }
 
 input FindByDomainOrID {

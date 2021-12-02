@@ -20,16 +20,16 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, chatID int, input m
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.CreateInvite(clientID, chatID) ||
-		pl.CountInviteLimit(chatID) ||
+		pl.InvitesLimit(chatID) ||
 		pl.ValidInviteInput(input) {
 		return pl.Err, nil
 	}
 
 	_, err := r.Services.Repos.Chats.CreateInviteLink(
-		&models.CreateInviteLink{
+		&models.CreateInvite{
 			ChatID: chatID,
 			Aliens: *input.Aliens,
-			Exp:    int64(*input.Exp) + time.Now().UTC().Unix(),
+			Exp:    *input.Duration + time.Now().UTC().Unix(),
 		},
 	)
 	if err != nil {

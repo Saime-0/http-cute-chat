@@ -28,7 +28,6 @@ func (r *queryResolver) UserRole(ctx context.Context, userID int, chatID int) (m
 	}
 	return model.Role{
 		ID:    role.ID,
-		Users: nil, // forced
 		Name:  role.Name,
 		Color: role.Color,
 	}, nil

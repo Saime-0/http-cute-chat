@@ -17,20 +17,24 @@ func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateCha
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	if pl.OwnedLimit(clientID) ||
-		pl.ChatCountLimit(clientID) ||
+		pl.ChatsLimit(clientID) ||
 		pl.ValidDomain(input.Domain) ||
 		pl.ValidName(input.Name) ||
 		pl.DomainIsFree(input.Domain) {
 		return pl.Err, nil
 	}
 
-	_, err := r.Services.Repos.Chats.CreateChat(clientID,
+	chatID, err := r.Services.Repos.Chats.CreateChat(clientID,
 		&models.CreateChat{
 			Domain:  input.Domain,
 			Name:    input.Name,
 			Private: input.Private,
 		},
 	)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	err = r.Services.Repos.Chats.AddUserToChat(clientID, chatID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}

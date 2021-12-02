@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 

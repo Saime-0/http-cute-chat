@@ -6,5 +6,5 @@ extend type Mutation {
 input CreateInviteInput {
     code: String!
     aliens: Int
-    exp: Int
+    duration: Int64
 }

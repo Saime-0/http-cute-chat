@@ -4,9 +4,4 @@ extend type Query {
 }
 
 # Members ...
-type MemberArray {
-    members: [ChatMember!]
-}
-union MembersResult =
-    | AdvancedError
-    | MemberArray
+# go to results.go

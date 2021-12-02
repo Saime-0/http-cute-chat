@@ -3,9 +3,4 @@ extend type Query {
 
 }
 # Rooms ...
-type RoomArray {
-    rooms: [Room!]
-}
-union RoomsResult =
-    | AdvancedError
-    | RoomArray
+# go to results.graphql

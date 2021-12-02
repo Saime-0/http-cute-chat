@@ -7,7 +7,7 @@ DROP TABLE room_whitelist;
 DROP TABLE chat_members;
 DROP TABLE roles;
 DROP TABLE rooms;
-DROP TABLE invite_links;
+DROP TABLE invites;
 DROP TABLE chat_banlist;
 DROP TABLE chats;
 DROP TABLE users;

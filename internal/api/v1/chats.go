@@ -282,7 +282,7 @@ func (h *Handler) AddUserToChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	countMembers, err := h.Services.Repos.Chats.GetCountChatMembers(chatId)
+	countMembers, err := h.Services.Repos.Chats.CountMembers(chatId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
@@ -379,7 +379,7 @@ func (h *Handler) GetChatMembers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userList, err := h.Services.Repos.Chats.GetChatMembers(chatId)
+	userList, err := h.Services.Repos.Chats.Members(chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, userList)
@@ -521,7 +521,7 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	inputLink := &models.InviteLinkInput{}
+	inputLink := &models.InviteInput{}
 	err = json.NewDecoder(r.Body).Decode(&inputLink)
 	if err != nil {
 		responder.Error(w, http.StatusBadRequest, rules.ErrBadRequestBody)
@@ -553,7 +553,7 @@ func (h *Handler) CreateInviteLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	link, err := h.Services.Repos.Chats.CreateInviteLink(
-		&models.CreateInviteLink{
+		&models.CreateInvite{
 			ChatID: chatId,
 			Aliens: inputLink.Aliens,
 			Exp:    inputLink.LifeTime + time.Now().UTC().Unix(),
@@ -592,7 +592,7 @@ func (h *Handler) GetInviteLinks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	links, err := h.Services.Repos.Chats.GetChatLinks(chatId)
+	links, err := h.Services.Repos.Chats.Invites(chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, links)
@@ -775,7 +775,7 @@ func (h *Handler) GetChatBanlist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	users, err := h.Services.Repos.Chats.GetChatBanlist(chatId)
+	users, err := h.Services.Repos.Chats.Banlist(chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, users)
@@ -909,7 +909,7 @@ func (h *Handler) GetChatRoles(w http.ResponseWriter, r *http.Request) {
 		responder.Respond(w, http.StatusOK, roles)
 
 	case h.Services.Repos.Chats.UserIsChatMember(userId, chatId):
-		roles, err := h.Services.Repos.Chats.ChatRoles(chatId)
+		roles, err := h.Services.Repos.Chats.Roles(chatId)
 		finalInspectionDatabase(w, err)
 
 		responder.Respond(w, http.StatusOK, roles)

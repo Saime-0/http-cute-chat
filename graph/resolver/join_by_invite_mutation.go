@@ -5,20 +5,29 @@ package resolver
 
 import (
 	"context"
-	"fmt"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
 func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
-	if pl.InviteIsExists(code) || // ?
-		pl.InviteIsRelevant(code) ||
-		pl.GetChatByInvite(code) ||
-		pl.IsNotMember(clientID) {
+	var chatID int
+	if pl.InviteIsRelevant(code) ||
+		pl.GetChatByInvite(code, &chatID) ||
+		pl.IsNotMember(clientID, chatID) ||
+		// todo UserIsNotBanned
+		pl.MembersLimit(chatID) ||
+		pl.ChatsLimit(clientID) {
 		return pl.Err, nil
 	}
+
+	_, err := r.Services.Repos.Chats.AddUserByCode(code, clientID)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	return resp.Success("успешно присоединился к чату"), nil
 }

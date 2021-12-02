@@ -16,40 +16,33 @@ type UpdateChatData struct {
 	Private bool   `json:"private"`
 }
 
-type Chat struct {
-	ID      int    `json:"id"`
-	Domain  string `json:"domain"`
-	Name    string `json:"name"`
-	Private bool   `json:"private"`
-	//CountMembers int
-}
 type ChatMembersCount struct {
 	Count int `json:"count"`
 }
 
-type ListChatMembers struct {
+type Members struct {
 	Members []Member `json:"members"`
 }
 type ChatID struct {
 	ID int `json:"id"`
 }
-type InviteLink struct {
+type Invite struct {
 	Code   string `json:"code"`
 	ChatID int    `json:"chat_id,omitempty"`
 	Aliens int    `json:"aliens"`
 	Exp    int64  `json:"exp"`
 }
-type InviteLinkInput struct {
+type InviteInput struct {
 	Aliens   int   `json:"aliens"`
 	LifeTime int64 `json:"lifetime"`
 }
-type CreateInviteLink struct {
+type CreateInvite struct {
 	ChatID int   `json:"chat_id"`
 	Aliens int   `json:"aliens"`
 	Exp    int64 `json:"exp"`
 }
-type InviteLinks struct {
-	Links []InviteLink
+type Invites struct {
+	Invites []Invite
 }
 type MemberInfo struct {
 	RoleID   int `json:"role_id"`
@@ -58,8 +51,8 @@ type MemberInfo struct {
 
 // news
 type Member struct {
-	User     UserInfo
-	RoleID   int
+	User     User
+	RoleID   *int // deprecated
 	Char     rules.CharType
 	JoinedAt int64
 }
@@ -183,13 +176,6 @@ type RoomID struct {
 	ID int `json:"id"`
 }
 
-type User struct {
-	ID          int              `json:"id"`
-	Domain      string           `json:"domain"`
-	Name        string           `json:"name"`
-	AppSettings string           `json:"app_settings"`
-	Sessions    []RefreshSession `json:"sessions"`
-}
 type RefreshSession struct {
 	RefreshToken string `json:"refresh_token"`
 	UserAgent    string `json:"user_agent"`
@@ -231,11 +217,9 @@ type UserInfo struct {
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
 }
-type UserData struct {
-	ID     int    `json:"id"`
-	Domain string `json:"domain"`
-	Name   string `json:"name"`
-	Email  string `json:"email"`
+type MeData struct {
+	Email    string `json:"email"`
+	Password string
 }
 type UserSettings struct {
 	AppSettings string `json:"app_settings"`
@@ -260,4 +244,26 @@ type AllowHolders struct {
 	Roles []int
 	Chars []rules.CharType
 	Users []int
+}
+
+type Unit struct {
+	ID     int    `json:"id"`
+	Domain string `json:"domain"`
+	Name   string `json:"name"`
+	Type   rules.UnitType
+}
+
+type Me struct {
+	Unit Unit
+	User MeData
+}
+type Chat struct {
+	Unit    Unit
+	Private bool
+}
+type User struct {
+	Unit Unit
+}
+type Users struct {
+	Users []User
 }

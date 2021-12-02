@@ -1,0 +1,31 @@
+union UserResult =
+    | AdvancedError
+    | User
+
+union RoomsResult =
+    | AdvancedError
+    | Rooms
+
+union CountMembersResult =
+    | AdvancedError
+    | IntValue
+
+union MembersResult =
+    | AdvancedError
+    | Members
+
+union RolesResult =
+    | AdvancedError
+    | Roles
+
+union InvitesResult =
+    | AdvancedError
+    | Invites
+
+union UsersResult =
+    | AdvancedError
+    | Users
+
+union ChatResult =
+    | AdvancedError
+    | Chat

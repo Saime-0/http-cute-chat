@@ -30,7 +30,7 @@ create function generate_invite_code() returns text language sql as $$
   SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
   FROM generate_series(1, 16)
 $$;
-CREATE TABLE invite_links (
+CREATE TABLE invites (
 	code varchar(16) primary key default generate_invite_code(),
 	chat_id bigint references chats (id) not null,
 	aliens smallint,
@@ -54,20 +54,11 @@ CREATE TABLE chat_members (
 	id bigserial primary key,
 	user_id bigint references users (id) not null,
 	chat_id bigint references chats (id) not null,
-	role_id bigint references roles (id) not null,
-	char varchar(16) not null,
+	role_id bigint references roles (id),
+	char char_type not null,
 	joined_at bigint not null,
 	muted boolean not null,
 	frozen boolean not null
-);
-CREATE TABLE room_whitelist (
-	room_id bigint references rooms (id) not null,
-	role_id bigint references roles (id) not null
-);
-CREATE TABLE dialogs (
-	id bigserial primary key,
-	user1 bigint references users (id) not null,
-	user2 bigint references users (id) not null
 );
 CREATE TABLE messages (
 	id bigserial primary key,
@@ -77,14 +68,6 @@ CREATE TABLE messages (
 	body varchar(8192) not null,
 	type message_type not null,
 	created_at bigint not null 
-);
-CREATE TABLE dialog_msg_pool (
-	dialog_id bigint references dialogs (id) not null,
-	message_id bigint references messages (id) not null
-);
-CREATE TABLE room_msg_pool (
-	room_id bigint references rooms (id) not null,
-	message_id bigint references messages (id) not null
 );
 CREATE TABLE refresh_sessions (
     id bigserial primary key,

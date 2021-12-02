@@ -25,7 +25,7 @@ func (r *queryResolver) Users(ctx context.Context, nameFragment string, params *
 		return nil, err
 	}
 	fmt.Printf("%#v", userList)
-	users := model.UserArray{}
+	users := model.Users{}
 	for _, v := range userList.Users {
 		user := model.User{
 			Unit: &model.Unit{

@@ -68,6 +68,7 @@ type ContextKeys int
 
 const (
 	UserIDFromToken ContextKeys = iota
+	ChatIDFromChat
 	PipeLineUserID
 	PipeLineUserDomain
 	PipeLineChatID

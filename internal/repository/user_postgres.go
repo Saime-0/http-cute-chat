@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
@@ -33,25 +32,6 @@ func (r *UsersRepo) CreateUser(userModel *models.CreateUser) (id int, err error)
 		userModel.Email,
 	).Scan(&id)
 
-	return
-}
-
-func (r *UsersRepo) GetUserData(userId int) (user models.UserData, err error) {
-	err = r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, users.email
-		FROM units INNER JOIN users 
-		ON units.id = users.id 
-		WHERE units.id = $1`,
-		userId,
-	).Scan(
-		&user.ID,
-		&user.Domain,
-		&user.Name,
-		&user.Email,
-	)
-	if err != nil {
-		return
-	}
 	return
 }
 
@@ -266,5 +246,79 @@ func (r *UsersRepo) UserExistsByDomain(userDomain string) (exists bool) {
 		userDomain,
 	).Scan(&exists)
 
+	return
+}
+
+func (r *UsersRepo) Me(usersId int) (me models.Me, err error) {
+	err = r.db.QueryRow(
+		`SELECT units.id, units.domain, units.name, units.type, users.email, users.password 
+		FROM units INNER JOIN users
+		ON units.id = users.id
+		WHERE units.id = $1`,
+		usersId,
+	).Scan(
+		&me.Unit.ID,
+		&me.Unit.Domain,
+		&me.Unit.Name,
+		&me.Unit.Type,
+		&me.User.Email,
+		&me.User.Password,
+	)
+	return
+}
+
+// migrate x2
+func (r *UsersRepo) OwnedChats(userId int) (chats []models.Chat, err error) {
+	rows, err := r.db.Query(
+		`SELECT units.id, units.domain, units.name, units.type, chats.private
+		FROM units INNER JOIN chats 
+		ON units.id = chats.id 
+		WHERE chats.owner_id = $1`,
+		userId,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.Chat{}
+		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
+			return
+		}
+
+		chats = append(chats, m) // 0_o
+	}
+	if !rows.NextResultSet() {
+		return
+	}
+	return
+}
+
+func (r *UsersRepo) Chats(userId int) (chats []models.Chat, err error) {
+	rows, err := r.db.Query(
+		`SELECT units.id, units.domain, units.name, units.type, chats.private
+		FROM units 
+		INNER JOIN chats 
+			ON units.id = chats.id 
+		INNER JOIN chat_members
+			ON units.id = chat_members.chat_id
+		WHERE chat_members.user_id = $1`,
+		userId,
+	)
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := models.Chat{}
+		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
+			return
+		}
+
+		chats = append(chats, m) // 0_o
+	}
+	if !rows.NextResultSet() {
+		return
+	}
 	return
 }

@@ -35,7 +35,8 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId int, err error) {
 	var format *string
 	if input.MsgFormat != nil {
-		marshal, err := json.Marshal(*input.MsgFormat)
+		var marshal []byte
+		marshal, err = json.Marshal(*input.MsgFormat)
 		if err != nil {
 			return
 		}

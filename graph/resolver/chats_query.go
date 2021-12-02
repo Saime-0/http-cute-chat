@@ -30,15 +30,15 @@ func (r *queryResolver) Chats(ctx context.Context, nameFragment string, params *
 	for _, chat := range chats {
 		m.Chats = append(m.Chats, &model.Chat{
 			Unit: &model.Unit{
-				ID:     chat.ID,
-				Domain: chat.Domain,
-				Name:   chat.Name,
-				Type:   model.UnitTypeChat,
+				ID:     chat.Unit.ID,
+				Domain: chat.Unit.Domain,
+				Name:   chat.Unit.Name,
+				Type:   model.UnitType(chat.Unit.Type),
 			},
 			Owner:        nil, // forced
 			Rooms:        nil, // forced
 			Private:      chat.Private,
-			CountMembers: 0,   // forced
+			CountMembers: nil, // forced
 			Members:      nil, // forced
 			Roles:        nil, // forced
 			Invites:      nil, // forced

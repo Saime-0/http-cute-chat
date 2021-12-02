@@ -4,7 +4,6 @@ extend type Query {
 }
 
 # Chat ...
-union ChatResult =
-    | AdvancedError
-    | Chat
+# go to results.go
+
 

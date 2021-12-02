@@ -6,6 +6,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/api/validator"
 	"github.com/saime-0/http-cute-chat/internal/its"
+	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
@@ -99,7 +100,7 @@ func (p *Pipeline) ValidParams(params *model.Params) (fail bool) {
 }
 
 func (p *Pipeline) ValidNameFragment(fragment string) (fail bool) {
-	if validator.ValidateNameFragment(fragment) {
+	if !validator.ValidateNameFragment(fragment) {
 		p.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение для фрагмента имени")
 		return true
 	}
@@ -112,14 +113,14 @@ func (p *Pipeline) OwnedLimit(userId int) (fail bool) {
 		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if count > rules.MaxCountOwnedChats {
+	if count >= rules.MaxCountOwnedChats {
 		p.Err = resp.Error(resp.ErrBadRequest, "достигнут лимит созднных чатов")
 		return true
 	}
 	return
 }
 
-func (p *Pipeline) ChatCountLimit(userId int) (fail bool) {
+func (p *Pipeline) ChatsLimit(userId int) (fail bool) {
 	count, err := p.repos.Users.GetCountUserOwnedChats(userId)
 	if err != nil {
 		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
@@ -133,7 +134,7 @@ func (p *Pipeline) ChatCountLimit(userId int) (fail bool) {
 }
 
 func (p *Pipeline) ValidDomain(domain string) (fail bool) {
-	if validator.ValidateDomain(domain) {
+	if !validator.ValidateDomain(domain) {
 		p.Err = resp.Error(resp.ErrBadRequest, "невалидный домен")
 		return true
 	}
@@ -141,7 +142,7 @@ func (p *Pipeline) ValidDomain(domain string) (fail bool) {
 }
 
 func (p *Pipeline) ValidName(name string) (fail bool) {
-	if validator.ValidateName(name) {
+	if !validator.ValidateName(name) {
 		p.Err = resp.Error(resp.ErrBadRequest, "невалидное имя")
 		return true
 	}
@@ -166,7 +167,7 @@ func (p *Pipeline) GetUserChar(userId int, chatId int, char *rules.CharType) (fa
 	return
 }
 
-func (p *Pipeline) CountInviteLimit(chatId int) (fail bool) {
+func (p *Pipeline) InvitesLimit(chatId int) (fail bool) {
 	count, err := p.repos.Chats.GetCountLinks(chatId)
 	if err != nil {
 		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
@@ -180,7 +181,7 @@ func (p *Pipeline) CountInviteLimit(chatId int) (fail bool) {
 }
 
 func (p *Pipeline) ValidInviteInput(inp model.CreateInviteInput) (fail bool) {
-	if *inp.Exp != 0 && !validator.ValidateLifetime(int64(*inp.Exp)) {
+	if *inp.Duration != 0 && !validator.ValidateLifetime(*inp.Duration) {
 		p.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение времени жизни ссылки")
 		return true
 	}
@@ -199,26 +200,34 @@ func (p *Pipeline) IsMember(userId, chatId int) (fail bool) {
 	return
 }
 
-func (p *Pipeline) CountRoleLimit(chatId int) (fail bool) {
+func (p *Pipeline) IsNotMember(userId, chatId int) (fail bool) {
+	if p.repos.Chats.UserIsChatMember(userId, chatId) {
+		p.Err = resp.Error(resp.ErrBadRequest, "пользователь является участником чата")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) RolesLimit(chatId int) (fail bool) {
 	count, err := p.repos.Chats.GetCountChatRoles(chatId)
 	if err != nil {
 		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if count > rules.MaxRolesInChat {
+	if count >= rules.MaxRolesInChat {
 		p.Err = resp.Error(resp.ErrBadRequest, "достигнут лимит количества ролей в чате")
 		return true
 	}
 	return
 }
 
-func (p *Pipeline) CountRoomLimit(chatId int) (fail bool) {
+func (p *Pipeline) RoomsLimit(chatId int) (fail bool) {
 	count, err := p.repos.Chats.GetCountRooms(chatId)
 	if err != nil {
 		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if count > rules.MaxCountRooms {
+	if count >= rules.MaxCountRooms {
 		p.Err = resp.Error(resp.ErrBadRequest, "достигнут лимит количества комнат в чате")
 		return true
 	}
@@ -262,5 +271,67 @@ func (p *Pipeline) RoleExists(chatID, roleID int) (fail bool) {
 		p.Err = resp.Error(resp.ErrBadRequest, "такой роли не существует")
 		return true
 	}
+	return
+}
+func (p *Pipeline) InviteIsExists(code string) (fail bool) {
+	if !p.repos.Chats.InviteExistsByCode(code) {
+		p.Err = resp.Error(resp.ErrBadRequest, "инвайта не существует")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) GetChatByInvite(code string, chatId *int) (fail bool) {
+	_id, err := p.repos.Chats.ChatIDByInvite(code)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	*chatId = _id
+	return
+}
+
+func (p *Pipeline) MembersLimit(chatId int) (fail bool) {
+	count, err := p.repos.Chats.CountMembers(chatId)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	if count >= rules.MaxMembersOnChat {
+		p.Err = resp.Error(resp.ErrBadRequest, "достигнут лимит количества участников в чате")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) ChatIsNotPrivate(chatId int) (fail bool) {
+	if p.repos.Chats.ChatIsPrivate(chatId) {
+		p.Err = resp.Error(resp.ErrBadRequest, "этот чат запривачин")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) UserExistsByInput(input model.LoginInput) (fail bool) {
+	if !p.repos.Users.UserExistsByInput(&models.UserInput{
+		Email:    input.Email,
+		Password: input.Password,
+	}) {
+		p.Err = resp.Error(resp.ErrBadRequest, "пользователь с такими данными не найден")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) GetUserIDByInput(input model.LoginInput, userId *int) (fail bool) {
+	_uid, err := p.repos.Users.GetUserIdByInput(&models.UserInput{
+		Email:    input.Email,
+		Password: input.Password,
+	})
+	if err != nil {
+		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	*userId = _uid
 	return
 }

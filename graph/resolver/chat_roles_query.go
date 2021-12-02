@@ -20,18 +20,17 @@ func (r *queryResolver) ChatRoles(ctx context.Context, chatID int) (model.ChatRo
 		return pl.Err, nil
 	}
 
-	roles, err := r.Services.Repos.Chats.ChatRoles(chatID)
+	roles, err := r.Services.Repos.Chats.Roles(chatID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
 
-	m := model.RoleArray{
+	m := model.Roles{
 		Roles: []*model.Role{},
 	}
 	for _, role := range roles {
 		m.Roles = append(m.Roles, &model.Role{
 			ID:    role.ID,
-			Users: nil, // forced
 			Name:  role.Name,
 			Color: role.Color,
 		})

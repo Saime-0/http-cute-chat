@@ -19,7 +19,7 @@ func (r *mutationResolver) CreateRole(ctx context.Context, chatID int, input mod
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.CreateRole(clientID, chatID) ||
-		pl.CountRoleLimit(chatID) {
+		pl.RolesLimit(chatID) {
 		return pl.Err, nil
 	}
 

@@ -6,6 +6,6 @@ extend type Query {
 # ChatRoles ...
 union ChatRolesResult =
     | AdvancedError
-    | RoleArray
+    | Roles
 
 

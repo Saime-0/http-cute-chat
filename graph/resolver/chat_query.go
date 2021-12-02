@@ -18,21 +18,21 @@ func (r *queryResolver) Chat(ctx context.Context, input model.FindByDomainOrID) 
 		return pl.Err, nil
 	}
 
-	chatData, err := r.Services.Repos.Chats.GetChatByID(*input.ID)
+	chat, err := r.Services.Repos.Chats.GetChatByID(*input.ID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
 	return model.Chat{
 		Unit: &model.Unit{
-			ID:     chatData.ID,
-			Domain: chatData.Domain,
-			Name:   chatData.Name,
-			Type:   model.UnitTypeChat,
+			ID:     chat.Unit.ID,
+			Domain: chat.Unit.Domain,
+			Name:   chat.Unit.Name,
+			Type:   model.UnitType(chat.Unit.Type),
 		},
 		Owner:        nil, // forced
 		Rooms:        nil, // forced
-		Private:      chatData.Private,
-		CountMembers: 0,   // forced
+		Private:      chat.Private,
+		CountMembers: nil, // forced
 		Members:      nil, // forced
 		Roles:        nil, // forced
 		Invites:      nil, // forced

@@ -55,5 +55,5 @@ func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
 			)`,
 		domain,
 	).Scan(&free)
-	return
+	return !free
 }

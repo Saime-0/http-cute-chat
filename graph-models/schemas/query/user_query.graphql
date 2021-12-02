@@ -3,6 +3,5 @@ extend type Query {
 }
 
 # User ...
-union UserResult =
-    | AdvancedError
-    | User
+# go to results.go
+
