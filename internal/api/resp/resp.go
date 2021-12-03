@@ -16,8 +16,8 @@ func Success(msg string) model.Successful {
 }
 func Error(code ErrCode, msg string) *model.AdvancedError {
 	return &model.AdvancedError{
-		Code:    string(code),
-		Message: msg,
+		Code:  string(code),
+		Error: msg,
 	}
 }
 
@@ -30,4 +30,4 @@ const (
 	ErrNoAccess            ErrCode = "NoAccess"
 )
 
-// todo лог запросов с типом результата ответа(если ощибка то полностю ошибку)
+// todo лог запросов с типом результата ответа(если ошибка то полностю ошибку)

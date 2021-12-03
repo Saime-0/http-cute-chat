@@ -102,7 +102,6 @@ const (
 	MaxPasswordLength        = 32
 	MaxInviteLinks           = 3
 	MaxRolesInChat           = 128
-	Max
 )
 
 // Errors ...

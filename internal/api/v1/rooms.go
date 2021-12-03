@@ -56,7 +56,7 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room, err := h.Services.Repos.Rooms.GetRoom(roomId)
+	room, err := h.Services.Repos.Rooms.Room(roomId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
@@ -154,7 +154,7 @@ func (h *Handler) GetRoomMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room, err := h.Services.Repos.Rooms.GetRoom(roomId)
+	room, err := h.Services.Repos.Rooms.Room(roomId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
@@ -210,7 +210,7 @@ func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room, err := h.Services.Repos.Rooms.GetRoom(roomId)
+	room, err := h.Services.Repos.Rooms.Room(roomId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
@@ -303,7 +303,7 @@ func (h *Handler) GetRoomForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	room, err := h.Services.Repos.Rooms.GetRoom(roomId)
+	room, err := h.Services.Repos.Rooms.Room(roomId)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 

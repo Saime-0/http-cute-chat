@@ -43,7 +43,7 @@ func (r *queryResolver) Chats(ctx context.Context, nameFragment string, params *
 			Roles:        nil, // forced
 			Invites:      nil, // forced
 			Banlist:      nil, // forced
-			MeRestricts:  nil, // forced
+			Me:           nil, // forced
 		})
 	}
 

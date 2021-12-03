@@ -128,45 +128,21 @@ func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId
 	return
 }
 
-func (r *RoomsRepo) GetChatRooms(chatId int) (rooms models.ListRoomInfo, err error) {
-	rows, err := r.db.Query(
-		`SELECT id, COALESCE(parent_id, 0), name, note, private
-		FROM rooms
-		WHERE chat_id = $1`,
-		chatId,
-	)
-	if err != nil {
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		m := models.RoomInfo{}
-		if err = rows.Scan(&m.ID, &m.ParentID, &m.Name, &m.Note, &m.Private); err != nil {
-			return
-		}
-		rooms.Rooms = append(rooms.Rooms, m)
-	}
-	if !rows.NextResultSet() {
-		return
-	}
-	return
-}
-
-func (r *RoomsRepo) GetRoom(roomId int) (room models.RoomInfo, err error) {
-	err = r.db.QueryRow(
-		`SELECT id, COALESCE(parent_id, 0), name, note, private
+func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
+	room := &model.Room{}
+	err := r.db.QueryRow(
+		`SELECT  id, name, note, msg_format
 		FROM rooms
 		WHERE id = $1`,
 		roomId,
 	).Scan(
 		&room.ID,
-		&room.ParentID,
 		&room.Name,
 		&room.Note,
-		&room.Private,
+		&room.MsgFormat,
 	)
 
-	return
+	return room, err
 }
 
 func (r *RoomsRepo) UpdateRoomData(roomId int, roomModel *models.UpdateRoomData) (err error) {
@@ -276,9 +252,13 @@ func (r *RoomsRepo) GetAllows(room_id int) (allows models.Allows, err error) {
 	}
 	defer rows.Close()
 
-	allows = models.Allows{
-		Read:  models.AllowHolders{},
-		Write: models.AllowHolders{},
+	allows = model.Allows{
+		AllowRead:  &model.PermissionHolders{
+			Roles:   &model.,
+			Chars:   nil,
+			Members: nil,
+		},
+		AllowWrite: nil,
 	}
 	for rows.Next() {
 		d := models.AllowsDB{}

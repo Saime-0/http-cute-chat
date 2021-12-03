@@ -1,6 +1,6 @@
 type AdvancedError {
     code: String!
-    message: String!
+    error: String!
 }
 
 type Successful {

@@ -408,7 +408,7 @@ func (h *Handler) GetChatRooms(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	roomList, err := h.Services.Repos.Rooms.GetChatRooms(chatId)
+	roomList, err := h.Services.Repos.Rooms.Rooms(chatId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, roomList)

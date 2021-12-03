@@ -48,6 +48,10 @@ type MeResult interface {
 	IsMeResult()
 }
 
+type MemberResult interface {
+	IsMemberResult()
+}
+
 type MembersResult interface {
 	IsMembersResult()
 }
@@ -66,6 +70,10 @@ type RefreshTokensResult interface {
 
 type RegisterResult interface {
 	IsRegisterResult()
+}
+
+type RoleResult interface {
+	IsRoleResult()
 }
 
 type RolesResult interface {
@@ -133,8 +141,8 @@ type UsersResult interface {
 }
 
 type AdvancedError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
+	Code  string `json:"code"`
+	Error string `json:"error"`
 }
 
 func (AdvancedError) IsJoinByInviteResult()      {}
@@ -168,6 +176,13 @@ func (AdvancedError) IsRolesResult()             {}
 func (AdvancedError) IsInvitesResult()           {}
 func (AdvancedError) IsUsersResult()             {}
 func (AdvancedError) IsChatResult()              {}
+func (AdvancedError) IsRoleResult()              {}
+func (AdvancedError) IsMemberResult()            {}
+
+type Allows struct {
+	AllowRead  *PermissionHolders `json:"allow_read"`
+	AllowWrite *PermissionHolders `json:"allow_write"`
+}
 
 type Chat struct {
 	Unit         *Unit              `json:"unit"`
@@ -179,7 +194,7 @@ type Chat struct {
 	Roles        RolesResult        `json:"roles"`
 	Invites      InvitesResult      `json:"invites"`
 	Banlist      UsersResult        `json:"banlist"`
-	MeRestricts  *MeRestrict        `json:"me_restricts"`
+	Me           MemberResult       `json:"me"`
 }
 
 func (Chat) IsJoinByInviteResult() {}
@@ -263,9 +278,9 @@ type Invite struct {
 }
 
 type InviteInfo struct {
-	Unit         *Unit `json:"unit"`
-	Private      bool  `json:"private"`
-	CountMembers int   `json:"count_members"`
+	Unit         *Unit              `json:"unit"`
+	Private      bool               `json:"private"`
+	CountMembers CountMembersResult `json:"count_members"`
 }
 
 func (InviteInfo) IsInviteInfoResult() {}
@@ -290,19 +305,17 @@ type Me struct {
 
 func (Me) IsMeResult() {}
 
-type MeRestrict struct {
-	Chat   *Chat `json:"chat"`
-	Frozen bool  `json:"frozen"`
-	Muted  bool  `json:"muted"`
-	Banned bool  `json:"banned"`
+type Member struct {
+	Chat     *Chat      `json:"chat"`
+	User     *User      `json:"user"`
+	Role     RoleResult `json:"role"`
+	Char     *Char      `json:"char"`
+	JoinedAt int64      `json:"joined_at"`
+	Muted    bool       `json:"muted"`
+	Frozen   bool       `json:"frozen"`
 }
 
-type Member struct {
-	User     *User `json:"user"`
-	Role     *Role `json:"role"`
-	Char     *Char `json:"char"`
-	JoinedAt int64 `json:"joined_at"`
-}
+func (Member) IsMemberResult() {}
 
 type Members struct {
 	Members []*Member `json:"members"`
@@ -360,11 +373,6 @@ type RegisterInput struct {
 	Password string `json:"password"`
 }
 
-type Restricts struct {
-	AllowRead  *PermissionHolders `json:"allow_read"`
-	AllowWrite *PermissionHolders `json:"allow_write"`
-}
-
 type RestrictsInput struct {
 	AllowRead  *PermissionHoldersInput `json:"allow_read"`
 	AllowWrite *PermissionHoldersInput `json:"allow_write"`
@@ -378,6 +386,7 @@ type Role struct {
 
 func (Role) IsUpdateRoleResult() {}
 func (Role) IsUserRoleResult()   {}
+func (Role) IsRoleResult()       {}
 
 type Roles struct {
 	Roles []*Role `json:"roles"`
@@ -389,12 +398,12 @@ func (Roles) IsRolesResult()         {}
 
 type Room struct {
 	ID        int        `json:"id"`
-	Chat      ChatResult `json:"chat"`
+	Chat      *Chat      `json:"chat"`
 	Name      string     `json:"name"`
 	Parent    *Room      `json:"parent"`
 	Note      *string    `json:"note"`
 	MsgFormat *Form      `json:"msg_format"`
-	Restricts *Restricts `json:"restricts"`
+	Allows    *Allows    `json:"allows"`
 	Messages  []*Message `json:"messages"`
 }
 

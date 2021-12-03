@@ -39,7 +39,6 @@ type ResolverRoot interface {
 	Chat() ChatResolver
 	InviteInfo() InviteInfoResolver
 	Me() MeResolver
-	MeRestrict() MeRestrictResolver
 	Member() MemberResolver
 	Message() MessageResolver
 	Mutation() MutationResolver
@@ -56,15 +55,20 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	AdvancedError struct {
-		Code    func(childComplexity int) int
-		Message func(childComplexity int) int
+		Code  func(childComplexity int) int
+		Error func(childComplexity int) int
+	}
+
+	Allows struct {
+		AllowRead  func(childComplexity int) int
+		AllowWrite func(childComplexity int) int
 	}
 
 	Chat struct {
 		Banlist      func(childComplexity int) int
 		CountMembers func(childComplexity int) int
 		Invites      func(childComplexity int) int
-		MeRestricts  func(childComplexity int) int
+		Me           func(childComplexity int) int
 		Members      func(childComplexity int) int
 		Owner        func(childComplexity int) int
 		Private      func(childComplexity int) int
@@ -116,16 +120,12 @@ type ComplexityRoot struct {
 		User       func(childComplexity int) int
 	}
 
-	MeRestrict struct {
-		Banned func(childComplexity int) int
-		Chat   func(childComplexity int) int
-		Frozen func(childComplexity int) int
-		Muted  func(childComplexity int) int
-	}
-
 	Member struct {
 		Char     func(childComplexity int) int
+		Chat     func(childComplexity int) int
+		Frozen   func(childComplexity int) int
 		JoinedAt func(childComplexity int) int
+		Muted    func(childComplexity int) int
 		Role     func(childComplexity int) int
 		User     func(childComplexity int) int
 	}
@@ -196,11 +196,6 @@ type ComplexityRoot struct {
 		Users         func(childComplexity int, nameFragment string, params *model.Params) int
 	}
 
-	Restricts struct {
-		AllowRead  func(childComplexity int) int
-		AllowWrite func(childComplexity int) int
-	}
-
 	Role struct {
 		Color func(childComplexity int) int
 		ID    func(childComplexity int) int
@@ -212,6 +207,7 @@ type ComplexityRoot struct {
 	}
 
 	Room struct {
+		Allows    func(childComplexity int) int
 		Chat      func(childComplexity int) int
 		ID        func(childComplexity int) int
 		Messages  func(childComplexity int) int
@@ -219,7 +215,6 @@ type ComplexityRoot struct {
 		Name      func(childComplexity int) int
 		Note      func(childComplexity int) int
 		Parent    func(childComplexity int) int
-		Restricts func(childComplexity int) int
 	}
 
 	Rooms struct {
@@ -269,20 +264,17 @@ type ChatResolver interface {
 	Roles(ctx context.Context, obj *model.Chat) (model.RolesResult, error)
 	Invites(ctx context.Context, obj *model.Chat) (model.InvitesResult, error)
 	Banlist(ctx context.Context, obj *model.Chat) (model.UsersResult, error)
-	MeRestricts(ctx context.Context, obj *model.Chat) (*model.MeRestrict, error)
+	Me(ctx context.Context, obj *model.Chat) (model.MemberResult, error)
 }
 type InviteInfoResolver interface {
-	CountMembers(ctx context.Context, obj *model.InviteInfo) (int, error)
+	CountMembers(ctx context.Context, obj *model.InviteInfo) (model.CountMembersResult, error)
 }
 type MeResolver interface {
 	Chats(ctx context.Context, obj *model.Me) ([]*model.Chat, error)
 	OwnedChats(ctx context.Context, obj *model.Me) ([]*model.Chat, error)
 }
-type MeRestrictResolver interface {
-	Chat(ctx context.Context, obj *model.MeRestrict) (*model.Chat, error)
-}
 type MemberResolver interface {
-	Role(ctx context.Context, obj *model.Member) (*model.Role, error)
+	Role(ctx context.Context, obj *model.Member) (model.RoleResult, error)
 }
 type MessageResolver interface {
 	Room(ctx context.Context, obj *model.Message) (*model.Room, error)
@@ -335,9 +327,9 @@ type QueryResolver interface {
 	Users(ctx context.Context, nameFragment string, params *model.Params) (model.UsersResult, error)
 }
 type RoomResolver interface {
-	Chat(ctx context.Context, obj *model.Room) (model.ChatResult, error)
+	Parent(ctx context.Context, obj *model.Room) (*model.Room, error)
 
-	Restricts(ctx context.Context, obj *model.Room) (*model.Restricts, error)
+	Allows(ctx context.Context, obj *model.Room) (*model.Allows, error)
 	Messages(ctx context.Context, obj *model.Room) ([]*model.Message, error)
 }
 
@@ -363,12 +355,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.AdvancedError.Code(childComplexity), true
 
-	case "AdvancedError.message":
-		if e.complexity.AdvancedError.Message == nil {
+	case "AdvancedError.error":
+		if e.complexity.AdvancedError.Error == nil {
 			break
 		}
 
-		return e.complexity.AdvancedError.Message(childComplexity), true
+		return e.complexity.AdvancedError.Error(childComplexity), true
+
+	case "Allows.allow_read":
+		if e.complexity.Allows.AllowRead == nil {
+			break
+		}
+
+		return e.complexity.Allows.AllowRead(childComplexity), true
+
+	case "Allows.allow_write":
+		if e.complexity.Allows.AllowWrite == nil {
+			break
+		}
+
+		return e.complexity.Allows.AllowWrite(childComplexity), true
 
 	case "Chat.banlist":
 		if e.complexity.Chat.Banlist == nil {
@@ -391,12 +397,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Chat.Invites(childComplexity), true
 
-	case "Chat.me_restricts":
-		if e.complexity.Chat.MeRestricts == nil {
+	case "Chat.me":
+		if e.complexity.Chat.Me == nil {
 			break
 		}
 
-		return e.complexity.Chat.MeRestricts(childComplexity), true
+		return e.complexity.Chat.Me(childComplexity), true
 
 	case "Chat.members":
 		if e.complexity.Chat.Members == nil {
@@ -573,34 +579,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Me.User(childComplexity), true
 
-	case "MeRestrict.banned":
-		if e.complexity.MeRestrict.Banned == nil {
-			break
-		}
-
-		return e.complexity.MeRestrict.Banned(childComplexity), true
-
-	case "MeRestrict.chat":
-		if e.complexity.MeRestrict.Chat == nil {
-			break
-		}
-
-		return e.complexity.MeRestrict.Chat(childComplexity), true
-
-	case "MeRestrict.frozen":
-		if e.complexity.MeRestrict.Frozen == nil {
-			break
-		}
-
-		return e.complexity.MeRestrict.Frozen(childComplexity), true
-
-	case "MeRestrict.muted":
-		if e.complexity.MeRestrict.Muted == nil {
-			break
-		}
-
-		return e.complexity.MeRestrict.Muted(childComplexity), true
-
 	case "Member.char":
 		if e.complexity.Member.Char == nil {
 			break
@@ -608,12 +586,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Member.Char(childComplexity), true
 
+	case "Member.chat":
+		if e.complexity.Member.Chat == nil {
+			break
+		}
+
+		return e.complexity.Member.Chat(childComplexity), true
+
+	case "Member.frozen":
+		if e.complexity.Member.Frozen == nil {
+			break
+		}
+
+		return e.complexity.Member.Frozen(childComplexity), true
+
 	case "Member.joined_at":
 		if e.complexity.Member.JoinedAt == nil {
 			break
 		}
 
 		return e.complexity.Member.JoinedAt(childComplexity), true
+
+	case "Member.muted":
+		if e.complexity.Member.Muted == nil {
+			break
+		}
+
+		return e.complexity.Member.Muted(childComplexity), true
 
 	case "Member.role":
 		if e.complexity.Member.Role == nil {
@@ -1140,20 +1139,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Users(childComplexity, args["name_fragment"].(string), args["params"].(*model.Params)), true
 
-	case "Restricts.allow_read":
-		if e.complexity.Restricts.AllowRead == nil {
-			break
-		}
-
-		return e.complexity.Restricts.AllowRead(childComplexity), true
-
-	case "Restricts.allow_write":
-		if e.complexity.Restricts.AllowWrite == nil {
-			break
-		}
-
-		return e.complexity.Restricts.AllowWrite(childComplexity), true
-
 	case "Role.color":
 		if e.complexity.Role.Color == nil {
 			break
@@ -1181,6 +1166,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Roles.Roles(childComplexity), true
+
+	case "Room.allows":
+		if e.complexity.Room.Allows == nil {
+			break
+		}
+
+		return e.complexity.Room.Allows(childComplexity), true
 
 	case "Room.chat":
 		if e.complexity.Room.Chat == nil {
@@ -1230,13 +1222,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Room.Parent(childComplexity), true
-
-	case "Room.restricts":
-		if e.complexity.Room.Restricts == nil {
-			break
-		}
-
-		return e.complexity.Room.Restricts(childComplexity), true
 
 	case "Rooms.rooms":
 		if e.complexity.Rooms.Rooms == nil {
@@ -1468,24 +1453,17 @@ type Chat {
     roles: RolesResult @goField(forceResolver: true)
     invites: InvitesResult @goField(forceResolver: true)
     banlist: UsersResult @goField(forceResolver: true)
-    me_restricts: MeRestrict @goField(forceResolver: true)
-}
-
-type MeRestrict {
-    chat: Chat! @goField(forceResolver: true)
-    frozen: Boolean!
-    muted: Boolean!
-    banned: Boolean!
+    me: MemberResult! @goField(forceResolver: true)
 }
 
 type Room {
     id: ID!
-    chat: ChatResult! @goField(forceResolver: true)
+    chat: Chat! # @goField(forceResolver: true)
     name: String!
-    parent: Room
+    parent: Room @goField(forceResolver: true)
     note: String
     msg_format: Form
-    restricts: Restricts @goField(forceResolver: true)
+    allows: Allows @goField(forceResolver: true)
     messages: [Message!] @goField(forceResolver: true)
 }
 
@@ -1506,11 +1484,13 @@ type FormField {
 }
 
 type Member {
-#    chat: Chat! @goField(forceResolver: true) зач тут чат?
+    chat: Chat! # @goField(forceResolver: true) # зач тут чат?
     user: User! # @goField(forceResolver: true)
-    role: Role @goField(forceResolver: true)
+    role: RoleResult @goField(forceResolver: true)
     char: Char
     joined_at: Int64!
+    muted: Boolean!
+    frozen: Boolean!
 }
 
 type Members {
@@ -1550,7 +1530,7 @@ type Invites {
 type InviteInfo {
     unit: Unit!
     private: Boolean!
-    count_members: Int! @goField(forceResolver: true)
+    count_members: CountMembersResult! @goField(forceResolver: true)
 }
 type User {
     unit: Unit!
@@ -1560,7 +1540,7 @@ type Users {
     users: [User!]
 }
 
-type Restricts {
+type Allows {
     allow_read: PermissionHolders
     allow_write: PermissionHolders
 }
@@ -1977,7 +1957,7 @@ union UserRoleResult =
 	{Name: "graph-models/schemas/query.graphql", Input: `type Query`, BuiltIn: false},
 	{Name: "graph-models/schemas/response.graphql", Input: `type AdvancedError {
     code: String!
-    message: String!
+    error: String!
 }
 
 type Successful {
@@ -2018,6 +1998,14 @@ union UsersResult =
 union ChatResult =
     | AdvancedError
     | Chat
+
+union RoleResult =
+    | AdvancedError
+    | Role
+
+union MemberResult =
+    | AdvancedError
+    | Member
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -2885,7 +2873,7 @@ func (ec *executionContext) _AdvancedError_code(ctx context.Context, field graph
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _AdvancedError_message(ctx context.Context, field graphql.CollectedField, obj *model.AdvancedError) (ret graphql.Marshaler) {
+func (ec *executionContext) _AdvancedError_error(ctx context.Context, field graphql.CollectedField, obj *model.AdvancedError) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -2903,7 +2891,7 @@ func (ec *executionContext) _AdvancedError_message(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
+		return obj.Error, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2918,6 +2906,70 @@ func (ec *executionContext) _AdvancedError_message(ctx context.Context, field gr
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Allows_allow_read(ctx context.Context, field graphql.CollectedField, obj *model.Allows) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Allows",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AllowRead, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PermissionHolders)
+	fc.Result = res
+	return ec.marshalOPermissionHolders2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐPermissionHolders(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Allows_allow_write(ctx context.Context, field graphql.CollectedField, obj *model.Allows) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Allows",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AllowWrite, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.PermissionHolders)
+	fc.Result = res
+	return ec.marshalOPermissionHolders2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐPermissionHolders(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Chat_unit(ctx context.Context, field graphql.CollectedField, obj *model.Chat) (ret graphql.Marshaler) {
@@ -3220,7 +3272,7 @@ func (ec *executionContext) _Chat_banlist(ctx context.Context, field graphql.Col
 	return ec.marshalOUsersResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐUsersResult(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Chat_me_restricts(ctx context.Context, field graphql.CollectedField, obj *model.Chat) (ret graphql.Marshaler) {
+func (ec *executionContext) _Chat_me(ctx context.Context, field graphql.CollectedField, obj *model.Chat) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3238,18 +3290,21 @@ func (ec *executionContext) _Chat_me_restricts(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Chat().MeRestricts(rctx, obj)
+		return ec.resolvers.Chat().Me(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.MeRestrict)
+	res := resTmp.(model.MemberResult)
 	fc.Result = res
-	return ec.marshalOMeRestrict2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMeRestrict(ctx, field.Selections, res)
+	return ec.marshalNMemberResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMemberResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _ChatArray_chats(ctx context.Context, field graphql.CollectedField, obj *model.ChatArray) (ret graphql.Marshaler) {
@@ -3719,9 +3774,9 @@ func (ec *executionContext) _InviteInfo_count_members(ctx context.Context, field
 		}
 		return graphql.Null
 	}
-	res := resTmp.(int)
+	res := resTmp.(model.CountMembersResult)
 	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
+	return ec.marshalNCountMembersResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCountMembersResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Invites_invites(ctx context.Context, field graphql.CollectedField, obj *model.Invites) (ret graphql.Marshaler) {
@@ -3890,7 +3945,7 @@ func (ec *executionContext) _Me_owned_chats(ctx context.Context, field graphql.C
 	return ec.marshalOChat2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChatᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _MeRestrict_chat(ctx context.Context, field graphql.CollectedField, obj *model.MeRestrict) (ret graphql.Marshaler) {
+func (ec *executionContext) _Member_chat(ctx context.Context, field graphql.CollectedField, obj *model.Member) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -3898,17 +3953,17 @@ func (ec *executionContext) _MeRestrict_chat(ctx context.Context, field graphql.
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "MeRestrict",
+		Object:     "Member",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.MeRestrict().Chat(rctx, obj)
+		return obj.Chat, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3923,111 +3978,6 @@ func (ec *executionContext) _MeRestrict_chat(ctx context.Context, field graphql.
 	res := resTmp.(*model.Chat)
 	fc.Result = res
 	return ec.marshalNChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChat(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MeRestrict_frozen(ctx context.Context, field graphql.CollectedField, obj *model.MeRestrict) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MeRestrict",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Frozen, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MeRestrict_muted(ctx context.Context, field graphql.CollectedField, obj *model.MeRestrict) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MeRestrict",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Muted, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _MeRestrict_banned(ctx context.Context, field graphql.CollectedField, obj *model.MeRestrict) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "MeRestrict",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Banned, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Member_user(ctx context.Context, field graphql.CollectedField, obj *model.Member) (ret graphql.Marshaler) {
@@ -4092,9 +4042,9 @@ func (ec *executionContext) _Member_role(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Role)
+	res := resTmp.(model.RoleResult)
 	fc.Result = res
-	return ec.marshalORole2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRole(ctx, field.Selections, res)
+	return ec.marshalORoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoleResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Member_char(ctx context.Context, field graphql.CollectedField, obj *model.Member) (ret graphql.Marshaler) {
@@ -4162,6 +4112,76 @@ func (ec *executionContext) _Member_joined_at(ctx context.Context, field graphql
 	res := resTmp.(int64)
 	fc.Result = res
 	return ec.marshalNInt642int64(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Member_muted(ctx context.Context, field graphql.CollectedField, obj *model.Member) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Member",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Muted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Member_frozen(ctx context.Context, field graphql.CollectedField, obj *model.Member) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Member",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Frozen, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Members_members(ctx context.Context, field graphql.CollectedField, obj *model.Members) (ret graphql.Marshaler) {
@@ -6523,70 +6543,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Restricts_allow_read(ctx context.Context, field graphql.CollectedField, obj *model.Restricts) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Restricts",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AllowRead, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.PermissionHolders)
-	fc.Result = res
-	return ec.marshalOPermissionHolders2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐPermissionHolders(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Restricts_allow_write(ctx context.Context, field graphql.CollectedField, obj *model.Restricts) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Restricts",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AllowWrite, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.PermissionHolders)
-	fc.Result = res
-	return ec.marshalOPermissionHolders2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐPermissionHolders(ctx, field.Selections, res)
-}
-
 func (ec *executionContext) _Role_id(ctx context.Context, field graphql.CollectedField, obj *model.Role) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -6770,14 +6726,14 @@ func (ec *executionContext) _Room_chat(ctx context.Context, field graphql.Collec
 		Object:     "Room",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Room().Chat(rctx, obj)
+		return obj.Chat, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6789,9 +6745,9 @@ func (ec *executionContext) _Room_chat(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.ChatResult)
+	res := resTmp.(*model.Chat)
 	fc.Result = res
-	return ec.marshalNChatResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChatResult(ctx, field.Selections, res)
+	return ec.marshalNChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChat(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_name(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -6840,14 +6796,14 @@ func (ec *executionContext) _Room_parent(ctx context.Context, field graphql.Coll
 		Object:     "Room",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Parent, nil
+		return ec.resolvers.Room().Parent(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6925,7 +6881,7 @@ func (ec *executionContext) _Room_msg_format(ctx context.Context, field graphql.
 	return ec.marshalOForm2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐForm(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Room_restricts(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+func (ec *executionContext) _Room_allows(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6943,7 +6899,7 @@ func (ec *executionContext) _Room_restricts(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Room().Restricts(rctx, obj)
+		return ec.resolvers.Room().Allows(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6952,9 +6908,9 @@ func (ec *executionContext) _Room_restricts(ctx context.Context, field graphql.C
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Restricts)
+	res := resTmp.(*model.Allows)
 	fc.Result = res
-	return ec.marshalORestricts2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRestricts(ctx, field.Selections, res)
+	return ec.marshalOAllows2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐAllows(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_messages(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -9518,6 +9474,29 @@ func (ec *executionContext) _MeResult(ctx context.Context, sel ast.SelectionSet,
 	}
 }
 
+func (ec *executionContext) _MemberResult(ctx context.Context, sel ast.SelectionSet, obj model.MemberResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.Member:
+		return ec._Member(ctx, sel, &obj)
+	case *model.Member:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Member(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _MembersResult(ctx context.Context, sel ast.SelectionSet, obj model.MembersResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -9635,6 +9614,29 @@ func (ec *executionContext) _RegisterResult(ctx context.Context, sel ast.Selecti
 			return graphql.Null
 		}
 		return ec._Successful(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _RoleResult(ctx context.Context, sel ast.SelectionSet, obj model.RoleResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.Role:
+		return ec._Role(ctx, sel, &obj)
+	case *model.Role:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Role(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -10019,7 +10021,7 @@ func (ec *executionContext) _UsersResult(ctx context.Context, sel ast.SelectionS
 
 // region    **************************** object.gotpl ****************************
 
-var advancedErrorImplementors = []string{"AdvancedError", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "UpdateChatResult", "UpdateMeDataResult", "UpdateRoleResult", "UpdateRoomResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MessageInfoResult", "RoomFormResult", "RoomMessagesResult", "RoomResult", "RoomWhiteListResult", "UnitResult", "UnitsResult", "UserRoleResult", "MutationResult", "UserResult", "RoomsResult", "CountMembersResult", "MembersResult", "RolesResult", "InvitesResult", "UsersResult", "ChatResult"}
+var advancedErrorImplementors = []string{"AdvancedError", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "UpdateChatResult", "UpdateMeDataResult", "UpdateRoleResult", "UpdateRoomResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MessageInfoResult", "RoomFormResult", "RoomMessagesResult", "RoomResult", "RoomWhiteListResult", "UnitResult", "UnitsResult", "UserRoleResult", "MutationResult", "UserResult", "RoomsResult", "CountMembersResult", "MembersResult", "RolesResult", "InvitesResult", "UsersResult", "ChatResult", "RoleResult", "MemberResult"}
 
 func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.SelectionSet, obj *model.AdvancedError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, advancedErrorImplementors)
@@ -10035,11 +10037,37 @@ func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "message":
-			out.Values[i] = ec._AdvancedError_message(ctx, field, obj)
+		case "error":
+			out.Values[i] = ec._AdvancedError_error(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var allowsImplementors = []string{"Allows"}
+
+func (ec *executionContext) _Allows(ctx context.Context, sel ast.SelectionSet, obj *model.Allows) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, allowsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Allows")
+		case "allow_read":
+			out.Values[i] = ec._Allows_allow_read(ctx, field, obj)
+		case "allow_write":
+			out.Values[i] = ec._Allows_allow_write(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10155,7 +10183,7 @@ func (ec *executionContext) _Chat(ctx context.Context, sel ast.SelectionSet, obj
 				res = ec._Chat_banlist(ctx, field, obj)
 				return res
 			})
-		case "me_restricts":
+		case "me":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -10163,7 +10191,10 @@ func (ec *executionContext) _Chat(ctx context.Context, sel ast.SelectionSet, obj
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Chat_me_restricts(ctx, field, obj)
+				res = ec._Chat_me(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		default:
@@ -10448,58 +10479,7 @@ func (ec *executionContext) _Me(ctx context.Context, sel ast.SelectionSet, obj *
 	return out
 }
 
-var meRestrictImplementors = []string{"MeRestrict"}
-
-func (ec *executionContext) _MeRestrict(ctx context.Context, sel ast.SelectionSet, obj *model.MeRestrict) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, meRestrictImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("MeRestrict")
-		case "chat":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._MeRestrict_chat(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "frozen":
-			out.Values[i] = ec._MeRestrict_frozen(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "muted":
-			out.Values[i] = ec._MeRestrict_muted(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "banned":
-			out.Values[i] = ec._MeRestrict_banned(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var memberImplementors = []string{"Member"}
+var memberImplementors = []string{"Member", "MemberResult"}
 
 func (ec *executionContext) _Member(ctx context.Context, sel ast.SelectionSet, obj *model.Member) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, memberImplementors)
@@ -10510,6 +10490,11 @@ func (ec *executionContext) _Member(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Member")
+		case "chat":
+			out.Values[i] = ec._Member_chat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "user":
 			out.Values[i] = ec._Member_user(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10530,6 +10515,16 @@ func (ec *executionContext) _Member(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Member_char(ctx, field, obj)
 		case "joined_at":
 			out.Values[i] = ec._Member_joined_at(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "muted":
+			out.Values[i] = ec._Member_muted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "frozen":
+			out.Values[i] = ec._Member_frozen(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
@@ -11078,33 +11073,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var restrictsImplementors = []string{"Restricts"}
-
-func (ec *executionContext) _Restricts(ctx context.Context, sel ast.SelectionSet, obj *model.Restricts) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, restrictsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Restricts")
-		case "allow_read":
-			out.Values[i] = ec._Restricts_allow_read(ctx, field, obj)
-		case "allow_write":
-			out.Values[i] = ec._Restricts_allow_write(ctx, field, obj)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var roleImplementors = []string{"Role", "UpdateRoleResult", "UserRoleResult"}
+var roleImplementors = []string{"Role", "UpdateRoleResult", "UserRoleResult", "RoleResult"}
 
 func (ec *executionContext) _Role(ctx context.Context, sel ast.SelectionSet, obj *model.Role) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, roleImplementors)
@@ -11182,31 +11151,16 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "chat":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Room_chat(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
+			out.Values[i] = ec._Room_chat(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "name":
 			out.Values[i] = ec._Room_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "parent":
-			out.Values[i] = ec._Room_parent(ctx, field, obj)
-		case "note":
-			out.Values[i] = ec._Room_note(ctx, field, obj)
-		case "msg_format":
-			out.Values[i] = ec._Room_msg_format(ctx, field, obj)
-		case "restricts":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -11214,7 +11168,22 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Room_restricts(ctx, field, obj)
+				res = ec._Room_parent(ctx, field, obj)
+				return res
+			})
+		case "note":
+			out.Values[i] = ec._Room_note(ctx, field, obj)
+		case "msg_format":
+			out.Values[i] = ec._Room_msg_format(ctx, field, obj)
+		case "allows":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Room_allows(ctx, field, obj)
 				return res
 			})
 		case "messages":
@@ -11746,10 +11715,6 @@ func (ec *executionContext) marshalNChar2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcute�
 	return v
 }
 
-func (ec *executionContext) marshalNChat2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChat(ctx context.Context, sel ast.SelectionSet, v model.Chat) graphql.Marshaler {
-	return ec._Chat(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChat(ctx context.Context, sel ast.SelectionSet, v *model.Chat) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -11758,16 +11723,6 @@ func (ec *executionContext) marshalNChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcu
 		return graphql.Null
 	}
 	return ec._Chat(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNChatResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChatResult(ctx context.Context, sel ast.SelectionSet, v model.ChatResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._ChatResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNCountMembersResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCountMembersResult(ctx context.Context, sel ast.SelectionSet, v model.CountMembersResult) graphql.Marshaler {
@@ -12008,6 +11963,16 @@ func (ec *executionContext) marshalNMember2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑ
 		return graphql.Null
 	}
 	return ec._Member(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMemberResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMemberResult(ctx context.Context, sel ast.SelectionSet, v model.MemberResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._MemberResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMessage2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMessage(ctx context.Context, sel ast.SelectionSet, v *model.Message) graphql.Marshaler {
@@ -12511,6 +12476,13 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
+func (ec *executionContext) marshalOAllows2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐAllows(ctx context.Context, sel ast.SelectionSet, v *model.Allows) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Allows(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -12910,13 +12882,6 @@ func (ec *executionContext) marshalOInvitesResult2githubᚗcomᚋsaimeᚑ0ᚋhtt
 	return ec._InvitesResult(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalOMeRestrict2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMeRestrict(ctx context.Context, sel ast.SelectionSet, v *model.MeRestrict) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._MeRestrict(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalOMember2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMemberᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Member) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -13063,13 +13028,6 @@ func (ec *executionContext) unmarshalOPermissionHoldersInput2ᚖgithubᚗcomᚋs
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalORestricts2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRestricts(ctx context.Context, sel ast.SelectionSet, v *model.Restricts) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Restricts(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalORestrictsInput2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRestrictsInput(ctx context.Context, v interface{}) (*model.RestrictsInput, error) {
 	if v == nil {
 		return nil, nil
@@ -13125,11 +13083,11 @@ func (ec *executionContext) marshalORole2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttp�
 	return ret
 }
 
-func (ec *executionContext) marshalORole2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRole(ctx context.Context, sel ast.SelectionSet, v *model.Role) graphql.Marshaler {
+func (ec *executionContext) marshalORoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoleResult(ctx context.Context, sel ast.SelectionSet, v model.RoleResult) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._Role(ctx, sel, v)
+	return ec._RoleResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORolesResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRolesResult(ctx context.Context, sel ast.SelectionSet, v model.RolesResult) graphql.Marshaler {

@@ -8,13 +8,16 @@ import (
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
 func (r *queryResolver) Chat(ctx context.Context, input model.FindByDomainOrID) (model.ChatResult, error) {
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	if input.ID != nil && pl.ChatExists(*input.ID) ||
-		input.Domain != nil && pl.ChatExistsByDomain(*input.Domain) && pl.GetIDByDomain(*input.Domain, input.ID) {
+		input.Domain != nil && pl.ChatExistsByDomain(*input.Domain) && pl.GetIDByDomain(*input.Domain, input.ID) ||
+		pl.IsNotBanned(clientID, *input.ID) {
 		return pl.Err, nil
 	}
 
@@ -37,6 +40,6 @@ func (r *queryResolver) Chat(ctx context.Context, input model.FindByDomainOrID) 
 		Roles:        nil, // forced
 		Invites:      nil, // forced
 		Banlist:      nil, // forced
-		MeRestricts:  nil, // forced
+		Me:           nil, // forced
 	}, nil
 }

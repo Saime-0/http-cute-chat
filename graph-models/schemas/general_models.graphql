@@ -55,24 +55,17 @@ type Chat {
     roles: RolesResult @goField(forceResolver: true)
     invites: InvitesResult @goField(forceResolver: true)
     banlist: UsersResult @goField(forceResolver: true)
-    me_restricts: MeRestrict @goField(forceResolver: true)
-}
-
-type MeRestrict {
-    chat: Chat! @goField(forceResolver: true)
-    frozen: Boolean!
-    muted: Boolean!
-    banned: Boolean!
+    me: MemberResult! @goField(forceResolver: true)
 }
 
 type Room {
     id: ID!
-    chat: ChatResult! @goField(forceResolver: true)
+    chat: Chat! # @goField(forceResolver: true)
     name: String!
-    parent: Room
+    parent: RoomResult @goField(forceResolver: true)
     note: String
     msg_format: Form
-    restricts: Restricts @goField(forceResolver: true)
+    allows: Allows @goField(forceResolver: true)
     messages: [Message!] @goField(forceResolver: true)
 }
 
@@ -93,11 +86,13 @@ type FormField {
 }
 
 type Member {
-#    chat: Chat! @goField(forceResolver: true) зач тут чат?
+    chat: Chat! # @goField(forceResolver: true) # зач тут чат?
     user: User! # @goField(forceResolver: true)
-    role: Role @goField(forceResolver: true)
+    role: RoleResult @goField(forceResolver: true)
     char: Char
     joined_at: Int64!
+    muted: Boolean!
+    frozen: Boolean!
 }
 
 type Members {
@@ -137,7 +132,7 @@ type Invites {
 type InviteInfo {
     unit: Unit!
     private: Boolean!
-    count_members: Int! @goField(forceResolver: true)
+    count_members: CountMembersResult! @goField(forceResolver: true)
 }
 type User {
     unit: Unit!
@@ -147,7 +142,8 @@ type Users {
     users: [User!]
 }
 
-type Restricts {
+type Allows {
+    room: Room! # 04.12 1:55 todo
     allow_read: PermissionHolders
     allow_write: PermissionHolders
 }

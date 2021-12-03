@@ -26,9 +26,5 @@ func (r *queryResolver) UserRole(ctx context.Context, userID int, chatID int) (m
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
-	return model.Role{
-		ID:    role.ID,
-		Name:  role.Name,
-		Color: role.Color,
-	}, nil
+	return role, nil
 }

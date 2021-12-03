@@ -55,6 +55,8 @@ type Member struct {
 	RoleID   *int // deprecated
 	Char     rules.CharType
 	JoinedAt int64
+	Muted    bool
+	Frozen   bool
 }
 
 // general room model
@@ -266,4 +268,9 @@ type User struct {
 }
 type Users struct {
 	Users []User
+}
+type InviteInfo struct {
+	Unit         *Unit `json:"unit"`
+	Private      bool  `json:"private"`
+	CountMembers int   `json:"count_members"`
 }

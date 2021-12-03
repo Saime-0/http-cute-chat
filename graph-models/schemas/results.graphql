@@ -29,3 +29,11 @@ union UsersResult =
 union ChatResult =
     | AdvancedError
     | Chat
+
+union RoleResult =
+    | AdvancedError
+    | Role
+
+union MemberResult =
+    | AdvancedError
+    | Member

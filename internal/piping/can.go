@@ -104,3 +104,11 @@ func (c *Can) ObserveBanlist(uid, cid int) (fail bool) {
 func (c *Can) ObserveMembers(uid, cid int) (fail bool) {
 	return all
 }
+
+func (c *Can) ObserveOwner(uid, cid int) (fail bool) {
+	return all
+}
+
+func (c *Can) ObserveRooms(uid, cid int) (fail bool) {
+	return all
+}

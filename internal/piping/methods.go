@@ -335,3 +335,11 @@ func (p *Pipeline) GetUserIDByInput(input model.LoginInput, userId *int) (fail b
 	*userId = _uid
 	return
 }
+
+func (p *Pipeline) IsNotBanned(userId, chatId int) (fail bool) {
+	if p.repos.Chats.UserIsBanned(userId, chatId) {
+		p.Err = resp.Error(resp.ErrBadRequest, "вы забанены в этом чате")
+		return true
+	}
+	return
+}

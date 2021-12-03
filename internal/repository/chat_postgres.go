@@ -107,7 +107,7 @@ func (r *ChatsRepo) GetChatsByNameFragment(fragment string, limit int, offset in
 }
 func (r *ChatsRepo) Members(chatId int) (members models.Members, err error) {
 	rows, err := r.db.Query(
-		`SELECT units.id, units.domain, units.name, units.type, member.role_id, member.char, member.joined_at
+		`SELECT units.id, units.domain, units.name, units.type, member.role_id, member.char, member.joined_at, member.muted, member.frozen
 		FROM units INNER JOIN chat_members AS member
 		ON units.id = member.id
 		WHERE member.chat_id = $1
@@ -120,7 +120,7 @@ func (r *ChatsRepo) Members(chatId int) (members models.Members, err error) {
 	defer rows.Close()
 	for rows.Next() {
 		m := models.Member{}
-		if err = rows.Scan(&m.User.Unit.ID, &m.User.Unit.Domain, &m.User.Unit.Name, &m.User.Unit.Type, &m.RoleID, &m.Char, &m.JoinedAt); err != nil {
+		if err = rows.Scan(&m.User.Unit.ID, &m.User.Unit.Domain, &m.User.Unit.Name, &m.User.Unit.Type, &m.RoleID, &m.Char, &m.JoinedAt, &m.Muted, &m.Frozen); err != nil {
 			return
 		}
 		members.Members = append(members.Members, m)
@@ -538,8 +538,9 @@ func (r *ChatsRepo) Banlist(chatId int) (users models.Users, err error) {
 	return
 }
 
-func (r *ChatsRepo) UserRole(userId int, chatId int) (role models.Role, err error) {
-	err = r.db.QueryRow(
+func (r *ChatsRepo) UserRole(userId int, chatId int) (*model.Role, error) {
+	role := &model.Role{}
+	err := r.db.QueryRow(
 		`SELECT id, name, color
 		FROM roles 
 		WHERE id = (
@@ -554,8 +555,10 @@ func (r *ChatsRepo) UserRole(userId int, chatId int) (role models.Role, err erro
 		&role.Name,
 		&role.Color,
 	)
-
-	return
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	return role, nil
 }
 
 func (r *ChatsRepo) CreateRoleInChat(chatId int, roleModel *models.CreateRole) (roleId int, err error) {
@@ -702,16 +705,19 @@ func (r *ChatsRepo) RoleExistsByID(chatId, roleId int) (exists bool) {
 	return
 }
 
-func (r *ChatsRepo) InviteInfo(code string) (info model.InviteInfo, err error) {
+func (r *ChatsRepo) InviteInfo(code string) (info *model.InviteInfo, err error) {
+	info = &model.InviteInfo{
+		Unit: &model.Unit{},
+	}
 	err = r.db.QueryRow(
 		`SELECT units.id, units.domain, units.name, units.type, chats.private
-		FROM units INNER JOIN chats
-		ON units.id = chats.id
-		WHERE units.id IN (
-		    SELECT chat_id
-		    FROM invites
-		    WHERE code = $1
-		)`,
+		FROM units 
+		INNER JOIN chats
+			ON units.id = chats.id
+		INNER JOIN invites
+			ON units.id = invites.chat_id
+		WHERE invites.code = $1`,
+		code,
 	).Scan(
 		&info.Unit.ID,
 		&info.Unit.Domain,
@@ -721,4 +727,90 @@ func (r *ChatsRepo) InviteInfo(code string) (info model.InviteInfo, err error) {
 	)
 
 	return
+}
+
+func (r *ChatsRepo) Owner(chatId int) (*model.User, error) {
+	owner := &model.User{
+		Unit: &model.Unit{},
+	}
+	err := r.db.QueryRow(
+		`SELECT units.id, units.domain, units.name, units.type
+		FROM units 
+		INNER JOIN users 
+			ON units.id = users.id
+		INNER JOIN chats 
+			ON units.id = chats.owner_id
+		WHERE chats.id = $1`,
+		chatId,
+	).Scan(
+		&owner.Unit.ID,
+		&owner.Unit.Domain,
+		&owner.Unit.Name,
+		&owner.Unit.Type,
+	)
+
+	return owner, err
+}
+func (r *ChatsRepo) UserIsBanned(userId int, chatId int) (banned bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM chat_banlist WHERE user_id = $1 AND chat_id = $2)`,
+		userId,
+		chatId,
+	).Scan(&banned)
+
+	return
+}
+func (r *ChatsRepo) Member(userId, chatId int) (*model.Member, error) {
+	member := &model.Member{
+		Chat: nil, // outside
+		User: &model.User{
+			Unit: &model.Unit{},
+		},
+		Role:     nil, // forced
+		Char:     nil,
+		JoinedAt: 0,
+		Muted:    false,
+		Frozen:   false,
+	}
+	err := r.db.QueryRow(
+		`SELECT units.id, units.domain, units.name, units.type, member.char, member.joined_at, member.muted, member.frozen
+		FROM units INNER JOIN chat_members AS member
+		ON units.id = member.id
+		WHERE member.user_id = $1 AND member.chat_id = $2`,
+		userId,
+		chatId,
+	).Scan(
+		&member.User.Unit.ID,
+		&member.User.Unit.Domain,
+		&member.User.Unit.Name,
+		&member.User.Unit.Type,
+		&member.Char,
+		&member.JoinedAt,
+		&member.Muted,
+		&member.Frozen,
+	)
+	return member, err
+}
+
+func (r *ChatsRepo) Rooms(chatId int) (*model.Rooms, error) {
+	rooms := &model.Rooms{}
+	rows, err := r.db.Query(
+		`SELECT id, name, note, msg_format
+		FROM rooms
+		WHERE chat_id = $1`,
+		chatId,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := &model.Room{}
+		if err = rows.Scan(&m.ID, &m.Name, &m.Note, &m.MsgFormat); err != nil {
+			return nil, err
+		}
+		rooms.Rooms = append(rooms.Rooms, m)
+	}
+
+	return rooms, nil
 }
