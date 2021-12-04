@@ -37,3 +37,7 @@ union RoleResult =
 union MemberResult =
     | AdvancedError
     | Member
+
+union AllowsResult =
+    | AdvancedError
+    | Allows

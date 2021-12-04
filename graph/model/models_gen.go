@@ -8,6 +8,10 @@ import (
 	"strconv"
 )
 
+type AllowsResult interface {
+	IsAllowsResult()
+}
+
 type ChatResult interface {
 	IsChatResult()
 }
@@ -178,10 +182,18 @@ func (AdvancedError) IsUsersResult()             {}
 func (AdvancedError) IsChatResult()              {}
 func (AdvancedError) IsRoleResult()              {}
 func (AdvancedError) IsMemberResult()            {}
+func (AdvancedError) IsAllowsResult()            {}
 
 type Allows struct {
+	Room       *Room              `json:"room"`
 	AllowRead  *PermissionHolders `json:"allow_read"`
 	AllowWrite *PermissionHolders `json:"allow_write"`
+}
+
+func (Allows) IsAllowsResult() {}
+
+type Chars struct {
+	Chars []Char `json:"chars"`
 }
 
 type Chat struct {
@@ -355,9 +367,9 @@ type Params struct {
 }
 
 type PermissionHolders struct {
-	Roles   []*Role   `json:"roles"`
-	Chars   []Char    `json:"chars"`
-	Members []*Member `json:"members"`
+	Roles   *Roles   `json:"roles"`
+	Chars   *Chars   `json:"chars"`
+	Members *Members `json:"members"`
 }
 
 type PermissionHoldersInput struct {
@@ -397,14 +409,14 @@ func (Roles) IsRoomWhiteListResult() {}
 func (Roles) IsRolesResult()         {}
 
 type Room struct {
-	ID        int        `json:"id"`
-	Chat      *Chat      `json:"chat"`
-	Name      string     `json:"name"`
-	Parent    *Room      `json:"parent"`
-	Note      *string    `json:"note"`
-	MsgFormat *Form      `json:"msg_format"`
-	Allows    *Allows    `json:"allows"`
-	Messages  []*Message `json:"messages"`
+	ID        int          `json:"id"`
+	Chat      *Chat        `json:"chat"`
+	Name      string       `json:"name"`
+	ParentID  *int         `json:"parent_id"`
+	Note      *string      `json:"note"`
+	MsgFormat *Form        `json:"msg_format"`
+	Allows    AllowsResult `json:"allows"`
+	Messages  []*Message   `json:"messages"`
 }
 
 func (Room) IsUpdateRoomResult() {}

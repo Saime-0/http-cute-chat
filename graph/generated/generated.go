@@ -42,7 +42,6 @@ type ResolverRoot interface {
 	Member() MemberResolver
 	Message() MessageResolver
 	Mutation() MutationResolver
-	PermissionHolders() PermissionHoldersResolver
 	Query() QueryResolver
 	Room() RoomResolver
 }
@@ -62,6 +61,11 @@ type ComplexityRoot struct {
 	Allows struct {
 		AllowRead  func(childComplexity int) int
 		AllowWrite func(childComplexity int) int
+		Room       func(childComplexity int) int
+	}
+
+	Chars struct {
+		Chars func(childComplexity int) int
 	}
 
 	Chat struct {
@@ -214,7 +218,7 @@ type ComplexityRoot struct {
 		MsgFormat func(childComplexity int) int
 		Name      func(childComplexity int) int
 		Note      func(childComplexity int) int
-		Parent    func(childComplexity int) int
+		ParentID  func(childComplexity int) int
 	}
 
 	Rooms struct {
@@ -302,11 +306,6 @@ type MutationResolver interface {
 	UpdateRole(ctx context.Context, roleID int, input model.UpdateRoleInput) (model.UpdateRoleResult, error)
 	UpdateRoom(ctx context.Context, roomID int, input model.UpdateRoomInput) (model.UpdateRoomResult, error)
 }
-type PermissionHoldersResolver interface {
-	Roles(ctx context.Context, obj *model.PermissionHolders) ([]*model.Role, error)
-	Chars(ctx context.Context, obj *model.PermissionHolders) ([]model.Char, error)
-	Members(ctx context.Context, obj *model.PermissionHolders) ([]*model.Member, error)
-}
 type QueryResolver interface {
 	Chat(ctx context.Context, input model.FindByDomainOrID) (model.ChatResult, error)
 	ChatRoles(ctx context.Context, chatID int) (model.ChatRolesResult, error)
@@ -327,9 +326,8 @@ type QueryResolver interface {
 	Users(ctx context.Context, nameFragment string, params *model.Params) (model.UsersResult, error)
 }
 type RoomResolver interface {
-	Parent(ctx context.Context, obj *model.Room) (*model.Room, error)
-
-	Allows(ctx context.Context, obj *model.Room) (*model.Allows, error)
+	MsgFormat(ctx context.Context, obj *model.Room) (*model.Form, error)
+	Allows(ctx context.Context, obj *model.Room) (model.AllowsResult, error)
 	Messages(ctx context.Context, obj *model.Room) ([]*model.Message, error)
 }
 
@@ -375,6 +373,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Allows.AllowWrite(childComplexity), true
+
+	case "Allows.room":
+		if e.complexity.Allows.Room == nil {
+			break
+		}
+
+		return e.complexity.Allows.Room(childComplexity), true
+
+	case "Chars.chars":
+		if e.complexity.Chars.Chars == nil {
+			break
+		}
+
+		return e.complexity.Chars.Chars(childComplexity), true
 
 	case "Chat.banlist":
 		if e.complexity.Chat.Banlist == nil {
@@ -1216,12 +1228,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Room.Note(childComplexity), true
 
-	case "Room.parent":
-		if e.complexity.Room.Parent == nil {
+	case "Room.parent_id":
+		if e.complexity.Room.ParentID == nil {
 			break
 		}
 
-		return e.complexity.Room.Parent(childComplexity), true
+		return e.complexity.Room.ParentID(childComplexity), true
 
 	case "Rooms.rooms":
 		if e.complexity.Rooms.Rooms == nil {
@@ -1418,6 +1430,9 @@ enum Char {
     MODER
     NONE
 }
+type Chars {
+    chars: [Char!]
+}
 
 # Union type be like
 type IntValue {
@@ -1460,10 +1475,11 @@ type Room {
     id: ID!
     chat: Chat! # @goField(forceResolver: true)
     name: String!
-    parent: Room @goField(forceResolver: true)
+    parent_id: ID
+    #    parent: RoomResult @goField(forceResolver: true)
     note: String
-    msg_format: Form
-    allows: Allows @goField(forceResolver: true)
+    msg_format: Form @goField(forceResolver: true) # не проверено
+    allows: AllowsResult! @goField(forceResolver: true)
     messages: [Message!] @goField(forceResolver: true)
 }
 
@@ -1541,13 +1557,14 @@ type Users {
 }
 
 type Allows {
+    room: Room! # 04.12 1:55 todo
     allow_read: PermissionHolders
     allow_write: PermissionHolders
 }
 type PermissionHolders {
-    roles: [Role!] @goField(forceResolver: true)
-    chars: [Char!] @goField(forceResolver: true)
-    members: [Member!] @goField(forceResolver: true)
+    roles: Roles # @goField(forceResolver: true)
+    chars: Chars # @goField(forceResolver: true)
+    members: Members # @goField(forceResolver: true)
 }
 
 input FindByDomainOrID {
@@ -2006,6 +2023,10 @@ union RoleResult =
 union MemberResult =
     | AdvancedError
     | Member
+
+union AllowsResult =
+    | AdvancedError
+    | Allows
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -2908,6 +2929,41 @@ func (ec *executionContext) _AdvancedError_error(ctx context.Context, field grap
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Allows_room(ctx context.Context, field graphql.CollectedField, obj *model.Allows) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Allows",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Room, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Room)
+	fc.Result = res
+	return ec.marshalNRoom2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoom(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Allows_allow_read(ctx context.Context, field graphql.CollectedField, obj *model.Allows) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2970,6 +3026,38 @@ func (ec *executionContext) _Allows_allow_write(ctx context.Context, field graph
 	res := resTmp.(*model.PermissionHolders)
 	fc.Result = res
 	return ec.marshalOPermissionHolders2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐPermissionHolders(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Chars_chars(ctx context.Context, field graphql.CollectedField, obj *model.Chars) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Chars",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Chars, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]model.Char)
+	fc.Result = res
+	return ec.marshalOChar2ᚕgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCharᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Chat_unit(ctx context.Context, field graphql.CollectedField, obj *model.Chat) (ret graphql.Marshaler) {
@@ -5716,14 +5804,14 @@ func (ec *executionContext) _PermissionHolders_roles(ctx context.Context, field 
 		Object:     "PermissionHolders",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PermissionHolders().Roles(rctx, obj)
+		return obj.Roles, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5732,9 +5820,9 @@ func (ec *executionContext) _PermissionHolders_roles(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Role)
+	res := resTmp.(*model.Roles)
 	fc.Result = res
-	return ec.marshalORole2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoleᚄ(ctx, field.Selections, res)
+	return ec.marshalORoles2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoles(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PermissionHolders_chars(ctx context.Context, field graphql.CollectedField, obj *model.PermissionHolders) (ret graphql.Marshaler) {
@@ -5748,14 +5836,14 @@ func (ec *executionContext) _PermissionHolders_chars(ctx context.Context, field 
 		Object:     "PermissionHolders",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PermissionHolders().Chars(rctx, obj)
+		return obj.Chars, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5764,9 +5852,9 @@ func (ec *executionContext) _PermissionHolders_chars(ctx context.Context, field 
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]model.Char)
+	res := resTmp.(*model.Chars)
 	fc.Result = res
-	return ec.marshalOChar2ᚕgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐCharᚄ(ctx, field.Selections, res)
+	return ec.marshalOChars2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChars(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _PermissionHolders_members(ctx context.Context, field graphql.CollectedField, obj *model.PermissionHolders) (ret graphql.Marshaler) {
@@ -5780,14 +5868,14 @@ func (ec *executionContext) _PermissionHolders_members(ctx context.Context, fiel
 		Object:     "PermissionHolders",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.PermissionHolders().Members(rctx, obj)
+		return obj.Members, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5796,9 +5884,9 @@ func (ec *executionContext) _PermissionHolders_members(ctx context.Context, fiel
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Member)
+	res := resTmp.(*model.Members)
 	fc.Result = res
-	return ec.marshalOMember2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMemberᚄ(ctx, field.Selections, res)
+	return ec.marshalOMembers2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMembers(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_chat(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -6785,7 +6873,7 @@ func (ec *executionContext) _Room_name(ctx context.Context, field graphql.Collec
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Room_parent(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+func (ec *executionContext) _Room_parent_id(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -6796,14 +6884,14 @@ func (ec *executionContext) _Room_parent(ctx context.Context, field graphql.Coll
 		Object:     "Room",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Room().Parent(rctx, obj)
+		return obj.ParentID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6812,9 +6900,9 @@ func (ec *executionContext) _Room_parent(ctx context.Context, field graphql.Coll
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Room)
+	res := resTmp.(*int)
 	fc.Result = res
-	return ec.marshalORoom2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoom(ctx, field.Selections, res)
+	return ec.marshalOID2ᚖint(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_note(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -6860,14 +6948,14 @@ func (ec *executionContext) _Room_msg_format(ctx context.Context, field graphql.
 		Object:     "Room",
 		Field:      field,
 		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 	}
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.MsgFormat, nil
+		return ec.resolvers.Room().MsgFormat(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6906,11 +6994,14 @@ func (ec *executionContext) _Room_allows(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Allows)
+	res := resTmp.(model.AllowsResult)
 	fc.Result = res
-	return ec.marshalOAllows2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐAllows(ctx, field.Selections, res)
+	return ec.marshalNAllowsResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐAllowsResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Room_messages(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
@@ -9223,6 +9314,29 @@ func (ec *executionContext) unmarshalInputUpdateRoomInput(ctx context.Context, o
 
 // region    ************************** interface.gotpl ***************************
 
+func (ec *executionContext) _AllowsResult(ctx context.Context, sel ast.SelectionSet, obj model.AllowsResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.Allows:
+		return ec._Allows(ctx, sel, &obj)
+	case *model.Allows:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Allows(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _ChatResult(ctx context.Context, sel ast.SelectionSet, obj model.ChatResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -10021,7 +10135,7 @@ func (ec *executionContext) _UsersResult(ctx context.Context, sel ast.SelectionS
 
 // region    **************************** object.gotpl ****************************
 
-var advancedErrorImplementors = []string{"AdvancedError", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "UpdateChatResult", "UpdateMeDataResult", "UpdateRoleResult", "UpdateRoomResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MessageInfoResult", "RoomFormResult", "RoomMessagesResult", "RoomResult", "RoomWhiteListResult", "UnitResult", "UnitsResult", "UserRoleResult", "MutationResult", "UserResult", "RoomsResult", "CountMembersResult", "MembersResult", "RolesResult", "InvitesResult", "UsersResult", "ChatResult", "RoleResult", "MemberResult"}
+var advancedErrorImplementors = []string{"AdvancedError", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "UpdateChatResult", "UpdateMeDataResult", "UpdateRoleResult", "UpdateRoomResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MessageInfoResult", "RoomFormResult", "RoomMessagesResult", "RoomResult", "RoomWhiteListResult", "UnitResult", "UnitsResult", "UserRoleResult", "MutationResult", "UserResult", "RoomsResult", "CountMembersResult", "MembersResult", "RolesResult", "InvitesResult", "UsersResult", "ChatResult", "RoleResult", "MemberResult", "AllowsResult"}
 
 func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.SelectionSet, obj *model.AdvancedError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, advancedErrorImplementors)
@@ -10053,7 +10167,7 @@ func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var allowsImplementors = []string{"Allows"}
+var allowsImplementors = []string{"Allows", "AllowsResult"}
 
 func (ec *executionContext) _Allows(ctx context.Context, sel ast.SelectionSet, obj *model.Allows) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, allowsImplementors)
@@ -10064,10 +10178,39 @@ func (ec *executionContext) _Allows(ctx context.Context, sel ast.SelectionSet, o
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Allows")
+		case "room":
+			out.Values[i] = ec._Allows_room(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "allow_read":
 			out.Values[i] = ec._Allows_allow_read(ctx, field, obj)
 		case "allow_write":
 			out.Values[i] = ec._Allows_allow_write(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var charsImplementors = []string{"Chars"}
+
+func (ec *executionContext) _Chars(ctx context.Context, sel ast.SelectionSet, obj *model.Chars) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, charsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Chars")
+		case "chars":
+			out.Values[i] = ec._Chars_chars(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10798,38 +10941,11 @@ func (ec *executionContext) _PermissionHolders(ctx context.Context, sel ast.Sele
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("PermissionHolders")
 		case "roles":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PermissionHolders_roles(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._PermissionHolders_roles(ctx, field, obj)
 		case "chars":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PermissionHolders_chars(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._PermissionHolders_chars(ctx, field, obj)
 		case "members":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._PermissionHolders_members(ctx, field, obj)
-				return res
-			})
+			out.Values[i] = ec._PermissionHolders_members(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11160,7 +11276,11 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
-		case "parent":
+		case "parent_id":
+			out.Values[i] = ec._Room_parent_id(ctx, field, obj)
+		case "note":
+			out.Values[i] = ec._Room_note(ctx, field, obj)
+		case "msg_format":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -11168,13 +11288,9 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Room_parent(ctx, field, obj)
+				res = ec._Room_msg_format(ctx, field, obj)
 				return res
 			})
-		case "note":
-			out.Values[i] = ec._Room_note(ctx, field, obj)
-		case "msg_format":
-			out.Values[i] = ec._Room_msg_format(ctx, field, obj)
 		case "allows":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -11184,6 +11300,9 @@ func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Room_allows(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		case "messages":
@@ -11689,6 +11808,16 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNAllowsResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐAllowsResult(ctx context.Context, sel ast.SelectionSet, v model.AllowsResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._AllowsResult(ctx, sel, v)
+}
 
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
@@ -12476,13 +12605,6 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	return res
 }
 
-func (ec *executionContext) marshalOAllows2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐAllows(ctx context.Context, sel ast.SelectionSet, v *model.Allows) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._Allows(ctx, sel, v)
-}
-
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -12657,6 +12779,13 @@ func (ec *executionContext) marshalOChar2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcu
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOChars2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChars(ctx context.Context, sel ast.SelectionSet, v *model.Chars) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Chars(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOChat2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐChatᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Chat) graphql.Marshaler {
@@ -12929,6 +13058,13 @@ func (ec *executionContext) marshalOMember2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttp
 	return ret
 }
 
+func (ec *executionContext) marshalOMembers2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMembers(ctx context.Context, sel ast.SelectionSet, v *model.Members) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Members(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOMembersResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMembersResult(ctx context.Context, sel ast.SelectionSet, v model.MembersResult) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -13088,6 +13224,13 @@ func (ec *executionContext) marshalORoleResult2githubᚗcomᚋsaimeᚑ0ᚋhttp�
 		return graphql.Null
 	}
 	return ec._RoleResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalORoles2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoles(ctx context.Context, sel ast.SelectionSet, v *model.Roles) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Roles(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalORolesResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRolesResult(ctx context.Context, sel ast.SelectionSet, v model.RolesResult) graphql.Marshaler {

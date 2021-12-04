@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"strconv"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -105,28 +107,74 @@ func (r *ChatsRepo) GetChatsByNameFragment(fragment string, limit int, offset in
 	return
 
 }
-func (r *ChatsRepo) Members(chatId int) (members models.Members, err error) {
+func (r *ChatsRepo) Members(chatId int) (*model.Members, error) {
+	members := &model.Members{}
 	rows, err := r.db.Query(
-		`SELECT units.id, units.domain, units.name, units.type, member.role_id, member.char, member.joined_at, member.muted, member.frozen
+		`SELECT units.id, units.domain, units.name, units.type, member.char, member.joined_at, member.muted, member.frozen
 		FROM units INNER JOIN chat_members AS member
 		ON units.id = member.id
-		WHERE member.chat_id = $1
-		`,
+		WHERE member.chat_id = $1`,
 		chatId,
 	)
 	if err != nil {
-		return
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := models.Member{}
-		if err = rows.Scan(&m.User.Unit.ID, &m.User.Unit.Domain, &m.User.Unit.Name, &m.User.Unit.Type, &m.RoleID, &m.Char, &m.JoinedAt, &m.Muted, &m.Frozen); err != nil {
-			return
+		m := &model.Member{
+			User: &model.User{
+				Unit: &model.Unit{},
+			},
+		}
+		if err = rows.Scan(
+			&m.User.Unit.ID,
+			&m.User.Unit.Domain,
+			&m.User.Unit.Name,
+			&m.User.Unit.Type,
+			&m.Char,
+			&m.JoinedAt,
+			&m.Muted,
+			&m.Frozen); err != nil {
+			return nil, err
 		}
 		members.Members = append(members.Members, m)
 	}
 
-	return
+	return members, nil
+}
+
+// MembersByArray sorry
+func (r *RoomsRepo) MembersByArray(chatId int, memberIds *[]int) (*model.Members, error) {
+	members := &model.Members{}
+	query := `SELECT units.id, units.domain, units.name, units.type, member.char, member.joined_at, member.muted, member.frozen
+		FROM units INNER JOIN chat_members AS member
+		ON units.id = member.user_id
+		WHERE member.user_id IN (` + kit.CommaSeparate(memberIds) + `) AND member.chat_id =` + strconv.Itoa(chatId)
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := model.Member{
+			User: &model.User{
+				Unit: &model.Unit{},
+			},
+		}
+		if err = rows.Scan(
+			&m.User.Unit.ID,
+			&m.User.Unit.Domain,
+			&m.User.Unit.Name,
+			&m.User.Unit.Type,
+			&m.Char,
+			&m.JoinedAt,
+			&m.Muted,
+			&m.Frozen); err != nil {
+			return nil, err
+		}
+		members.Members = append(members.Members, &m)
+	}
+	return members, nil
 }
 func (r *ChatsRepo) GetChatMember(userId, chatId int) (member models.Member, err error) {
 	err = r.db.QueryRow(
@@ -795,7 +843,7 @@ func (r *ChatsRepo) Member(userId, chatId int) (*model.Member, error) {
 func (r *ChatsRepo) Rooms(chatId int) (*model.Rooms, error) {
 	rooms := &model.Rooms{}
 	rows, err := r.db.Query(
-		`SELECT id, name, note, msg_format
+		`SELECT id, parent_id, name, note
 		FROM rooms
 		WHERE chat_id = $1`,
 		chatId,
@@ -806,11 +854,34 @@ func (r *ChatsRepo) Rooms(chatId int) (*model.Rooms, error) {
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Room{}
-		if err = rows.Scan(&m.ID, &m.Name, &m.Note, &m.MsgFormat); err != nil {
+		if err = rows.Scan(&m.ID, &m.ParentID, &m.Name, &m.Note); err != nil {
 			return nil, err
 		}
 		rooms.Rooms = append(rooms.Rooms, m)
 	}
 
 	return rooms, nil
+}
+
+// RolesByArray sorry
+func (r *RoomsRepo) RolesByArray(roleIds *[]int) (*model.Roles, error) {
+	roles := &model.Roles{}
+	query := `SELECT id, name, color
+		FROM roles 
+		WHERE id IN (` + kit.CommaSeparate(roleIds) + `)`
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := &model.Role{}
+		if err = rows.Scan(&m.ID, &m.Name, &m.Color); err != nil {
+			return nil, err
+		}
+		roles.Roles = append(roles.Roles, m)
+	}
+
+	return roles, nil
+
 }

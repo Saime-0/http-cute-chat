@@ -274,3 +274,8 @@ type InviteInfo struct {
 	Private      bool  `json:"private"`
 	CountMembers int   `json:"count_members"`
 }
+type AllowV2 struct {
+	Action rules.AllowActionType
+	Group  rules.AllowGroupType
+	Value  string
+}

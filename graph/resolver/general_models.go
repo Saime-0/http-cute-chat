@@ -74,30 +74,13 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 		return pl.Err, nil
 	}
 
-	_members, err := r.Services.Repos.Chats.Members(chatID)
+	members, err := r.Services.Repos.Chats.Members(chatID)
 	if err != nil {
 		println(err.Error())
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
-	var members model.Members
-	for _, member := range _members.Members {
-		members.Members = append(members.Members, &model.Member{
-			Chat: obj,
-			User: &model.User{
-				Unit: &model.Unit{
-					ID:     member.User.Unit.ID,
-					Domain: member.User.Unit.Domain,
-					Name:   member.User.Unit.Name,
-					Type:   model.UnitType(member.User.Unit.Type),
-				},
-			},
-			Role:     nil, // forced
-			Char:     (*model.Char)(&member.Char),
-			JoinedAt: member.JoinedAt,
-			Muted:    member.Muted,
-			Frozen:   member.Frozen,
-		})
-
+	for _, member := range members.Members {
+		member.Chat = obj
 	}
 	ctx = context.WithValue(ctx, rules.ChatIDFromChat, chatID)
 	return members, nil
@@ -234,31 +217,21 @@ func (r *messageResolver) Author(ctx context.Context, obj *model.Message) (*mode
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *permissionHoldersResolver) Roles(ctx context.Context, obj *model.PermissionHolders) ([]*model.Role, error) {
+func (r *roomResolver) MsgFormat(ctx context.Context, obj *model.Room) (*model.Form, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *permissionHoldersResolver) Chars(ctx context.Context, obj *model.PermissionHolders) ([]model.Char, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *permissionHoldersResolver) Members(ctx context.Context, obj *model.PermissionHolders) ([]*model.Member, error) {
-	panic(fmt.Errorf("not implemented"))
-}
-
-func (r *roomResolver) Parent(ctx context.Context, obj *model.Room) (*model.Room, error) {
-	if obj.Parent == nil {
-		return nil, nil
-	}
-	room, err := r.Services.Repos.Rooms.Room(obj.Parent.ID)
+func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.AllowsResult, error) {
+	allows, err := r.Services.Repos.Rooms.GetAllows(obj.ID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
-	return room, nil
-}
+	allows.Room = obj
+	for _, member := range append(allows.AllowRead.Members.Members, allows.AllowWrite.Members.Members...) {
+		member.Chat = obj.Chat
+	}
 
-func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (*model.Allows, error) {
-	r.Services.Repos.Rooms.GetAllows()
+	return allows, nil
 }
 
 func (r *roomResolver) Messages(ctx context.Context, obj *model.Room) ([]*model.Message, error) {
@@ -277,11 +250,6 @@ func (r *Resolver) Member() generated.MemberResolver { return &memberResolver{r}
 // Message returns generated.MessageResolver implementation.
 func (r *Resolver) Message() generated.MessageResolver { return &messageResolver{r} }
 
-// PermissionHolders returns generated.PermissionHoldersResolver implementation.
-func (r *Resolver) PermissionHolders() generated.PermissionHoldersResolver {
-	return &permissionHoldersResolver{r}
-}
-
 // Room returns generated.RoomResolver implementation.
 func (r *Resolver) Room() generated.RoomResolver { return &roomResolver{r} }
 
@@ -289,23 +257,4 @@ type chatResolver struct{ *Resolver }
 type inviteInfoResolver struct{ *Resolver }
 type memberResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }
-type permissionHoldersResolver struct{ *Resolver }
 type roomResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (model.ChatResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	chatID := obj.Chat
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
-	if
-	// pl.IsMember(clientID, chatID) ||
-	//pl.HasRole(userID, chatID)  ||
-	pl.Can.ObserveRoles(clientID, chatID) {
-		return pl.Err, nil
-	}
-}

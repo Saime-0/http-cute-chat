@@ -20,6 +20,9 @@ enum Char {
     MODER
     NONE
 }
+type Chars {
+    chars: [Char!]
+}
 
 # Union type be like
 type IntValue {
@@ -62,10 +65,11 @@ type Room {
     id: ID!
     chat: Chat! # @goField(forceResolver: true)
     name: String!
-    parent: RoomResult @goField(forceResolver: true)
+    parent_id: ID
+    #    parent: RoomResult @goField(forceResolver: true)
     note: String
-    msg_format: Form
-    allows: Allows @goField(forceResolver: true)
+    msg_format: Form @goField(forceResolver: true) # не проверено
+    allows: AllowsResult! @goField(forceResolver: true)
     messages: [Message!] @goField(forceResolver: true)
 }
 
@@ -148,9 +152,9 @@ type Allows {
     allow_write: PermissionHolders
 }
 type PermissionHolders {
-    roles: [Role!] @goField(forceResolver: true)
-    chars: [Char!] @goField(forceResolver: true)
-    members: [Member!] @goField(forceResolver: true)
+    roles: Roles # @goField(forceResolver: true)
+    chars: Chars # @goField(forceResolver: true)
+    members: Members # @goField(forceResolver: true)
 }
 
 input FindByDomainOrID {
