@@ -187,7 +187,7 @@ type ComplexityRoot struct {
 		InviteInfo    func(childComplexity int, code string) int
 		Me            func(childComplexity int) int
 		Members       func(childComplexity int, chatID int, userID *int) int
-		MessageInfo   func(childComplexity int, id int, chatID int) int
+		MessageInfo   func(childComplexity int, id int, roomID int) int
 		Room          func(childComplexity int, id int) int
 		RoomForm      func(childComplexity int, roomID int) int
 		RoomMessages  func(childComplexity int, roomID *int, filter *model.MessageFilter, params *model.Params) int
@@ -313,7 +313,7 @@ type QueryResolver interface {
 	InviteInfo(ctx context.Context, code string) (model.InviteInfoResult, error)
 	Me(ctx context.Context) (model.MeResult, error)
 	Members(ctx context.Context, chatID int, userID *int) (model.MembersResult, error)
-	MessageInfo(ctx context.Context, id int, chatID int) (model.MessageInfoResult, error)
+	MessageInfo(ctx context.Context, id int, roomID int) (model.MessageInfoResult, error)
 	RoomForm(ctx context.Context, roomID int) (model.RoomFormResult, error)
 	RoomMessages(ctx context.Context, roomID *int, filter *model.MessageFilter, params *model.Params) (model.RoomMessagesResult, error)
 	Room(ctx context.Context, id int) (model.RoomResult, error)
@@ -1029,7 +1029,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.MessageInfo(childComplexity, args["id"].(int), args["chat_id"].(int)), true
+		return e.complexity.Query.MessageInfo(childComplexity, args["id"].(int), args["room_id"].(int)), true
 
 	case "Query.room":
 		if e.complexity.Query.Room == nil {
@@ -1862,7 +1862,7 @@ union MeResult =
 # go to results.go
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/query/message_info_query.graphql", Input: `extend type Query {
-    message_info(id: ID!, chat_id: ID!): MessageInfoResult @goField(forceResolver: true)
+    message_info(id: ID!, room_id: ID!): MessageInfoResult @goField(forceResolver: true)
 
 }
 
@@ -2579,14 +2579,14 @@ func (ec *executionContext) field_Query_message_info_args(ctx context.Context, r
 	}
 	args["id"] = arg0
 	var arg1 int
-	if tmp, ok := rawArgs["chat_id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chat_id"))
+	if tmp, ok := rawArgs["room_id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("room_id"))
 		arg1, err = ec.unmarshalNID2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["chat_id"] = arg1
+	args["room_id"] = arg1
 	return args, nil
 }
 
@@ -6144,7 +6144,7 @@ func (ec *executionContext) _Query_message_info(ctx context.Context, field graph
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().MessageInfo(rctx, args["id"].(int), args["chat_id"].(int))
+		return ec.resolvers.Query().MessageInfo(rctx, args["id"].(int), args["room_id"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

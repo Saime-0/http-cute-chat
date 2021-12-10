@@ -1,5 +1,5 @@
 extend type Query {
-    message_info(id: ID!, chat_id: ID!): MessageInfoResult @goField(forceResolver: true)
+    message_info(id: ID!, room_id: ID!): MessageInfoResult @goField(forceResolver: true)
 
 }
 

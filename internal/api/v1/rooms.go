@@ -236,7 +236,7 @@ func (h *Handler) GetRoomMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	message, err := h.Services.Repos.Messages.GetMessageFromRoom(messageId, roomId)
+	message, err := h.Services.Repos.Messages.Message(messageId, roomId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, message)

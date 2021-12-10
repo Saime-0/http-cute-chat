@@ -11,5 +11,6 @@ import (
 )
 
 func (r *queryResolver) Members(ctx context.Context, chatID int, userID *int) (model.MembersResult, error) {
+	// я думаю этот резольвер можно удалить
 	panic(fmt.Errorf("not implemented"))
 }

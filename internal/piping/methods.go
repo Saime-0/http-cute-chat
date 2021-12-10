@@ -343,3 +343,49 @@ func (p *Pipeline) IsNotBanned(userId, chatId int) (fail bool) {
 	}
 	return
 }
+
+func (p *Pipeline) GetChatIDByRoom(roomId int, chatId *int) (fail bool) {
+	_chatId, err := p.repos.Rooms.GetChatIDByRoomID(roomId)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	*chatId = _chatId
+	return
+}
+
+func (p *Pipeline) MessageAvailable(msgId, roomId int) (fail bool) {
+	if !p.repos.Messages.MessageAvailableOnRoom(msgId, roomId) {
+		p.Err = resp.Error(resp.ErrBadRequest, "сообщение не найдено")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) IsAllowedTo(action rules.AllowActionType, roomId int, holder *models.AllowHolder) (fail bool) {
+	if !p.repos.Rooms.Allowed(action, roomId, holder) {
+		p.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав на это действие")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) GetAllowHolder(userId, chatId int, holder *models.AllowHolder) (fail bool) {
+	_holder, err := p.repos.Rooms.AllowHolder(userId, chatId)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	holder = _holder
+
+	return
+}
+
+// deprecated
+func (p *Pipeline) IsAllowsSet(roomId int) (fail bool) {
+	if !p.repos.Rooms.AllowsIsSet(roomId) {
+		p.Err = resp.Error(resp.ErrBadRequest, "в комнате не установлены ограничения")
+		return true
+	}
+	return
+}

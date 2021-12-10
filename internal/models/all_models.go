@@ -247,6 +247,11 @@ type AllowHolders struct {
 	Chars []rules.CharType
 	Users []int
 }
+type AllowHolder struct {
+	RoleID *int
+	Char   rules.CharType
+	UserID int
+}
 
 type Unit struct {
 	ID     int    `json:"id"`

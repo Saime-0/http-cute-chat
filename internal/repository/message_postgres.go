@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"github.com/saime-0/http-cute-chat/graph/model"
 
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -30,33 +31,15 @@ func (r *MessagesRepo) MessageExistsByID(messageId int) (exists bool) {
 	return
 }
 
-func (r *MessagesRepo) MessageAvailableOnDialog(messageId int, dialogId int) (exists bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
-			SELECT 1
-			FROM messages
-			INNER JOIN dialog_msg_pool
-			ON messages.id = dialog_msg_pool.message_id
-			WHERE dialog_id = $1 AND message_id = $2
-			)`,
-		dialogId,
-		messageId,
-	).Scan(&exists)
-
-	return
-}
-
 func (r *MessagesRepo) MessageAvailableOnRoom(messageId int, roomId int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM messages
-			INNER JOIN room_msg_pool
-			ON messages.id = room_msg_pool.message_id
-			WHERE room_id = $1 AND message_id = $2
+			WHERE id = $1 AND room_id = $2
 			)`,
-		roomId,
 		messageId,
+		roomId,
 	).Scan(&exists)
 
 	return
@@ -82,24 +65,21 @@ func (r *MessagesRepo) GetMessageFromDialog(messageId int, dialogId int) (messag
 	return
 }
 
-func (r *MessagesRepo) GetMessageFromRoom(messageId int, roomId int) (message models.MessageInfo, err error) {
-	err = r.db.QueryRow(
-		`SELECT messages.id, COALESCE(messages.reply_to, 0), messages.author, messages.body, messages.type
+func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
+	message := &model.Message{}
+	err := r.db.QueryRow(
+		`SELECT id, body, type, created_at
 		FROM messages
-		INNER JOIN room_msg_pool
-		ON messages.id = room_msg_pool.message_id
-		WHERE room_id = $1 AND message_id = $2`,
-		roomId,
+		WHERE id = $1`,
 		messageId,
 	).Scan(
 		&message.ID,
-		&message.ReplyTo,
-		&message.Author,
 		&message.Body,
 		&message.Type,
+		&message.Date,
 	)
 
-	return
+	return message, err
 }
 
 func (r *MessagesRepo) GetMessagesFromDialog(dialogId int, offset int) (messages models.MessagesList, err error) {

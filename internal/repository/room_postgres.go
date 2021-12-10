@@ -361,11 +361,69 @@ func (r *RoomsRepo) HasParent(roomId int) (has bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
-			FROM rooms 
+			FROM rooms
 			WHERE id = $1 AND parent_id IS NOT NULL 
-    	)`,
+		)`,
 		roomId,
 	).Scan(&has)
+
+	return
+}
+
+func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *models.AllowHolder) (yes bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+	    SELECT 1 
+	    FROM allows
+	    WHERE 
+	    	action_type = $1 AND 
+			room_id = $2 AND
+			(
+				group_type = 'ROLES' AND value = $3 OR
+				group_type = 'CHARS' AND value = $4 OR
+				group_type = 'USERS' AND value = $5 
+			)
+	    )`,
+		action,
+		roomId,
+		holder.RoleID,
+		holder.Char,
+		holder.UserID,
+	).Scan(&yes)
+
+	return
+}
+
+func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error) {
+	holder := &models.AllowHolder{
+		RoleID: nil,
+		Char:   "",
+		UserID: 0,
+	}
+	err := r.db.QueryRow(
+		`SELECT role_id, char
+		FROM chat_members
+		WHERE user_id = $1 AND chat_id = $2`,
+		userId,
+		chatId,
+	).Scan(
+		&holder.RoleID,
+		&holder.Char,
+	)
+	holder.UserID = userId
+
+	return holder, err
+}
+
+func (r *RoomsRepo) AllowsIsSet(roomId int) (have bool) {
+	r.db.QueryRow(
+		`SELECT EXISTS(
+    		SELECT 1 
+    		FROM allows
+    		WHERE room_id = $1
+		)`,
+		roomId,
+	).Scan(&have)
 
 	return
 }

@@ -65,8 +65,7 @@ type Room {
     id: ID!
     chat: Chat! # @goField(forceResolver: true)
     name: String!
-    parent_id: ID
-    #    parent: RoomResult @goField(forceResolver: true)
+    parentId: ID
     note: String
     msg_format: Form @goField(forceResolver: true) # не проверено
     allows: AllowsResult! @goField(forceResolver: true)
@@ -115,7 +114,7 @@ type Roles {
 
 type Message {
     id: ID!
-    room: Room @goField(forceResolver: true)
+    room: Room! @goField(forceResolver: true)
     reply_to: Message @goField(forceResolver: true)
     author: Unit! @goField(forceResolver: true)
     body: String!

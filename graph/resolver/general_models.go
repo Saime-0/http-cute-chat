@@ -6,6 +6,7 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"github.com/99designs/gqlgen/graphql"
 
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -206,7 +207,13 @@ func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.Rol
 }
 
 func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.Room, error) {
-	panic(fmt.Errorf("not implemented"))
+	roomID := graphql.GetFieldContext(ctx).Parent.Args["room_id"].(int)
+	println(roomID)
+	room, err := r.Services.Repos.Rooms.Room(roomID)
+	if err != nil {
+		return nil, err
+	}
+	return room, nil
 }
 
 func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*model.Message, error) {
