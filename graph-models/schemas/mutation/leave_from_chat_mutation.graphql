@@ -1,3 +1,3 @@
 extend type Mutation {
-    leave_from_chat(chat_id: ID!): MutationResult! @goField(forceResolver: true) @isAuth
+    leaveFromChat(chatId: ID!): MutationResult! @goField(forceResolver: true) @isAuth
 }

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
@@ -586,27 +587,23 @@ func (r *ChatsRepo) Banlist(chatId int) (users models.Users, err error) {
 	return
 }
 
-func (r *ChatsRepo) UserRole(userId int, chatId int) (*model.Role, error) {
-	role := &model.Role{}
-	err := r.db.QueryRow(
-		`SELECT id, name, color
-		FROM roles 
-		WHERE id = (
-			SELECT role_id
-			FROM chat_members
-			WHERE user_id = $1 AND chat_id = $2
-		)`,
-		userId,
-		chatId,
+func (r *ChatsRepo) MemberRole(memberId int) (role *model.Role) {
+	err := r.db.QueryRow(`
+		SELECT roles.id, roles.name, roles.color
+		FROM roles JOIN chat_members ON roles.id = chat_members.role_id
+		WHERE chat_members.id = $1
+		`,
+		memberId,
 	).Scan(
 		&role.ID,
 		&role.Name,
 		&role.Color,
 	)
-	if err == sql.ErrNoRows {
-		return nil, nil
+	if err != nil {
+		fmt.Println("не найдена роль")
+		return
 	}
-	return role, nil
+	return
 }
 
 func (r *ChatsRepo) CreateRoleInChat(chatId int, roleModel *models.CreateRole) (roleId int, err error) {
@@ -656,13 +653,12 @@ func (r *ChatsRepo) GetCountChatRoles(chatId int) (count int, err error) {
 	return
 }
 
-func (r *ChatsRepo) GiveRole(userId, chatId, roleId int) (err error) {
+func (r *ChatsRepo) GiveRole(memberId, roleId int) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE chat_members
-		SET role_id = $3
-		WHERE user_id = $1 AND chat_id = $2`,
-		userId,
-		chatId,
+		SET role_id = $2
+		WHERE id = $1`,
+		memberId,
 		roleId,
 	).Err()
 
@@ -810,15 +806,9 @@ func (r *ChatsRepo) UserIsBanned(userId int, chatId int) (banned bool) {
 }
 func (r *ChatsRepo) Member(userId, chatId int) (*model.Member, error) {
 	member := &model.Member{
-		Chat: nil, // outside
 		User: &model.User{
 			Unit: &model.Unit{},
 		},
-		Role:     nil, // forced
-		Char:     nil,
-		JoinedAt: 0,
-		Muted:    false,
-		Frozen:   false,
 	}
 	err := r.db.QueryRow(
 		`SELECT units.id, units.domain, units.name, units.type, member.char, member.joined_at, member.muted, member.frozen
@@ -854,7 +844,7 @@ func (r *ChatsRepo) Rooms(chatId int) (*model.Rooms, error) {
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Room{}
-		if err = rows.Scan(&m.ID, &m.ParentID, &m.Name, &m.Note); err != nil {
+		if err = rows.Scan(&m.RoomID, &m.ParentID, &m.Name, &m.Note); err != nil {
 			return nil, err
 		}
 		rooms.Rooms = append(rooms.Rooms, m)
@@ -884,4 +874,89 @@ func (r *RoomsRepo) RolesByArray(roleIds *[]int) (*model.Roles, error) {
 
 	return roles, nil
 
+}
+
+func (r *ChatsRepo) FindMessages(inp *model.FindMessages, holder *models.AllowHolder) *model.Messages {
+	messages := &model.Messages{
+		Messages: []*model.Message{},
+	}
+	if inp.TextFragment != nil {
+		*inp.TextFragment = "%" + *inp.TextFragment + "%"
+	}
+	// language=PostgreSQL
+	rows, err := r.db.Query(`
+		SELECT id, body, type, created_at
+		FROM messages INNER JOIN allows on messages.room_id = allows.room_id
+		WHERE messages.room_id IN (
+		    SELECT rooms.id 
+		    FROM chats
+		    INNER JOIN rooms
+		        ON chats.id = rooms.chat_id
+		    LEFT JOIN allows 
+		    	ON rooms.id = allows.room_id 
+		    WHERE chats.id = $1 
+			AND (
+			    $2 IS NOT NULL AND rooms.id = $2 
+			    OR $2 IS NULL
+			)
+	        AND (
+	            action_type IS NULL 
+				OR action_type = 'READ' 
+                AND (
+                    group_type = 'ROLES' AND value = $3
+                    OR group_type = 'CHARS' AND value = $4
+                    OR group_type = 'USERS' AND value = $5
+                )
+            )
+		)
+		AND (
+		    $6 IS NOT NULL AND author = $6 
+		    OR $6 IS NULL
+		)
+		AND (
+		    $7 IS NOT NULL AND body ILIKE $7
+		    OR $7 IS NULL
+		)
+		`,
+		inp.ChatID,
+		inp.RoomID,
+		holder.RoleID,
+		holder.Char,
+		holder.UserID,
+		inp.AuthorID,
+		inp.TextFragment,
+	)
+	if err != nil {
+		fmt.Println("Сообщения не найдены")
+		return messages
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := &model.Message{}
+		if err = rows.Scan(&m.ID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+			return messages
+		}
+		messages.Messages = append(messages.Messages, m)
+	}
+
+	return messages
+}
+
+func (r *ChatsRepo) FindMember(memberId int) (chatId *int) {
+	err := r.db.QueryRow(`
+		SELECT chat_id
+		FROM chat_members
+		WHERE id = $1
+		`,
+		memberId,
+	).Scan(&chatId)
+	if err != nil {
+		fmt.Println("не найден мембер")
+		return
+	}
+	return
+}
+
+func (r *ChatsRepo) FindMessage(messageId int) *models.FindMember {
+	panic("Not implemented")
 }

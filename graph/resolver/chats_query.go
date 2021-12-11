@@ -24,7 +24,7 @@ func (r *queryResolver) Chats(ctx context.Context, nameFragment string, params *
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
 
-	m := model.ChatArray{
+	m := model.Chats{
 		Chats: []*model.Chat{},
 	}
 	for _, chat := range chats {

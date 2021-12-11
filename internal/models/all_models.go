@@ -284,3 +284,11 @@ type AllowV2 struct {
 	Group  rules.AllowGroupType
 	Value  string
 }
+type FindMember struct {
+	MemberID int
+	ChatID   int
+}
+type FindMessage struct {
+	MemberID int
+	ChatID   int
+}

@@ -107,6 +107,14 @@ func (p *Pipeline) ValidNameFragment(fragment string) (fail bool) {
 	return
 }
 
+func (p *Pipeline) ValidID(id int) (fail bool) {
+	if !validator.ValidateID(id) {
+		p.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение для id")
+		return true
+	}
+	return
+}
+
 func (p *Pipeline) OwnedLimit(userId int) (fail bool) {
 	count, err := p.repos.Users.GetCountUserOwnedChats(userId)
 	if err != nil {
@@ -385,6 +393,25 @@ func (p *Pipeline) GetAllowHolder(userId, chatId int, holder *models.AllowHolder
 func (p *Pipeline) IsAllowsSet(roomId int) (fail bool) {
 	if !p.repos.Rooms.AllowsIsSet(roomId) {
 		p.Err = resp.Error(resp.ErrBadRequest, "в комнате не установлены ограничения")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) GetMessageByID(msgId int, message *model.Message) (fail bool) {
+	_message, err := p.repos.Messages.Message(msgId)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrBadRequest, "сообщение не найдено")
+		return true
+	}
+	message = _message
+	return
+}
+
+func (p *Pipeline) FindMember(memberId int, chatId *int) (fail bool) {
+	chatId = p.repos.Chats.FindMember(memberId)
+	if chatId == nil {
+		p.Err = resp.Error(resp.ErrBadRequest, "участник не найден")
 		return true
 	}
 	return

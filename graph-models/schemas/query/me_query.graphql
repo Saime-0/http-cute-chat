@@ -2,17 +2,3 @@ extend type Query {
     me: MeResult! @goField(forceResolver: true)
 }
 
-# Me ...
-type UserData {
-    password: String!
-    email: String!
-}
-type Me {
-    user: User!
-    data: UserData!
-    chats: [Chat!] @goField(forceResolver: true)
-    owned_chats: [Chat!] @goField(forceResolver: true)
-}
-union MeResult =
-    | AdvancedError
-    | Me

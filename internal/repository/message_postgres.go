@@ -45,26 +45,6 @@ func (r *MessagesRepo) MessageAvailableOnRoom(messageId int, roomId int) (exists
 	return
 }
 
-func (r *MessagesRepo) GetMessageFromDialog(messageId int, dialogId int) (message models.MessageInfo, err error) {
-	err = r.db.QueryRow(
-		`SELECT messages.id, COALESCE(messages.reply_to, 0), messages.author, messages.body, messages.type
-		FROM messages
-		INNER JOIN dialog_msg_pool
-		ON messages.id = dialog_msg_pool.message_id
-		WHERE dialog_id = $1 AND message_id = $2`,
-		dialogId,
-		messageId,
-	).Scan(
-		&message.ID,
-		&message.ReplyTo,
-		&message.Author,
-		&message.Body,
-		&message.Type,
-	)
-
-	return
-}
-
 func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 	message := &model.Message{}
 	err := r.db.QueryRow(
@@ -76,7 +56,7 @@ func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 		&message.ID,
 		&message.Body,
 		&message.Type,
-		&message.Date,
+		&message.CreatedAt,
 	)
 
 	return message, err
@@ -142,29 +122,6 @@ func (r *MessagesRepo) GetMessagesFromRoom(roomId int, createdAfter int, offset 
 		messages.Messages = append(messages.Messages, m)
 	}
 
-	return
-}
-
-func (r *MessagesRepo) CreateMessageInDialog(dialogId int, messageModel *models.CreateMessage) (messageId int, err error) {
-	err = r.db.QueryRow(
-		`WITH m AS (
-			INSERT INTO messages (reply_to, author, body, type)
-			VALUES (NULLIF($2, 0), $3, $4, $5)
-			RETURNING id
-		)
-		INSERT INTO dialog_msg_pool (dialog_id, message_id) 
-		SELECT $1, m.id
-		FROM m
-		RETURNING message_id`,
-		dialogId,
-		messageModel.ReplyTo,
-		messageModel.Author,
-		messageModel.Body,
-		rules.UserMsg,
-	).Scan(&messageId)
-	if err != nil {
-		return
-	}
 	return
 }
 

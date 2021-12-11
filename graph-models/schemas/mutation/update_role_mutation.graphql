@@ -1,14 +1,5 @@
 extend type Mutation {
-    update_role(role_id: ID!, input: UpdateRoleInput!): UpdateRoleResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
-
+    updateRole(roleId: ID!, input: UpdateRoleInput!): UpdateRoleResult! @goField(forceResolver: true)
 }
 
-# UpdateRole ...
-input UpdateRoleInput {
-    name: String
-    color: String
-}
-union UpdateRoleResult =
-    | AdvancedError
-    | Role
 

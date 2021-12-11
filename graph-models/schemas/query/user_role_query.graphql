@@ -1,9 +1,3 @@
 extend type Query {
-    user_role(user_id: ID!, chat_id: ID!): UserRoleResult @goField(forceResolver: true)
-
+    userRole(memberId: ID!): UserRoleResult @goField(forceResolver: true)
 }
-
-# UserRole ...
-union UserRoleResult =
-    | AdvancedError
-    | Role

@@ -1,6 +1,3 @@
 extend type Query {
-    rooms(chat: ID!, params: Params): RoomsResult @goField(forceResolver: true)
-
+    rooms(find: FindRooms!, params: Params): RoomsResult @goField(forceResolver: true)
 }
-# Rooms ...
-# go to results.graphql

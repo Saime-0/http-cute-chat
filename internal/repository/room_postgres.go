@@ -136,7 +136,7 @@ func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
 		WHERE id = $1`,
 		roomId,
 	).Scan(
-		&room.ID,
+		&room.RoomID,
 		&room.ParentID,
 		&room.Name,
 		&room.Note,
@@ -304,7 +304,7 @@ func (r *RoomsRepo) GetAllows(roomId int) (*model.Allows, error) {
 				Roles: []*model.Role{},
 			},
 			Chars: &model.Chars{
-				Chars: []model.Char{},
+				Chars: []model.CharType{},
 			},
 			Members: &model.Members{
 				Members: []*model.Member{},
@@ -315,7 +315,7 @@ func (r *RoomsRepo) GetAllows(roomId int) (*model.Allows, error) {
 				Roles: []*model.Role{},
 			},
 			Chars: &model.Chars{
-				Chars: []model.Char{},
+				Chars: []model.CharType{},
 			},
 			Members: &model.Members{
 				Members: []*model.Member{},
@@ -344,7 +344,7 @@ func (r *RoomsRepo) GetAllows(roomId int) (*model.Allows, error) {
 		}
 		if len(aholdres.Chars) != 0 {
 			for _, char := range aholdres.Chars {
-				phold.Chars.Chars = append(phold.Chars.Chars, model.Char(char))
+				phold.Chars.Chars = append(phold.Chars.Chars, model.CharType(char))
 			}
 		}
 		return nil

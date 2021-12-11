@@ -1,12 +1,4 @@
 extend type Query {
-    chats(name_fragment: String!, params: Params): ChatsResult @goField(forceResolver: true)
+    chats(nameFragment: String!, params: Params): ChatsResult @goField(forceResolver: true)
 
 }
-
-# Chats ...
-type ChatArray {
-    chats: [Chat!]
-}
-union ChatsResult =
-    | AdvancedError
-    | ChatArray

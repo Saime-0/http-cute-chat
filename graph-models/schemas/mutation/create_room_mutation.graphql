@@ -26,6 +26,6 @@ input RestrictsInput {
 }
 input PermissionHoldersInput {
     roles: [ID!]
-    chars: [Char!]
+    chars: [CharType!]
     members: [ID!]
 }

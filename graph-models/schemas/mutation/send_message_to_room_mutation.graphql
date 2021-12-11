@@ -1,15 +1,4 @@
 extend type Mutation {
-    send_message_to_room(room: ID!, input: CreateMessageInput!): SendMessageToRoomResult! @goField(forceResolver: true) @isAuth
-
+    sendMessageToRoom(roomId: ID!, input: CreateMessageInput!): SendMessageToRoomResult! @goField(forceResolver: true) @isAuth
 }
-
-# SendMessageToRoom ...
-input CreateMessageInput {
-    reply_to: ID!
-    body: String!
-}
-union SendMessageToRoomResult =
-    | AdvancedError
-    | Successful
-    | Message
 

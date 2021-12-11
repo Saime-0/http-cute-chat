@@ -6,8 +6,8 @@ package resolver
 import (
 	"context"
 	"fmt"
-	"github.com/99designs/gqlgen/graphql"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
@@ -187,21 +187,60 @@ func (r *inviteInfoResolver) CountMembers(ctx context.Context, obj *model.Invite
 	return model.IntValue{Value: &count}, nil
 }
 
-func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.RoleResult, error) {
+func (r *meResolver) Chats(ctx context.Context, obj *model.Me) ([]*model.Chat, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	chatID := obj.Chat.Unit.ID
-	userID := obj.User.Unit.ID
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
-	if
-	// pl.IsMember(clientID, chatID) ||
-	//pl.HasRole(userID, chatID)  ||
-	pl.Can.ObserveRoles(clientID, chatID) {
-		return pl.Err, nil
-	}
-	role, err := r.Services.Repos.Chats.UserRole(userID, chatID)
+	_chats, err := r.Services.Repos.Users.Chats(clientID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return nil, nil // resp.Error
 	}
+	var chats []*model.Chat
+	for _, chat := range _chats {
+		chats = append(chats, &model.Chat{
+			Unit: &model.Unit{
+				ID:     chat.Unit.ID,
+				Domain: chat.Unit.Domain,
+				Name:   chat.Unit.Name,
+				Type:   model.UnitType(chat.Unit.Type),
+			},
+			Private: chat.Private,
+		})
+	}
+	return chats, nil
+}
+
+func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) ([]*model.Chat, error) {
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	_chats, err := r.Services.Repos.Users.OwnedChats(clientID)
+	if err != nil {
+		return nil, nil // resp.Error
+	}
+	var chats []*model.Chat
+	for _, chat := range _chats {
+		chats = append(chats, &model.Chat{
+			Unit: &model.Unit{
+				ID:     chat.Unit.ID,
+				Domain: chat.Unit.Domain,
+				Name:   chat.Unit.Name,
+				Type:   model.UnitType(chat.Unit.Type),
+			},
+			Private: chat.Private,
+		})
+	}
+	return chats, nil
+}
+
+func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.RoleResult, error) {
+	//clientID := ctx.Value(rules.UserIDFromToken).(int)
+	//chatID := obj.Chat.Unit.ID
+	memberID := obj.ID
+	//pl := piping.NewPipeline(ctx, r.Services.Repos)
+	//if
+	//// pl.IsMember(clientID, chatID) ||
+	////pl.HasRole(memberID, chatID)  ||
+	//pl.Can.ObserveRoles(clientID, chatID) {
+	//	return pl.Err, nil
+	//}
+	role := r.Services.Repos.Chats.MemberRole(memberID)
 
 	return role, nil
 }
@@ -224,12 +263,12 @@ func (r *messageResolver) Author(ctx context.Context, obj *model.Message) (*mode
 	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *roomResolver) MsgFormat(ctx context.Context, obj *model.Room) (*model.Form, error) {
+func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (*model.Form, error) {
 	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.AllowsResult, error) {
-	allows, err := r.Services.Repos.Rooms.GetAllows(obj.ID)
+	allows, err := r.Services.Repos.Rooms.GetAllows(obj.RoomID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
@@ -251,6 +290,9 @@ func (r *Resolver) Chat() generated.ChatResolver { return &chatResolver{r} }
 // InviteInfo returns generated.InviteInfoResolver implementation.
 func (r *Resolver) InviteInfo() generated.InviteInfoResolver { return &inviteInfoResolver{r} }
 
+// Me returns generated.MeResolver implementation.
+func (r *Resolver) Me() generated.MeResolver { return &meResolver{r} }
+
 // Member returns generated.MemberResolver implementation.
 func (r *Resolver) Member() generated.MemberResolver { return &memberResolver{r} }
 
@@ -262,6 +304,17 @@ func (r *Resolver) Room() generated.RoomResolver { return &roomResolver{r} }
 
 type chatResolver struct{ *Resolver }
 type inviteInfoResolver struct{ *Resolver }
+type meResolver struct{ *Resolver }
 type memberResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }
 type roomResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *roomResolver) MsgFormat(ctx context.Context, obj *model.Room) (*model.Form, error) {
+	panic(fmt.Errorf("not implemented"))
+}

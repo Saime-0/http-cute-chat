@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
+	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
@@ -321,4 +323,39 @@ func (r *UsersRepo) Chats(userId int) (chats []models.Chat, err error) {
 		return
 	}
 	return
+}
+
+func (r *UsersRepo) FindUsers(inp *model.FindUsers) *model.Users {
+	users := &model.Users{}
+	if inp.NameFragment != nil {
+		*inp.NameFragment = "%" + *inp.NameFragment + "%"
+	}
+	rows, err := r.db.Query(`
+		SELECT units.id, units.domain, units.name, units.type
+		FROM units JOIN users ON units.id = users.id 
+		WHERE	($1 IS NULL OR units.id = $1)
+			AND ($2 IS NULL OR units.domain = $2)
+			AND ($3 IS NULL OR units.name ILIKE $3)
+		`,
+		inp.UserID,
+		inp.UserDomain,
+		inp.NameFragment,
+	)
+	if err != nil {
+		fmt.Println(err.Error())
+		fmt.Println("пользователи не найдены")
+		return users
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := &model.User{
+			Unit: &model.Unit{},
+		}
+		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
+			return users
+		}
+		users.Users = append(users.Users, m)
+	}
+
+	return users
 }

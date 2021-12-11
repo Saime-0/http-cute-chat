@@ -1,11 +1,3 @@
 extend type Query {
-    units(name_fragment: String!, type: UnitType, params: Params): UnitsResult! @goField(forceResolver: true)
+    units(find: FindUnits, params: Params): UnitsResult! @goField(forceResolver: true)
 }
-
-# Units ...
-type UnitArray {
-    units: [Unit!]
-}
-union UnitsResult =
-    | AdvancedError
-    | UnitArray

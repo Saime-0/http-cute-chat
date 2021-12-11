@@ -1,0 +1,106 @@
+input CreateChatInput {
+    domain: String!
+    name: String!
+    private: Boolean!
+}
+input CreateInviteInput {
+    code: String!
+    aliens: Int
+    duration: Int64
+}
+input CreateRoleInput {
+    name: String!
+    color: String!
+}
+input LoginInput {
+    email: String!
+    password: String!
+}
+input RegisterInput {
+    domain: String!
+    name: String!
+    email: String!
+    password: String!
+}
+input CreateMessageInput {
+    replyTo: ID!
+    body: String!
+}
+
+input UpdateChatInput {
+    domain: String!
+    name: String!
+    private: Boolean!
+}
+
+input UpdateMeDataInput  {
+    domain: String
+    name: String
+    password: String
+    email: String
+}
+
+input UpdateRoleInput {
+    name: String
+    color: String
+}
+
+input UpdateRoomInput {
+    name: String
+    parentId: ID
+    note: String
+    restricts: RestrictsInput
+    form: UpdateFormInput
+}
+
+input FindMembers {
+    chatId: ID
+    memberId: ID
+    roleId: ID
+    char: CharType
+}
+
+input FindMessages {
+    chatId: ID!
+    roomId: ID
+    authorId: ID
+    textFragment: String
+}
+
+input FindRooms {
+    chatId: ID!
+    roomId: ID
+    parentId: ID
+    isParent: FetchType
+
+}
+
+input FindUnits {
+    unitId: ID
+    unitDomain: String
+    nameFragment: String
+    unitType: UnitType
+}
+
+
+input FindUsers {
+    userId: ID
+    userDomain: String
+    nameFragment: String
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
 extend type Mutation {
-    give_role(user_id: ID!, chat_id: ID!, role_id: ID!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    giveRole(memberId: ID!, roleId: ID!): MutationResult! @goField(forceResolver: true) @isAuth
 }
 

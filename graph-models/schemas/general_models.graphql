@@ -15,16 +15,26 @@ enum MessageType {
     USER
     FORMATTED
 }
-enum Char {
+enum FetchType {
+    POSITIVE
+    NEUTRAL
+    NEGATIVE
+}
+enum CharType {
     ADMIN
     MODER
     NONE
 }
 type Chars {
-    chars: [Char!]
+    chars: [CharType!]
 }
 
 # Union type be like
+input FindByDomainOrID {
+    id: Int
+    domain: String
+}
+
 type IntValue {
     value: Int
 }
@@ -37,8 +47,8 @@ input Params {
 }
 
 type TokenPair {
-    access_token: String!
-    refresh_token: String!
+    accessToken: String!
+    refreshToken: String!
 }
 
 type Unit {
@@ -48,28 +58,36 @@ type Unit {
     type: UnitType!
 }
 
+type Units {
+    units: [Unit!]
+}
+
 type Chat {
     unit: Unit!
     owner: UserResult! @goField(forceResolver: true)
     rooms: RoomsResult @goField(forceResolver: true)
     private: Boolean!
-    count_members: CountMembersResult! @goField(forceResolver: true)
+    countMembers: CountMembersResult! @goField(forceResolver: true)
     members: MembersResult @goField(forceResolver: true)
     roles: RolesResult @goField(forceResolver: true)
     invites: InvitesResult @goField(forceResolver: true)
     banlist: UsersResult @goField(forceResolver: true)
     me: MemberResult! @goField(forceResolver: true)
 }
+type Chats {
+    chats: [Chat!]
+}
 
 type Room {
-    id: ID!
+    roomId: ID!
     chat: Chat! # @goField(forceResolver: true)
     name: String!
     parentId: ID
     note: String
-    msg_format: Form @goField(forceResolver: true) # не проверено
+    form: Form @goField(forceResolver: true) # не проверено
     allows: AllowsResult! @goField(forceResolver: true)
     messages: [Message!] @goField(forceResolver: true)
+    #todo next: prev: or symbolindex:
 }
 
 type Rooms {
@@ -89,11 +107,12 @@ type FormField {
 }
 
 type Member {
+    id: ID!
     chat: Chat! # @goField(forceResolver: true) # зач тут чат?
     user: User! # @goField(forceResolver: true)
     role: RoleResult @goField(forceResolver: true)
-    char: Char
-    joined_at: Int64!
+    char: CharType!
+    joinedAt: Int64!
     muted: Boolean!
     frozen: Boolean!
 }
@@ -115,11 +134,15 @@ type Roles {
 type Message {
     id: ID!
     room: Room! @goField(forceResolver: true)
-    reply_to: Message @goField(forceResolver: true)
+    replyTo: Message @goField(forceResolver: true)
     author: Unit! @goField(forceResolver: true)
     body: String!
     type: MessageType!
-    date: Int!
+    createdAt: Int64!
+}
+
+type Messages {
+    messages: [Message!]
 }
 
 type Invite {
@@ -135,7 +158,7 @@ type Invites {
 type InviteInfo {
     unit: Unit!
     private: Boolean!
-    count_members: CountMembersResult! @goField(forceResolver: true)
+    countMembers: CountMembersResult! @goField(forceResolver: true)
 }
 type User {
     unit: Unit!
@@ -147,16 +170,21 @@ type Users {
 
 type Allows {
     room: Room! # 04.12 1:55 todo
-    allow_read: PermissionHolders
-    allow_write: PermissionHolders
+    allowRead: PermissionHolders
+    allowWrite: PermissionHolders
 }
 type PermissionHolders {
     roles: Roles # @goField(forceResolver: true)
     chars: Chars # @goField(forceResolver: true)
     members: Members # @goField(forceResolver: true)
 }
-
-input FindByDomainOrID {
-    id: Int
-    domain: String
+type UserData {
+    password: String!
+    email: String!
+}
+type Me {
+    user: User!
+    data: UserData!
+    chats: [Chat!] @goField(forceResolver: true)
+    ownedChats: [Chat!] @goField(forceResolver: true)
 }

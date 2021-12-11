@@ -54,7 +54,7 @@ func main() {
 			Services: services,
 		},
 		Directives: generated.DirectiveRoot{
-			HasChar: func(ctx context.Context, obj interface{}, next graphql.Resolver, char []*model.Char) (res interface{}, err error) {
+			HasChar: func(ctx context.Context, obj interface{}, next graphql.Resolver, char []*model.CharType) (res interface{}, err error) {
 				return next(ctx)
 			},
 			IsAuth:     directive.IsAuth,

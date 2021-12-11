@@ -6,53 +6,10 @@ package resolver
 import (
 	"context"
 
-	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
-
-func (r *meResolver) Chats(ctx context.Context, obj *model.Me) ([]*model.Chat, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	_chats, err := r.Services.Repos.Users.Chats(clientID)
-	if err != nil {
-		return nil, nil // resp.Error
-	}
-	var chats []*model.Chat
-	for _, chat := range _chats {
-		chats = append(chats, &model.Chat{
-			Unit: &model.Unit{
-				ID:     chat.Unit.ID,
-				Domain: chat.Unit.Domain,
-				Name:   chat.Unit.Name,
-				Type:   model.UnitType(chat.Unit.Type),
-			},
-			Private: chat.Private,
-		})
-	}
-	return chats, nil
-}
-
-func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) ([]*model.Chat, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	_chats, err := r.Services.Repos.Users.OwnedChats(clientID)
-	if err != nil {
-		return nil, nil // resp.Error
-	}
-	var chats []*model.Chat
-	for _, chat := range _chats {
-		chats = append(chats, &model.Chat{
-			Unit: &model.Unit{
-				ID:     chat.Unit.ID,
-				Domain: chat.Unit.Domain,
-				Name:   chat.Unit.Name,
-				Type:   model.UnitType(chat.Unit.Type),
-			},
-			Private: chat.Private,
-		})
-	}
-	return chats, nil
-}
 
 func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
@@ -78,8 +35,3 @@ func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
 		OwnedChats: nil, // forced
 	}, nil
 }
-
-// Me returns generated.MeResolver implementation.
-func (r *Resolver) Me() generated.MeResolver { return &meResolver{r} }
-
-type meResolver struct{ *Resolver }

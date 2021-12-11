@@ -1,9 +1,3 @@
 extend type Mutation {
-    refresh_tokens(refresh_token: String!): RefreshTokensResult! @goField(forceResolver: true)
+    refreshTokens(refreshToken: String!): RefreshTokensResult! @goField(forceResolver: true)
 }
-
-# RefreshTokens ...
-union RefreshTokensResult =
-    | AdvancedError
-    | Successful
-    | TokenPair

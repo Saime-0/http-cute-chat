@@ -10,7 +10,8 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) Members(ctx context.Context, chatID int, userID *int) (model.MembersResult, error) {
+func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (model.MembersResult, error) {
 	// я думаю этот резольвер можно удалить
+	// upd: я думаю лучше не удалять
 	panic(fmt.Errorf("not implemented"))
 }

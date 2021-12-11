@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
@@ -12,6 +13,16 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
+func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.MutationResult, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
 func (r *mutationResolver) BanUser(ctx context.Context, userID int, chatID int) (model.MutationResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)

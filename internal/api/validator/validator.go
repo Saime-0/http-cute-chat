@@ -54,6 +54,9 @@ func ValidateLimit(limit int) (valid bool) {
 func ValidateNameFragment(fragment string) (valid bool) {
 	return len(fragment) >= 1 && len(fragment) <= rules.NameMaxLength
 }
+func ValidateID(id int) (valid bool) {
+	return id > 0
+}
 
 // func handleDatabaseError(err error) error {
 // 	if err != nil {

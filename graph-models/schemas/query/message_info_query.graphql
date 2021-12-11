@@ -1,9 +1,0 @@
-extend type Query {
-    message_info(id: ID!, room_id: ID!): MessageInfoResult @goField(forceResolver: true)
-
-}
-
-# MessageInfo ...
-union MessageInfoResult =
-    | AdvancedError
-    | Message

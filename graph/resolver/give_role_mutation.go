@@ -12,19 +12,19 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *mutationResolver) GiveRole(ctx context.Context, userID int, chatID int, roleID int) (model.MutationResult, error) {
+func (r *mutationResolver) GiveRole(ctx context.Context, memberID int, roleID int) (model.MutationResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
-	if pl.ChatExists(chatID) ||
+	var chatID int
+	// todo MemberExists-> chatid; RoleExists(cid, rid):
+	if pl.FindMember(memberID, &chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.GiveRole(clientID, chatID) ||
-		pl.RoleExists(chatID, roleID) ||
-		pl.UserExists(userID) ||
-		pl.IsMember(userID, chatID) {
+		pl.RoleExists(chatID, roleID) {
 		return pl.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.GiveRole(clientID, chatID, roleID)
+	err := r.Services.Repos.Chats.GiveRole(memberID, roleID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}

@@ -60,8 +60,12 @@ type MembersResult interface {
 	IsMembersResult()
 }
 
-type MessageInfoResult interface {
-	IsMessageInfoResult()
+type MessageResult interface {
+	IsMessageResult()
+}
+
+type MessagesResult interface {
+	IsMessagesResult()
 }
 
 type MutationResult interface {
@@ -88,16 +92,8 @@ type RoomFormResult interface {
 	IsRoomFormResult()
 }
 
-type RoomMessagesResult interface {
-	IsRoomMessagesResult()
-}
-
 type RoomResult interface {
 	IsRoomResult()
-}
-
-type RoomWhiteListResult interface {
-	IsRoomWhiteListResult()
 }
 
 type RoomsResult interface {
@@ -149,6 +145,18 @@ type AdvancedError struct {
 	Error string `json:"error"`
 }
 
+func (AdvancedError) IsMutationResult()          {}
+func (AdvancedError) IsUserResult()              {}
+func (AdvancedError) IsRoomsResult()             {}
+func (AdvancedError) IsCountMembersResult()      {}
+func (AdvancedError) IsMembersResult()           {}
+func (AdvancedError) IsRolesResult()             {}
+func (AdvancedError) IsInvitesResult()           {}
+func (AdvancedError) IsUsersResult()             {}
+func (AdvancedError) IsChatResult()              {}
+func (AdvancedError) IsRoleResult()              {}
+func (AdvancedError) IsMemberResult()            {}
+func (AdvancedError) IsAllowsResult()            {}
 func (AdvancedError) IsJoinByInviteResult()      {}
 func (AdvancedError) IsJoinToChatResult()        {}
 func (AdvancedError) IsLoginResult()             {}
@@ -163,37 +171,24 @@ func (AdvancedError) IsChatRolesResult()         {}
 func (AdvancedError) IsChatsResult()             {}
 func (AdvancedError) IsInviteInfoResult()        {}
 func (AdvancedError) IsMeResult()                {}
-func (AdvancedError) IsMessageInfoResult()       {}
+func (AdvancedError) IsMessageResult()           {}
 func (AdvancedError) IsRoomFormResult()          {}
-func (AdvancedError) IsRoomMessagesResult()      {}
+func (AdvancedError) IsMessagesResult()          {}
 func (AdvancedError) IsRoomResult()              {}
-func (AdvancedError) IsRoomWhiteListResult()     {}
 func (AdvancedError) IsUnitResult()              {}
 func (AdvancedError) IsUnitsResult()             {}
 func (AdvancedError) IsUserRoleResult()          {}
-func (AdvancedError) IsMutationResult()          {}
-func (AdvancedError) IsUserResult()              {}
-func (AdvancedError) IsRoomsResult()             {}
-func (AdvancedError) IsCountMembersResult()      {}
-func (AdvancedError) IsMembersResult()           {}
-func (AdvancedError) IsRolesResult()             {}
-func (AdvancedError) IsInvitesResult()           {}
-func (AdvancedError) IsUsersResult()             {}
-func (AdvancedError) IsChatResult()              {}
-func (AdvancedError) IsRoleResult()              {}
-func (AdvancedError) IsMemberResult()            {}
-func (AdvancedError) IsAllowsResult()            {}
 
 type Allows struct {
 	Room       *Room              `json:"room"`
-	AllowRead  *PermissionHolders `json:"allow_read"`
-	AllowWrite *PermissionHolders `json:"allow_write"`
+	AllowRead  *PermissionHolders `json:"allowRead"`
+	AllowWrite *PermissionHolders `json:"allowWrite"`
 }
 
 func (Allows) IsAllowsResult() {}
 
 type Chars struct {
-	Chars []Char `json:"chars"`
+	Chars []CharType `json:"chars"`
 }
 
 type Chat struct {
@@ -201,7 +196,7 @@ type Chat struct {
 	Owner        UserResult         `json:"owner"`
 	Rooms        RoomsResult        `json:"rooms"`
 	Private      bool               `json:"private"`
-	CountMembers CountMembersResult `json:"count_members"`
+	CountMembers CountMembersResult `json:"countMembers"`
 	Members      MembersResult      `json:"members"`
 	Roles        RolesResult        `json:"roles"`
 	Invites      InvitesResult      `json:"invites"`
@@ -209,16 +204,16 @@ type Chat struct {
 	Me           MemberResult       `json:"me"`
 }
 
+func (Chat) IsChatResult()         {}
 func (Chat) IsJoinByInviteResult() {}
 func (Chat) IsJoinToChatResult()   {}
 func (Chat) IsUpdateChatResult()   {}
-func (Chat) IsChatResult()         {}
 
-type ChatArray struct {
+type Chats struct {
 	Chats []*Chat `json:"chats"`
 }
 
-func (ChatArray) IsChatsResult() {}
+func (Chats) IsChatsResult() {}
 
 type CreateChatInput struct {
 	Domain  string `json:"domain"`
@@ -233,7 +228,7 @@ type CreateInviteInput struct {
 }
 
 type CreateMessageInput struct {
-	ReplyTo int    `json:"reply_to"`
+	ReplyTo int    `json:"replyTo"`
 	Body    string `json:"body"`
 }
 
@@ -253,6 +248,40 @@ type CreateRoomInput struct {
 type FindByDomainOrID struct {
 	ID     *int    `json:"id"`
 	Domain *string `json:"domain"`
+}
+
+type FindMembers struct {
+	ChatID   *int      `json:"chatId"`
+	MemberID *int      `json:"memberId"`
+	RoleID   *int      `json:"roleId"`
+	Char     *CharType `json:"char"`
+}
+
+type FindMessages struct {
+	ChatID       int     `json:"chatId"`
+	RoomID       *int    `json:"roomId"`
+	AuthorID     *int    `json:"authorId"`
+	TextFragment *string `json:"textFragment"`
+}
+
+type FindRooms struct {
+	ChatID   int        `json:"chatId"`
+	RoomID   *int       `json:"roomId"`
+	ParentID *int       `json:"parentId"`
+	IsParent *FetchType `json:"isParent"`
+}
+
+type FindUnits struct {
+	UnitID       *int      `json:"unitId"`
+	UnitDomain   *string   `json:"unitDomain"`
+	NameFragment *string   `json:"nameFragment"`
+	UnitType     *UnitType `json:"unitType"`
+}
+
+type FindUsers struct {
+	UserID       *int    `json:"userId"`
+	UserDomain   *string `json:"userDomain"`
+	NameFragment *string `json:"nameFragment"`
 }
 
 type Form struct {
@@ -292,7 +321,7 @@ type Invite struct {
 type InviteInfo struct {
 	Unit         *Unit              `json:"unit"`
 	Private      bool               `json:"private"`
-	CountMembers CountMembersResult `json:"count_members"`
+	CountMembers CountMembersResult `json:"countMembers"`
 }
 
 func (InviteInfo) IsInviteInfoResult() {}
@@ -312,17 +341,18 @@ type Me struct {
 	User       *User     `json:"user"`
 	Data       *UserData `json:"data"`
 	Chats      []*Chat   `json:"chats"`
-	OwnedChats []*Chat   `json:"owned_chats"`
+	OwnedChats []*Chat   `json:"ownedChats"`
 }
 
 func (Me) IsMeResult() {}
 
 type Member struct {
+	ID       int        `json:"id"`
 	Chat     *Chat      `json:"chat"`
 	User     *User      `json:"user"`
 	Role     RoleResult `json:"role"`
-	Char     *Char      `json:"char"`
-	JoinedAt int64      `json:"joined_at"`
+	Char     CharType   `json:"char"`
+	JoinedAt int64      `json:"joinedAt"`
 	Muted    bool       `json:"muted"`
 	Frozen   bool       `json:"frozen"`
 }
@@ -336,30 +366,23 @@ type Members struct {
 func (Members) IsMembersResult() {}
 
 type Message struct {
-	ID      int         `json:"id"`
-	Room    *Room       `json:"room"`
-	ReplyTo *Message    `json:"reply_to"`
-	Author  *Unit       `json:"author"`
-	Body    string      `json:"body"`
-	Type    MessageType `json:"type"`
-	Date    int         `json:"date"`
+	ID        int         `json:"id"`
+	Room      *Room       `json:"room"`
+	ReplyTo   *Message    `json:"replyTo"`
+	Author    *Unit       `json:"author"`
+	Body      string      `json:"body"`
+	Type      MessageType `json:"type"`
+	CreatedAt int64       `json:"createdAt"`
 }
 
 func (Message) IsSendMessageToRoomResult() {}
-func (Message) IsMessageInfoResult()       {}
+func (Message) IsMessageResult()           {}
 
-type MessageArray struct {
+type Messages struct {
 	Messages []*Message `json:"messages"`
 }
 
-func (MessageArray) IsRoomMessagesResult() {}
-
-type MessageFilter struct {
-	TextFragment *string `json:"text_fragment"`
-	AuthorID     *int    `json:"author_id"`
-	ChatID       *int    `json:"chat_id"`
-	RoomID       *int    `json:"room_id"`
-}
+func (Messages) IsMessagesResult() {}
 
 type Params struct {
 	Limit  *int `json:"limit"`
@@ -373,9 +396,9 @@ type PermissionHolders struct {
 }
 
 type PermissionHoldersInput struct {
-	Roles   []int  `json:"roles"`
-	Chars   []Char `json:"chars"`
-	Members []int  `json:"members"`
+	Roles   []int      `json:"roles"`
+	Chars   []CharType `json:"chars"`
+	Members []int      `json:"members"`
 }
 
 type RegisterInput struct {
@@ -396,27 +419,26 @@ type Role struct {
 	Color string `json:"color"`
 }
 
+func (Role) IsRoleResult()       {}
 func (Role) IsUpdateRoleResult() {}
 func (Role) IsUserRoleResult()   {}
-func (Role) IsRoleResult()       {}
 
 type Roles struct {
 	Roles []*Role `json:"roles"`
 }
 
-func (Roles) IsChatRolesResult()     {}
-func (Roles) IsRoomWhiteListResult() {}
-func (Roles) IsRolesResult()         {}
+func (Roles) IsRolesResult()     {}
+func (Roles) IsChatRolesResult() {}
 
 type Room struct {
-	ID        int          `json:"id"`
-	Chat      *Chat        `json:"chat"`
-	Name      string       `json:"name"`
-	ParentID  *int         `json:"parent_id"`
-	Note      *string      `json:"note"`
-	MsgFormat *Form        `json:"msg_format"`
-	Allows    AllowsResult `json:"allows"`
-	Messages  []*Message   `json:"messages"`
+	RoomID   int          `json:"roomId"`
+	Chat     *Chat        `json:"chat"`
+	Name     string       `json:"name"`
+	ParentID *int         `json:"parentId"`
+	Note     *string      `json:"note"`
+	Form     *Form        `json:"form"`
+	Allows   AllowsResult `json:"allows"`
+	Messages []*Message   `json:"messages"`
 }
 
 func (Room) IsUpdateRoomResult() {}
@@ -432,17 +454,17 @@ type Successful struct {
 	Success string `json:"success"`
 }
 
+func (Successful) IsMutationResult()          {}
 func (Successful) IsJoinByInviteResult()      {}
 func (Successful) IsJoinToChatResult()        {}
 func (Successful) IsLoginResult()             {}
 func (Successful) IsRefreshTokensResult()     {}
 func (Successful) IsRegisterResult()          {}
 func (Successful) IsSendMessageToRoomResult() {}
-func (Successful) IsMutationResult()          {}
 
 type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken  string `json:"accessToken"`
+	RefreshToken string `json:"refreshToken"`
 }
 
 func (TokenPair) IsLoginResult()         {}
@@ -457,11 +479,11 @@ type Unit struct {
 
 func (Unit) IsUnitResult() {}
 
-type UnitArray struct {
+type Units struct {
 	Units []*Unit `json:"units"`
 }
 
-func (UnitArray) IsUnitsResult() {}
+func (Units) IsUnitsResult() {}
 
 type UpdateChatInput struct {
 	Domain  string `json:"domain"`
@@ -487,10 +509,10 @@ type UpdateRoleInput struct {
 
 type UpdateRoomInput struct {
 	Name      *string          `json:"name"`
-	ParentID  *int             `json:"parent_id"`
+	ParentID  *int             `json:"parentId"`
 	Note      *string          `json:"note"`
 	Restricts *RestrictsInput  `json:"restricts"`
-	MsgFormat *UpdateFormInput `json:"msg_format"`
+	Form      *UpdateFormInput `json:"form"`
 }
 
 type User struct {
@@ -512,46 +534,89 @@ type Users struct {
 
 func (Users) IsUsersResult() {}
 
-type Char string
+type CharType string
 
 const (
-	CharAdmin Char = "ADMIN"
-	CharModer Char = "MODER"
-	CharNone  Char = "NONE"
+	CharTypeAdmin CharType = "ADMIN"
+	CharTypeModer CharType = "MODER"
+	CharTypeNone  CharType = "NONE"
 )
 
-var AllChar = []Char{
-	CharAdmin,
-	CharModer,
-	CharNone,
+var AllCharType = []CharType{
+	CharTypeAdmin,
+	CharTypeModer,
+	CharTypeNone,
 }
 
-func (e Char) IsValid() bool {
+func (e CharType) IsValid() bool {
 	switch e {
-	case CharAdmin, CharModer, CharNone:
+	case CharTypeAdmin, CharTypeModer, CharTypeNone:
 		return true
 	}
 	return false
 }
 
-func (e Char) String() string {
+func (e CharType) String() string {
 	return string(e)
 }
 
-func (e *Char) UnmarshalGQL(v interface{}) error {
+func (e *CharType) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = Char(str)
+	*e = CharType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid Char", str)
+		return fmt.Errorf("%s is not a valid CharType", str)
 	}
 	return nil
 }
 
-func (e Char) MarshalGQL(w io.Writer) {
+func (e CharType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type FetchType string
+
+const (
+	FetchTypePositive FetchType = "POSITIVE"
+	FetchTypeNeutral  FetchType = "NEUTRAL"
+	FetchTypeNegative FetchType = "NEGATIVE"
+)
+
+var AllFetchType = []FetchType{
+	FetchTypePositive,
+	FetchTypeNeutral,
+	FetchTypeNegative,
+}
+
+func (e FetchType) IsValid() bool {
+	switch e {
+	case FetchTypePositive, FetchTypeNeutral, FetchTypeNegative:
+		return true
+	}
+	return false
+}
+
+func (e FetchType) String() string {
+	return string(e)
+}
+
+func (e *FetchType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = FetchType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid FetchType", str)
+	}
+	return nil
+}
+
+func (e FetchType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

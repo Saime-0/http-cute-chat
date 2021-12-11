@@ -1,0 +1,3 @@
+extend type Query {
+    message(msgId: ID!): MessageResult @goField(forceResolver: true)
+}

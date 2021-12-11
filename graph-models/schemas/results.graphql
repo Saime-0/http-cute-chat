@@ -41,3 +41,101 @@ union MemberResult =
 union AllowsResult =
     | AdvancedError
     | Allows
+
+union JoinByInviteResult =
+    | AdvancedError
+    | Successful
+    | Chat
+
+union JoinToChatResult =
+    | AdvancedError
+    | Successful
+    | Chat
+
+union LoginResult =
+    | AdvancedError
+    | Successful
+    | TokenPair
+
+union RefreshTokensResult =
+    | AdvancedError
+    | Successful
+    | TokenPair
+
+union RegisterResult =
+    | AdvancedError
+    | Successful
+
+union SendMessageToRoomResult =
+    | AdvancedError
+    | Successful
+    | Message
+
+union UpdateChatResult =
+    | AdvancedError
+    | Chat
+
+union UpdateMeDataResult =
+    | AdvancedError
+    | UserData
+
+union UpdateRoleResult =
+    | AdvancedError
+    | Role
+
+union UpdateRoomResult =
+    | AdvancedError
+    | Room
+
+union ChatRolesResult =
+    | AdvancedError
+    | Roles
+
+union ChatsResult =
+    | AdvancedError
+    | Chats
+
+union InviteInfoResult =
+    | AdvancedError
+    | InviteInfo
+
+union MeResult =
+    | AdvancedError
+    | Me
+
+union MessageResult =
+    | AdvancedError
+    | Message
+
+union RoomFormResult =
+    | AdvancedError
+    | Form
+
+union MessagesResult =
+    | AdvancedError
+    | Messages
+
+union RoomResult =
+    | AdvancedError
+    | Room
+
+union UnitResult =
+    | AdvancedError
+    | Unit
+
+union UnitsResult =
+    | AdvancedError
+    | Units
+
+union UserRoleResult =
+    | AdvancedError
+    | Role
+
+
+
+
+
+
+
+
+

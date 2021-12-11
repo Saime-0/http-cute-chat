@@ -1,13 +1,6 @@
 extend type Mutation {
-    update_me_data(input: UpdateMeDataInput!): UpdateMeDataResult! @goField(forceResolver: true) @isAuth
+    updateMeData(input: UpdateMeDataInput!): UpdateMeDataResult! @goField(forceResolver: true) @isAuth
 }
 # UpdateMeData ...
-input UpdateMeDataInput  {
-    domain: String
-    name: String
-    password: String
-    email: String
-}
-union UpdateMeDataResult =
-    | AdvancedError
-    | UserData
+
+
