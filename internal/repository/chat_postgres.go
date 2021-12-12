@@ -883,9 +883,10 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, holder *models.AllowHo
 	if inp.TextFragment != nil {
 		*inp.TextFragment = "%" + *inp.TextFragment + "%"
 	}
+
 	// language=PostgreSQL
 	rows, err := r.db.Query(`
-		SELECT id, body, type, created_at
+		SELECT id, reply_to, author, messages.room_id, body, type, created_at
 		FROM messages INNER JOIN allows on messages.room_id = allows.room_id
 		WHERE messages.room_id IN (
 		    SELECT rooms.id 
@@ -896,8 +897,8 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, holder *models.AllowHo
 		    	ON rooms.id = allows.room_id 
 		    WHERE chats.id = $1 
 			AND (
-			    $2 IS NOT NULL AND rooms.id = $2 
-			    OR $2 IS NULL
+			    $2::BIGINT IS NULL 
+			    OR rooms.id = $2 
 			)
 	        AND (
 	            action_type IS NULL 
@@ -910,12 +911,12 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, holder *models.AllowHo
             )
 		)
 		AND (
-		    $6 IS NOT NULL AND author = $6 
-		    OR $6 IS NULL
+		    $6::BIGINT IS NULL 
+		    OR author = $6 
 		)
 		AND (
-		    $7 IS NOT NULL AND body ILIKE $7
-		    OR $7 IS NULL
+		    $7::VARCHAR IS NULL 
+		    OR body ILIKE $7
 		)
 		`,
 		inp.ChatID,
@@ -927,14 +928,24 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, holder *models.AllowHo
 		inp.TextFragment,
 	)
 	if err != nil {
-		fmt.Println("Сообщения не найдены")
+		println(err.Error())
 		return messages
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := &model.Message{}
-		if err = rows.Scan(&m.ID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+		m := &model.Message{
+			Author: &model.Unit{},
+			Room:   &model.Room{},
+		}
+		var _replid *int
+		if err = rows.Scan(&m.ID, &_replid, &m.Author.ID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+			println("rows.scan:", err.Error()) // debug
 			return messages
+		}
+		if _replid != nil {
+			m.ReplyTo = &model.Message{
+				ID: *_replid,
+			}
 		}
 		messages.Messages = append(messages.Messages, m)
 	}

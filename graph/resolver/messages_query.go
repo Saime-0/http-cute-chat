@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
@@ -16,12 +17,13 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	var (
-		chatID   int
+		chatID   = find.ChatID
 		holder   models.AllowHolder
 		messages *model.Messages
 	)
-	if pl.ValidID(find.ChatID) ||
-		pl.IsMember(clientID, find.ChatID) ||
+
+	if pl.ValidID(chatID) ||
+		pl.IsMember(clientID, chatID) ||
 		find.RoomID != nil && pl.ValidID(*find.RoomID) ||
 		find.AuthorID != nil && pl.ValidID(*find.AuthorID) ||
 		pl.GetAllowHolder(clientID, chatID, &holder) {
@@ -30,4 +32,15 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 
 	messages = r.Services.Repos.Chats.FindMessages(&find, &holder)
 	return messages, nil
+}
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+func dbg(str string) bool {
+	fmt.Println(str)
+	return true
 }

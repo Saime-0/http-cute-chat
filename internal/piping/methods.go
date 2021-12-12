@@ -384,8 +384,7 @@ func (p *Pipeline) GetAllowHolder(userId, chatId int, holder *models.AllowHolder
 		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	holder = _holder
-
+	*holder = *_holder
 	return
 }
 

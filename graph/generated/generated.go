@@ -1845,7 +1845,7 @@ input PermissionHoldersInput {
 }
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/query/messages_query.graphql", Input: `extend type Query {
-    messages(find: FindMessages!, params: Params): MessagesResult @goField(forceResolver: true)
+    messages(find: FindMessages!, params: Params): MessagesResult @goField(forceResolver: true) @isAuth
 }
 `, BuiltIn: false},
 	{Name: "graph-models/schemas/query/room_form_query.graphql", Input: `extend type Query {
@@ -6030,8 +6030,28 @@ func (ec *executionContext) _Query_messages(ctx context.Context, field graphql.C
 	}
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Messages(rctx, args["find"].(model.FindMessages), args["params"].(*model.Params))
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Messages(rctx, args["find"].(model.FindMessages), args["params"].(*model.Params))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.IsAuth == nil {
+				return nil, errors.New("directive isAuth is not implemented")
+			}
+			return ec.directives.IsAuth(ctx, nil, directive0)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(model.MessagesResult); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MessagesResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)

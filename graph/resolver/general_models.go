@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/99designs/gqlgen/graphql"
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
@@ -230,24 +229,14 @@ func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) ([]*model.Ch
 }
 
 func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.RoleResult, error) {
-	//clientID := ctx.Value(rules.UserIDFromToken).(int)
-	//chatID := obj.Chat.Unit.ID
 	memberID := obj.ID
-	//pl := piping.NewPipeline(ctx, r.Services.Repos)
-	//if
-	//// pl.IsMember(clientID, chatID) ||
-	////pl.HasRole(memberID, chatID)  ||
-	//pl.Can.ObserveRoles(clientID, chatID) {
-	//	return pl.Err, nil
-	//}
 	role := r.Services.Repos.Chats.MemberRole(memberID)
 
 	return role, nil
 }
 
 func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.Room, error) {
-	roomID := graphql.GetFieldContext(ctx).Parent.Args["room_id"].(int)
-	println(roomID)
+	roomID := obj.Room.RoomID
 	room, err := r.Services.Repos.Rooms.Room(roomID)
 	if err != nil {
 		return nil, err
@@ -256,11 +245,23 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 }
 
 func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*model.Message, error) {
-	panic(fmt.Errorf("not implemented"))
+	if obj.ReplyTo == nil {
+		return nil, nil
+	}
+	message, err := r.Services.Repos.Messages.Message(obj.ReplyTo.ID)
+	if err != nil {
+		return nil, err
+	}
+	return message, err
 }
 
 func (r *messageResolver) Author(ctx context.Context, obj *model.Message) (*model.Unit, error) {
-	panic(fmt.Errorf("not implemented"))
+	unitID := obj.Author.ID
+	unit, err := r.Services.Repos.Units.UnitByID(unitID)
+	if err != nil {
+		return nil, err
+	}
+	return unit, nil
 }
 
 func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (*model.Form, error) {

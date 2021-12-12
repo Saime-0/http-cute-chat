@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 )
 
@@ -37,4 +38,40 @@ func PrettyPrint(v interface{}) (err error) {
 		fmt.Println(string(b))
 	}
 	return
+}
+
+// deprecated
+func SyntSQL(i interface{}) string {
+	return match(i)
+}
+func match(v interface{}) string {
+	switch v.(type) {
+	case string:
+		return "'" + v.(string) + "'"
+	case bool:
+		return strings.ToUpper(strconv.FormatBool(v.(bool)))
+	case int:
+		return strconv.Itoa(v.(int))
+	case int64:
+		return strconv.Itoa(int(v.(int64)))
+	case *int64:
+		if v.(*int64) != nil {
+			return match(*v.(*int64))
+		}
+	case *bool:
+		if v.(*bool) != nil {
+			return match(*v.(*bool))
+		}
+	case *int:
+		if v.(*int) != nil {
+			return match(*v.(*int))
+		}
+	case *string:
+		if v.(*string) != nil {
+			return match(*v.(*string))
+		}
+	default:
+		return fmt.Sprintf("'%v'", v)
+	}
+	return "NULL"
 }

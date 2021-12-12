@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
 
@@ -56,4 +57,21 @@ func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
 		domain,
 	).Scan(&free)
 	return !free
+}
+
+func (r *UnitsRepo) UnitByID(id int) (*model.Unit, error) {
+	unit := &model.Unit{}
+	err := r.db.QueryRow(`
+		SELECT id, domain, name, type 
+		FROM units
+		WHERE id = $1`,
+		id,
+	).Scan(
+		&unit.ID,
+		&unit.Domain,
+		&unit.Name,
+		&unit.Type,
+	)
+
+	return unit, err
 }

@@ -46,19 +46,30 @@ func (r *MessagesRepo) MessageAvailableOnRoom(messageId int, roomId int) (exists
 }
 
 func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
-	message := &model.Message{}
+	message := &model.Message{
+		Author: &model.Unit{},
+		Room:   &model.Room{},
+	}
+	var _replid *int
 	err := r.db.QueryRow(
-		`SELECT id, body, type, created_at
+		`SELECT id, reply_to, author, room_id, body, type, created_at
 		FROM messages
 		WHERE id = $1`,
 		messageId,
 	).Scan(
 		&message.ID,
+		&_replid,
+		&message.Author.ID,
+		&message.Room.RoomID,
 		&message.Body,
 		&message.Type,
 		&message.CreatedAt,
 	)
-
+	if _replid != nil {
+		message.ReplyTo = &model.Message{
+			ID: *_replid,
+		}
+	}
 	return message, err
 }
 

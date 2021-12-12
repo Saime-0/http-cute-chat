@@ -28,6 +28,6 @@ func (r *queryResolver) Message(ctx context.Context, msgID int) (model.MessageRe
 				pl.IsAllowedTo(rules.AllowRead, message.Room.RoomID, &holder)) {
 		return pl.Err, nil
 	}
-
+	panic("Not Inplemented")
 	return message, nil
 }
