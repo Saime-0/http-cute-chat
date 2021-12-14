@@ -187,6 +187,11 @@ type Allows struct {
 
 func (Allows) IsAllowsResult() {}
 
+type AllowsInput struct {
+	AllowRead  *PermissionHoldersInput `json:"allowRead"`
+	AllowWrite *PermissionHoldersInput `json:"allowWrite"`
+}
+
 type Chars struct {
 	Chars []CharType `json:"chars"`
 }
@@ -228,7 +233,7 @@ type CreateInviteInput struct {
 }
 
 type CreateMessageInput struct {
-	ReplyTo int    `json:"replyTo"`
+	ReplyTo *int   `json:"replyTo"`
 	Body    string `json:"body"`
 }
 
@@ -238,11 +243,11 @@ type CreateRoleInput struct {
 }
 
 type CreateRoomInput struct {
-	Name      string           `json:"name"`
-	Parent    *int             `json:"parent"`
-	Note      *string          `json:"note"`
-	MsgFormat *UpdateFormInput `json:"msg_format"`
-	Restricts *RestrictsInput  `json:"restricts"`
+	Name   string           `json:"name"`
+	Parent *int             `json:"parent"`
+	Note   *string          `json:"note"`
+	Form   *UpdateFormInput `json:"form"`
+	Allows *AllowsInput     `json:"allows"`
 }
 
 type FindByDomainOrID struct {
@@ -262,6 +267,11 @@ type FindMessages struct {
 	RoomID       *int    `json:"roomId"`
 	AuthorID     *int    `json:"authorId"`
 	TextFragment *string `json:"textFragment"`
+}
+
+type FindMessagesInRoomByUnionInput struct {
+	AfterTime  *int64 `json:"afterTime"`
+	BeforeTime *int64 `json:"beforeTime"`
 }
 
 type FindRooms struct {
@@ -369,7 +379,7 @@ type Message struct {
 	ID        int         `json:"id"`
 	Room      *Room       `json:"room"`
 	ReplyTo   *Message    `json:"replyTo"`
-	Author    *Unit       `json:"author"`
+	Author    *Member     `json:"author"`
 	Body      string      `json:"body"`
 	Type      MessageType `json:"type"`
 	CreatedAt int64       `json:"createdAt"`
@@ -408,11 +418,6 @@ type RegisterInput struct {
 	Password string `json:"password"`
 }
 
-type RestrictsInput struct {
-	AllowRead  *PermissionHoldersInput `json:"allow_read"`
-	AllowWrite *PermissionHoldersInput `json:"allow_write"`
-}
-
 type Role struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
@@ -431,14 +436,14 @@ func (Roles) IsRolesResult()     {}
 func (Roles) IsChatRolesResult() {}
 
 type Room struct {
-	RoomID   int          `json:"roomId"`
-	Chat     *Chat        `json:"chat"`
-	Name     string       `json:"name"`
-	ParentID *int         `json:"parentId"`
-	Note     *string      `json:"note"`
-	Form     *Form        `json:"form"`
-	Allows   AllowsResult `json:"allows"`
-	Messages []*Message   `json:"messages"`
+	RoomID   int            `json:"roomId"`
+	Chat     *Chat          `json:"chat"`
+	Name     string         `json:"name"`
+	ParentID *int           `json:"parentId"`
+	Note     *string        `json:"note"`
+	Form     *Form          `json:"form"`
+	Allows   AllowsResult   `json:"allows"`
+	Messages MessagesResult `json:"messages"`
 }
 
 func (Room) IsUpdateRoomResult() {}
@@ -507,12 +512,14 @@ type UpdateRoleInput struct {
 	Color *string `json:"color"`
 }
 
+type UpdateRoomAllowsInput struct {
+	Allows *AllowsInput `json:"allows"`
+}
+
 type UpdateRoomInput struct {
-	Name      *string          `json:"name"`
-	ParentID  *int             `json:"parentId"`
-	Note      *string          `json:"note"`
-	Restricts *RestrictsInput  `json:"restricts"`
-	Form      *UpdateFormInput `json:"form"`
+	Name     *string `json:"name"`
+	ParentID *int    `json:"parentId"`
+	Note     *string `json:"note"`
 }
 
 type User struct {
@@ -533,6 +540,47 @@ type Users struct {
 }
 
 func (Users) IsUsersResult() {}
+
+type ActionType string
+
+const (
+	ActionTypeRead  ActionType = "READ"
+	ActionTypeWrite ActionType = "WRITE"
+)
+
+var AllActionType = []ActionType{
+	ActionTypeRead,
+	ActionTypeWrite,
+}
+
+func (e ActionType) IsValid() bool {
+	switch e {
+	case ActionTypeRead, ActionTypeWrite:
+		return true
+	}
+	return false
+}
+
+func (e ActionType) String() string {
+	return string(e)
+}
+
+func (e *ActionType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ActionType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ActionType", str)
+	}
+	return nil
+}
+
+func (e ActionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
 
 type CharType string
 
@@ -623,12 +671,11 @@ func (e FetchType) MarshalGQL(w io.Writer) {
 type FieldType string
 
 const (
-	FieldTypeEmail    FieldType = "EMAIL"
-	FieldTypeDate     FieldType = "DATE"
-	FieldTypeLink     FieldType = "LINK"
-	FieldTypeText     FieldType = "TEXT"
-	FieldTypeNumeric  FieldType = "NUMERIC"
-	FieldTypeSelector FieldType = "SELECTOR"
+	FieldTypeEmail   FieldType = "EMAIL"
+	FieldTypeDate    FieldType = "DATE"
+	FieldTypeLink    FieldType = "LINK"
+	FieldTypeText    FieldType = "TEXT"
+	FieldTypeNumeric FieldType = "NUMERIC"
 )
 
 var AllFieldType = []FieldType{
@@ -637,12 +684,11 @@ var AllFieldType = []FieldType{
 	FieldTypeLink,
 	FieldTypeText,
 	FieldTypeNumeric,
-	FieldTypeSelector,
 }
 
 func (e FieldType) IsValid() bool {
 	switch e {
-	case FieldTypeEmail, FieldTypeDate, FieldTypeLink, FieldTypeText, FieldTypeNumeric, FieldTypeSelector:
+	case FieldTypeEmail, FieldTypeDate, FieldTypeLink, FieldTypeText, FieldTypeNumeric:
 		return true
 	}
 	return false
@@ -666,6 +712,49 @@ func (e *FieldType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e FieldType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type GroupType string
+
+const (
+	GroupTypeRole   GroupType = "ROLE"
+	GroupTypeChar   GroupType = "CHAR"
+	GroupTypeMember GroupType = "MEMBER"
+)
+
+var AllGroupType = []GroupType{
+	GroupTypeRole,
+	GroupTypeChar,
+	GroupTypeMember,
+}
+
+func (e GroupType) IsValid() bool {
+	switch e {
+	case GroupTypeRole, GroupTypeChar, GroupTypeMember:
+		return true
+	}
+	return false
+}
+
+func (e GroupType) String() string {
+	return string(e)
+}
+
+func (e *GroupType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = GroupType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid GroupType", str)
+	}
+	return nil
+}
+
+func (e GroupType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -709,6 +798,47 @@ func (e *MessageType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e MessageType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ModifyType string
+
+const (
+	ModifyTypeAdd    ModifyType = "ADD"
+	ModifyTypeReduce ModifyType = "REDUCE"
+)
+
+var AllModifyType = []ModifyType{
+	ModifyTypeAdd,
+	ModifyTypeReduce,
+}
+
+func (e ModifyType) IsValid() bool {
+	switch e {
+	case ModifyTypeAdd, ModifyTypeReduce:
+		return true
+	}
+	return false
+}
+
+func (e ModifyType) String() string {
+	return string(e)
+}
+
+func (e *ModifyType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ModifyType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ModifyType", str)
+	}
+	return nil
+}
+
+func (e ModifyType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

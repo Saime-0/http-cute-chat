@@ -11,6 +11,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
@@ -168,7 +169,7 @@ func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberRes
 		return pl.Err, nil
 	}
 
-	member, err := r.Services.Repos.Chats.Member(clientID, chatID)
+	member, err := r.Services.Repos.Chats.MemberBy(clientID, chatID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
@@ -228,6 +229,15 @@ func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) ([]*model.Ch
 	return chats, nil
 }
 
+func (r *memberResolver) Chat(ctx context.Context, obj *model.Member) (*model.Chat, error) {
+	chatID := obj.Chat.Unit.ID
+	chat, err := r.Services.Repos.Chats.Chat(chatID)
+	if err != nil {
+		return nil, err
+	}
+	return chat, nil
+}
+
 func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.RoleResult, error) {
 	memberID := obj.ID
 	role := r.Services.Repos.Chats.MemberRole(memberID)
@@ -255,17 +265,32 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 	return message, err
 }
 
-func (r *messageResolver) Author(ctx context.Context, obj *model.Message) (*model.Unit, error) {
-	unitID := obj.Author.ID
-	unit, err := r.Services.Repos.Units.UnitByID(unitID)
+func (r *messageResolver) Author(ctx context.Context, obj *model.Message) (*model.Member, error) {
+	if obj.Author == nil {
+		return nil, nil
+	}
+	memberID := obj.Author.ID
+	member, err := r.Services.Repos.Chats.Member(memberID)
 	if err != nil {
 		return nil, err
 	}
-	return unit, nil
+	return member, nil
+}
+
+func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (*model.Chat, error) {
+	chatID := obj.Chat.Unit.ID
+	chat, err := r.Services.Repos.Chats.Chat(chatID)
+	if err != nil {
+		return nil, err
+	}
+	return chat, nil
 }
 
 func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (*model.Form, error) {
-	panic(fmt.Errorf("not implemented"))
+	roomID := obj.RoomID
+	form := r.Services.Repos.Rooms.RoomForm(roomID)
+
+	return form, nil
 }
 
 func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.AllowsResult, error) {
@@ -281,8 +306,22 @@ func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.Allow
 	return allows, nil
 }
 
-func (r *roomResolver) Messages(ctx context.Context, obj *model.Room) ([]*model.Message, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model.FindMessagesInRoomByUnionInput, params model.Params) (model.MessagesResult, error) {
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	var (
+		roomID = obj.RoomID
+		chatID = obj.Chat.Unit.ID
+		holder models.AllowHolder
+	)
+
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	if pl.GetAllowHolder(clientID, chatID, &holder) ||
+		pl.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		return pl.Err, nil
+	}
+	room := r.Services.Repos.Messages.MessagesFromRoom(roomID, &find, &params)
+
+	return room, nil
 }
 
 // Chat returns generated.ChatResolver implementation.

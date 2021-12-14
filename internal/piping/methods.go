@@ -115,6 +115,15 @@ func (p *Pipeline) ValidID(id int) (fail bool) {
 	return
 }
 
+func (p *Pipeline) ValidForm(form *model.UpdateFormInput) (fail bool) {
+	_, err := validator.ValidateRoomForm(form)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrBadRequest, err.Error())
+		return true
+	}
+	return
+}
+
 func (p *Pipeline) OwnedLimit(userId int) (fail bool) {
 	count, err := p.repos.Users.GetCountUserOwnedChats(userId)
 	if err != nil {
@@ -205,6 +214,7 @@ func (p *Pipeline) IsMember(userId, chatId int) (fail bool) {
 		p.Err = resp.Error(resp.ErrBadRequest, "пользователь не является участником чата")
 		return true
 	}
+
 	return
 }
 
@@ -408,10 +418,31 @@ func (p *Pipeline) GetMessageByID(msgId int, message *model.Message) (fail bool)
 }
 
 func (p *Pipeline) FindMember(memberId int, chatId *int) (fail bool) {
-	chatId = p.repos.Chats.FindMember(memberId)
+	chatId = p.repos.Chats.ChatIDByMemberID(memberId)
 	if chatId == nil {
 		p.Err = resp.Error(resp.ErrBadRequest, "участник не найден")
 		return true
 	}
 	return
+}
+
+func (p *Pipeline) GetMemberBy(userId, chatId int, memberId *int) (fail bool) {
+	by := p.repos.Chats.FindMemberBy(userId, chatId)
+	if by == nil {
+		p.Err = resp.Error(resp.ErrBadRequest, "не удалось определить участника чата")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) IsNotMuted(memberId int) (fail bool) {
+	if p.repos.Chats.MemberIsMuted(memberId) {
+		p.Err = resp.Error(resp.ErrBadRequest, "участник чата заглушен")
+		return true
+	}
+	return
+}
+
+func (p *Pipeline) GetMemberIDWhich(userId, chatId int, memberId *int) (fail bool) {
+
 }

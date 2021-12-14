@@ -1,6 +1,9 @@
 package models
 
-import "github.com/saime-0/http-cute-chat/internal/api/rules"
+import (
+	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+)
 
 // INTERNAL models
 // RECEIVED models
@@ -49,7 +52,6 @@ type MemberInfo struct {
 	JoinedAt int `json:"joined_at"`
 }
 
-// news
 type Member struct {
 	User     User
 	RoleID   *int // deprecated
@@ -59,33 +61,15 @@ type Member struct {
 	Frozen   bool
 }
 
-// general room model
-type Dialog struct {
-	ID          int      `json:"id"`
-	MessagesIDs []int    `json:"messages_ids"`
-	Companion   UserInfo `json:"companion"`
-}
-
-// INTERNAL models
-// RECEIVED models
-
-// RESPONSE models
-type DialogInfo struct {
-	Companion UserInfo `json:"companion"`
-}
-type ListDialogs struct {
-	Dialogs []DialogInfo `json:"dialogs"`
-}
-
-// RECEIVED models
 type CreateMessage struct {
-	ReplyTo int    `json:"reply_to"`
-	Author  int    `json:"author"`
-	Body    string `json:"body"`
-	// UnitType    rules.MessageType `json:"type"`
+	ReplyTo *int
+	Author  *int
+	RoomID  int
+	Body    string
+	Type    model.MessageType
+	// CreatedAt int64 migrate to postgres
 }
 
-// RESPONSE models
 type MessageInfo struct {
 	ID      int               `json:"id"`
 	ReplyTo int               `json:"reply_to"`
@@ -144,6 +128,11 @@ type Role struct {
 	ID    int
 	Name  string
 	Color string
+}
+type RoleReference struct {
+	ID    *int
+	Name  *string
+	Color *string
 }
 
 type RoleID struct {
@@ -260,6 +249,14 @@ type Unit struct {
 	Type   rules.UnitType
 }
 
+// deprecated
+type ReferenceUnit struct {
+	ID     *int
+	Domain *string
+	Name   *string
+	Type   *rules.UnitType
+}
+
 type Me struct {
 	Unit Unit
 	User MeData
@@ -285,8 +282,15 @@ type AllowV2 struct {
 	Value  string
 }
 type FindMember struct {
-	MemberID int
-	ChatID   int
+	ChatID   *int
+	UserID   *int
+	MemberID *int
+	Char     *model.CharType
+	RoleID   *int
+	Muted    *bool
+	Frozen   *bool
+	CanWrite *int
+	CanRead  *int
 }
 type FindMessage struct {
 	MemberID int

@@ -8,7 +8,6 @@ enum FieldType {
     LINK
     TEXT
     NUMERIC
-    SELECTOR
 }
 enum MessageType {
     SYSTEM
@@ -24,6 +23,19 @@ enum CharType {
     ADMIN
     MODER
     NONE
+}
+enum ActionType {
+    READ
+    WRITE
+}
+enum GroupType {
+    ROLE
+    CHAR
+    MEMBER
+}
+enum ModifyType {
+    ADD
+    REDUCE
 }
 type Chars {
     chars: [CharType!]
@@ -80,15 +92,16 @@ type Chats {
 
 type Room {
     roomId: ID!
-    chat: Chat! # @goField(forceResolver: true)
+    chat: Chat! @goField(forceResolver: true)
     name: String!
     parentId: ID
     note: String
     form: Form @goField(forceResolver: true) # не проверено
     allows: AllowsResult! @goField(forceResolver: true)
-    messages: [Message!] @goField(forceResolver: true)
+    messages(find: FindMessagesInRoomByUnionInput!, params: Params!): MessagesResult @goField(forceResolver: true)
     #todo next: prev: or symbolindex:
 }
+
 
 type Rooms {
     rooms: [Room!]
@@ -108,7 +121,7 @@ type FormField {
 
 type Member {
     id: ID!
-    chat: Chat! # @goField(forceResolver: true) # зач тут чат?
+    chat: Chat! @goField(forceResolver: true) # зач тут чат?
     user: User! # @goField(forceResolver: true)
     role: RoleResult @goField(forceResolver: true)
     char: CharType!
@@ -135,7 +148,7 @@ type Message {
     id: ID!
     room: Room! @goField(forceResolver: true)
     replyTo: Message @goField(forceResolver: true)
-    author: Unit! @goField(forceResolver: true)
+    author: Member @goField(forceResolver: true)
     body: String!
     type: MessageType!
     createdAt: Int64!

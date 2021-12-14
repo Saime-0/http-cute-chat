@@ -98,7 +98,7 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 
 			return
 		}
-		roomForm, err := h.Services.Repos.Rooms.GetRoomForm(roomId)
+		roomForm, err := h.Services.Repos.Rooms.RoomForm(roomId)
 		if err != nil {
 			responder.Error(w, http.StatusInternalServerError, rules.ErrAccessingDatabase)
 
@@ -327,7 +327,7 @@ func (h *Handler) GetRoomForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	form, err := h.Services.Repos.Rooms.GetRoomForm(roomId)
+	form, err := h.Services.Repos.Rooms.RoomForm(roomId)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, form)

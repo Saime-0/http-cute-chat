@@ -1,12 +1,13 @@
 package validator
 
 import (
+	"errors"
+	"github.com/saime-0/http-cute-chat/graph/model"
 	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
 func ValidateDomain(domain string) (valid bool) {
@@ -82,48 +83,65 @@ func ValidateID(id int) (valid bool) {
 // 	return
 // }
 
-func ValidateRoomForm(form *models.FormPattern) (valid bool) {
+func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
+	if len(form.Fields) > rules.MaxFormFields {
+		return false, errors.New("превышен лимит полей")
+	}
 	for _, field := range form.Fields {
-		if field.Key == "" ||
-			field.Length < 0 {
-			return
+		// todo valid name
+		if !ValidateName(field.Key) {
+			return false, errors.New("невалидное значение ключа")
+		}
+		if len(field.Items) > rules.MaxFielditems {
+			return false, errors.New("exceeded the limit of items")
 		}
 		// unique key name
+		count := 0
 		for _, field2 := range form.Fields {
 			if field.Key == field2.Key {
-				return
+				count += 1
 			}
 		}
+		if count > 1 {
+			return false, errors.New("повторяющиеся значения ключей")
+		}
+		if field.Length != nil && *field.Length < 1 {
+			return false, errors.New("длина не может быть меньше 1")
+		}
 
+		// handling fields type
 		switch field.Type {
-		case rules.TextField:
+		case model.FieldTypeText:
 			// nothing
 
-		case rules.DateField:
+		case model.FieldTypeDate:
 			for _, v := range field.Items {
 				if _, err := strconv.ParseInt(v, 10, 64); err != nil {
-					return
+					return false, errors.New("it is not possible to convert a item value to int64")
 				}
 			}
 
-		case rules.EmailField:
+		case model.FieldTypeEmail:
 			for _, v := range field.Items {
 				if !ValidateEmail(v) {
-					return
+					return false, errors.New("item is not email")
+
 				}
 			}
 
-		case rules.LinkField:
+		case model.FieldTypeLink:
 			for _, v := range field.Items {
 				if !ValidateLink(v) {
-					return
+					return false, errors.New("item is not link")
+
 				}
 			}
 
-		case rules.NumericField:
+		case model.FieldTypeNumeric:
 			for _, v := range field.Items {
 				if _, err := strconv.Atoi(v); err != nil {
-					return
+					return false, errors.New("item is not numeric type")
+
 				}
 			}
 
@@ -132,5 +150,5 @@ func ValidateRoomForm(form *models.FormPattern) (valid bool) {
 		}
 
 	}
-	return true
+	return true, nil
 }

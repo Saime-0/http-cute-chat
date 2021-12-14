@@ -8,7 +8,8 @@ import (
 	"unicode/utf8"
 )
 
-func IntPtr(i int) *int { return &i }
+func IntPtr(i int) *int          { return &i }
+func StringPtr(s string) *string { return &s }
 
 func LeastOne(args ...bool) (discover bool) {
 	for _, arg := range args {

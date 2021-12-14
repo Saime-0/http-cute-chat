@@ -35,12 +35,11 @@ const (
 type FieldType string
 
 const (
-	EmailField    FieldType = "EMAIL"
-	DateField     FieldType = "DATE"
-	LinkField     FieldType = "LINK"
-	TextField     FieldType = "TEXT"
-	NumericField  FieldType = "NUMERIC"
-	SelectorField FieldType = "SELECTOR"
+	EmailField   FieldType = "EMAIL"
+	DateField    FieldType = "DATE"
+	LinkField    FieldType = "LINK"
+	TextField    FieldType = "TEXT"
+	NumericField FieldType = "NUMERIC"
 	// EventField FieldType = "event"
 )
 
@@ -102,6 +101,8 @@ const (
 	MaxPasswordLength        = 32
 	MaxInviteLinks           = 3
 	MaxRolesInChat           = 128
+	MaxFormFields            = 16
+	MaxFielditems            = 16
 )
 
 // Errors ...

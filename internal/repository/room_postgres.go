@@ -34,9 +34,9 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 
 func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId int, err error) {
 	var format *string
-	if input.MsgFormat != nil {
+	if input.Form != nil {
 		var marshal []byte
-		marshal, err = json.Marshal(*input.MsgFormat)
+		marshal, err = json.Marshal(*input.Form)
 		if err != nil {
 			return
 		}
@@ -50,30 +50,30 @@ func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId
 		input.Parent,
 		input.Name,
 		input.Note,
-		input.MsgFormat,
+		input.Form,
 	).Scan(&roomId)
 	if err != nil {
 		return
 	}
 	var allows *string
-	if input.Restricts != nil {
+	if input.Allows != nil {
 		var allowsDb []models.AllowsDB
-		if input.Restricts.AllowWrite != nil {
-			for _, role := range input.Restricts.AllowWrite.Roles {
+		if input.Allows.AllowWrite != nil {
+			for _, role := range input.Allows.AllowWrite.Roles {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowWrite,
 					Group:  rules.AllowRoles,
 					Value:  strconv.Itoa(role),
 				})
 			}
-			for _, char := range input.Restricts.AllowWrite.Chars {
+			for _, char := range input.Allows.AllowWrite.Chars {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowWrite,
 					Group:  rules.AllowChars,
 					Value:  char.String(),
 				})
 			}
-			for _, member := range input.Restricts.AllowWrite.Members {
+			for _, member := range input.Allows.AllowWrite.Members {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowWrite,
 					Group:  rules.AllowChars,
@@ -82,22 +82,22 @@ func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId
 			}
 		}
 
-		if input.Restricts.AllowRead != nil {
-			for _, role := range input.Restricts.AllowRead.Roles {
+		if input.Allows.AllowRead != nil {
+			for _, role := range input.Allows.AllowRead.Roles {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowRead,
 					Group:  rules.AllowRoles,
 					Value:  strconv.Itoa(role),
 				})
 			}
-			for _, char := range input.Restricts.AllowRead.Chars {
+			for _, char := range input.Allows.AllowRead.Chars {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowRead,
 					Group:  rules.AllowChars,
 					Value:  char.String(),
 				})
 			}
-			for _, member := range input.Restricts.AllowRead.Members {
+			for _, member := range input.Allows.AllowRead.Members {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowRead,
 					Group:  rules.AllowChars,
@@ -199,30 +199,33 @@ func (r *RoomsRepo) RoomIsPrivate(roomId int) (private bool) {
 	return
 }
 
-func (r *RoomsRepo) GetRoomForm(roomId int) (form models.FormPattern, err error) {
-	var format string
-	err = r.db.QueryRow(
-		`SELECT COALESCE(msg_format, '')
+func (r *RoomsRepo) RoomForm(roomId int) (form *model.Form) {
+	var format *string
+	err := r.db.QueryRow(
+		`SELECT msg_format
 		FROM rooms
 		WHERE id = $1`,
 		roomId,
 	).Scan(&format)
 	if err != nil {
-		return
+		println(err) // debug
+		return nil
 	}
-
-	err = json.Unmarshal([]byte(format), &form)
+	if format == nil {
+		return nil
+	}
+	err = json.Unmarshal([]byte(*format), form)
 
 	return
 }
 
-func (r *RoomsRepo) UpdateRoomForm(roomId int, format string) (err error) {
+func (r *RoomsRepo) UpdateRoomForm(roomId int, form *string) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE rooms
-		SET msg_format = NULLIF($2, '')
+		SET msg_format = $2
 		WHERE id = $1`,
 		roomId,
-		format,
+		form,
 	).Err()
 
 	return

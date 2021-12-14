@@ -1,5 +1,5 @@
 extend type Mutation {
-    create_room(chat_id: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth @hasChar(char: [ADMIN])
+    createRoom(chatId: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth
 }
 
 # CreateRoom ...
@@ -7,22 +7,13 @@ input CreateRoomInput {
     name: String!
     parent: ID
     note: String
-    msg_format: UpdateFormInput
-    restricts: RestrictsInput
+    form: UpdateFormInput
+    allows: AllowsInput
 }
-input UpdateFormInput {
-    fields: [FormFieldInput!]!
-}
-input FormFieldInput {
-    key: String!
-    type: FieldType!
-    optional: Boolean!
-    length: Int
-    items: [String!]
-}
-input RestrictsInput {
-    allow_read: PermissionHoldersInput
-    allow_write: PermissionHoldersInput
+
+input AllowsInput {
+    allowRead: PermissionHoldersInput
+    allowWrite: PermissionHoldersInput
 }
 input PermissionHoldersInput {
     roles: [ID!]

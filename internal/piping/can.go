@@ -112,3 +112,10 @@ func (c *Can) ObserveOwner(uid, cid int) (fail bool) {
 func (c *Can) ObserveRooms(uid, cid int) (fail bool) {
 	return all
 }
+
+func (c *Can) UpdateRoom(uid, cid int) (fail bool) {
+	return !kit.LeastOne(
+		c.owner(uid, cid),
+		c.admin(uid, cid),
+	)
+}

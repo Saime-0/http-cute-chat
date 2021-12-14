@@ -23,7 +23,7 @@ input RegisterInput {
     password: String!
 }
 input CreateMessageInput {
-    replyTo: ID!
+    replyTo: ID
     body: String!
 }
 
@@ -49,8 +49,19 @@ input UpdateRoomInput {
     name: String
     parentId: ID
     note: String
-    restricts: RestrictsInput
-    form: UpdateFormInput
+}
+input UpdateFormInput {
+    fields: [FormFieldInput!]!
+}
+input FormFieldInput {
+    key: String!
+    type: FieldType!
+    optional: Boolean!
+    length: Int
+    items: [String!]
+}
+input UpdateRoomAllowsInput {
+    allows: AllowsInput
 }
 
 input FindMembers {
@@ -89,7 +100,10 @@ input FindUsers {
     nameFragment: String
 }
 
-
+input FindMessagesInRoomByUnionInput {
+    afterTime: Int64
+    beforeTime: Int64
+}
 
 
 
