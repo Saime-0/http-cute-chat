@@ -6,6 +6,8 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
+	"strconv"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
@@ -13,7 +15,9 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error) {
+func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params model.Params) (model.MessagesResult, error) {
+	tl := tlog.Start("queryResolver > Messages [cid:" + strconv.Itoa(find.ChatID) + "]")
+	defer tl.Fine()
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	var (
@@ -22,15 +26,16 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 		messages *model.Messages
 	)
 
-	if pl.ValidID(chatID) ||
+	if pl.ValidParams(&params) ||
+		pl.ValidID(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		find.RoomID != nil && pl.ValidID(*find.RoomID) ||
 		find.AuthorID != nil && pl.ValidID(*find.AuthorID) ||
-		pl.GetAllowHolder(clientID, chatID, &holder) {
+		pl.GetAllowHolder(clientID, chatID, &holder) { // todo bodyfragment valid
 		return pl.Err, nil
 	}
 
-	messages = r.Services.Repos.Chats.FindMessages(&find, &holder)
+	messages = r.Services.Repos.Chats.FindMessages(&find, &params, &holder)
 	return messages, nil
 }
 

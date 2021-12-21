@@ -192,6 +192,11 @@ type AllowsInput struct {
 	AllowWrite *PermissionHoldersInput `json:"allowWrite"`
 }
 
+type Case struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type Chars struct {
 	Chars []CharType `json:"chars"`
 }
@@ -256,10 +261,13 @@ type FindByDomainOrID struct {
 }
 
 type FindMembers struct {
-	ChatID   *int      `json:"chatId"`
+	ChatID   int       `json:"chatId"`
+	UserID   *int      `json:"userId"`
 	MemberID *int      `json:"memberId"`
-	RoleID   *int      `json:"roleId"`
 	Char     *CharType `json:"char"`
+	RoleID   *int      `json:"roleId"`
+	Muted    *bool     `json:"muted"`
+	Frozen   *bool     `json:"frozen"`
 }
 
 type FindMessages struct {
@@ -275,10 +283,11 @@ type FindMessagesInRoomByUnionInput struct {
 }
 
 type FindRooms struct {
-	ChatID   int        `json:"chatId"`
-	RoomID   *int       `json:"roomId"`
-	ParentID *int       `json:"parentId"`
-	IsParent *FetchType `json:"isParent"`
+	ChatID       int        `json:"chatId"`
+	RoomID       *int       `json:"roomId"`
+	NameFragment *string    `json:"nameFragment"`
+	ParentID     *int       `json:"parentId"`
+	IsChild      *FetchType `json:"isChild"`
 }
 
 type FindUnits struct {
@@ -441,7 +450,7 @@ type Room struct {
 	Name     string         `json:"name"`
 	ParentID *int           `json:"parentId"`
 	Note     *string        `json:"note"`
-	Form     *Form          `json:"form"`
+	Form     RoomFormResult `json:"form"`
 	Allows   AllowsResult   `json:"allows"`
 	Messages MessagesResult `json:"messages"`
 }
@@ -527,6 +536,10 @@ type User struct {
 }
 
 func (User) IsUserResult() {}
+
+type UserChoice struct {
+	Choice []*Case `json:"choice"`
+}
 
 type UserData struct {
 	Password string `json:"password"`

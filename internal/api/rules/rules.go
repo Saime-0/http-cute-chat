@@ -1,6 +1,16 @@
 package rules
 
+import "time"
+
 const Year int64 = 31536000
+
+type FetchType string
+
+const (
+	Positive FetchType = "POSITIVE"
+	Neutral  FetchType = "NEUTRAL"
+	Negative FetchType = "NEGATIVE"
+)
 
 type AllowActionType string
 
@@ -68,6 +78,7 @@ type ContextKeys int
 const (
 	UserIDFromToken ContextKeys = iota
 	ChatIDFromChat
+	UserAgentFromHeaders
 	PipeLineUserID
 	PipeLineUserDomain
 	PipeLineChatID
@@ -79,30 +90,32 @@ const (
 )
 
 const (
-	NameMaxLength            = 32
-	NameMinLength            = 1
-	DomainMaxLength          = 32
-	DomainMinLength          = 4
-	AppSettingsMaxLength     = 512
-	MaxCountOwnedChats       = 128
-	NoteMaxLength            = 64
-	MessageBodyMaxLength     = 4096
-	RefreshTokenLength       = 16
-	MaxCountRooms            = 128
-	MaxUserChats             = 128
-	MaxMembersOnChat         = 2_097_152
-	LimitOnShowUnitsInSearch = 20
-	LimitOnShowMessages      = 20
-	LimitOnShowChats         = 20
-	LimitOnShowDialogs       = 20
-	LimitOnShowMembers       = 20
-	MaxLimit                 = 20
-	MinPasswordLength        = 6
-	MaxPasswordLength        = 32
-	MaxInviteLinks           = 3
-	MaxRolesInChat           = 128
-	MaxFormFields            = 16
-	MaxFielditems            = 16
+	NameMaxLength                  = 32
+	NameMinLength                  = 1
+	DomainMaxLength                = 32
+	DomainMinLength                = 4
+	AppSettingsMaxLength           = 512
+	MaxCountOwnedChats             = 128
+	NoteMaxLength                  = 64
+	MessageBodyMaxLength           = 4096
+	RefreshTokenLength             = 16
+	MaxCountRooms                  = 128
+	MaxUserChats                   = 128
+	MaxMembersOnChat               = 2_097_152
+	LimitOnShowUnitsInSearch       = 20
+	LimitOnShowMessages            = 20
+	LimitOnShowChats               = 20
+	LimitOnShowDialogs             = 20
+	LimitOnShowMembers             = 20
+	MaxLimit                       = 20
+	MinPasswordLength              = 6
+	MaxPasswordLength              = 32
+	MaxInviteLinks                 = 3
+	MaxRolesInChat                 = 128
+	MaxFormFields                  = 16
+	MaxFielditems                  = 16
+	RefreshTokenLiftime      int64 = int64(time.Hour * 24 * 10 / time.Second) // 10 days
+	MaxRefreshSession              = 5
 )
 
 // Errors ...

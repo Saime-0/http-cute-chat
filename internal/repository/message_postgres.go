@@ -79,38 +79,6 @@ func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 	return message, err
 }
 
-func (r *MessagesRepo) GetMessagesFromDialog(dialogId int, offset int) (messages models.MessagesList, err error) {
-	rows, err := r.db.Query(
-		`SELECT id, COALESCE(reply_to, 0), author, body, type
-		FROM messages
-		WHERE id IN (
-			SELECT message_id 
-			FROM dialog_msg_pool 
-			WHERE dialog_id = $1 
-			LIMIT 20
-			OFFSET $2
-			)`,
-		dialogId,
-		offset,
-	)
-	if err != nil {
-		return
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		m := models.MessageInfo{}
-		if err = rows.Scan(&m.ID, &m.ReplyTo, &m.Author, &m.Body, &m.Type); err != nil {
-			return
-		}
-		messages.Messages = append(messages.Messages, m)
-	}
-	// if !rows.NextResultSet() {
-	// 	return
-	// }
-	return
-}
-
 func (r *MessagesRepo) GetMessagesFromRoom(roomId int, createdAfter int, offset int) (messages models.MessagesList, err error) {
 	rows, err := r.db.Query(
 		`SELECT id, COALESCE(reply_to, 0), author, body, type
@@ -147,6 +115,11 @@ func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (err error
 		INSERT INTO messages (reply_to, author, room_id, body, type)
 		VALUES ($1, $2, $3, $4, $5)
 		`,
+		inp.ReplyTo,
+		inp.Author,
+		inp.RoomID,
+		inp.Body,
+		inp.Type,
 	).Err()
 	if err != nil {
 		return

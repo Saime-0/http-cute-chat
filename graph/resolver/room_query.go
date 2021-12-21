@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *queryResolver) Room(ctx context.Context, id int) (model.RoomResult, error) {
+func (r *queryResolver) Room(ctx context.Context, roomID int) (model.RoomResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

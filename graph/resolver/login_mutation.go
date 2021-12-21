@@ -7,7 +7,6 @@ import (
 	"context"
 	"os"
 	"strconv"
-	"time"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -26,39 +25,31 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		return pl.Err, nil
 	}
 
-	tokenPair, session := func(userId int) (tokenPair *models.FreshTokenPair, session *models.RefreshSession) {
-		refreshToken := gotp.RandomSecret(rules.RefreshTokenLength)
-		session = &models.RefreshSession{
-			RefreshToken: refreshToken,
-			UserAgent:    "blank agent",
-			Exp:          time.Now().Unix() + int64(time.Hour),
-			CreatedAt:    time.Now().Unix(),
-		}
-		token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-			ExpiresAt: session.Exp,
-			Subject:   strconv.Itoa(userId),
-		}).SignedString([]byte(os.Getenv("SECRET_SIGNING_KEY")))
-		if err != nil {
-			panic(err)
-		}
-		tokenPair = &models.FreshTokenPair{
-			AccessToken:  token,
-			RefreshToken: refreshToken,
-		}
-		return
-	}(clientID)
-	sessionsCount, err := r.Services.Repos.Auth.CreateNewUserRefreshSession(clientID, session)
+	var (
+		session *models.RefreshSession
+	)
+	newRefreshToken := gotp.RandomSecret(rules.RefreshTokenLength)
+	session = &models.RefreshSession{
+		RefreshToken: newRefreshToken,
+		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),
+		Lifetime:     rules.RefreshTokenLiftime,
+	}
+
+	expiresAt, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "неудачная попытка создать сессию пользователя"), nil
 	}
-	if sessionsCount > 5 {
-		err = r.Services.Repos.Auth.DeleteOldestSession(clientID)
-		if err != nil {
-			return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
-		}
+
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		ExpiresAt: expiresAt,
+		Subject:   strconv.Itoa(clientID),
+	}).SignedString([]byte(os.Getenv("SECRET_SIGNING_KEY")))
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}
+
 	return model.TokenPair{
-		AccessToken:  tokenPair.AccessToken,
-		RefreshToken: tokenPair.RefreshToken,
+		AccessToken:  token,
+		RefreshToken: newRefreshToken,
 	}, nil
 }

@@ -62,7 +62,9 @@ func main() {
 		},
 	}))
 	router := mux.NewRouter()
+	router.Use(middleware.LoggingMiddleware)
 	router.Use(middleware.CheckAuth)
+	router.Use(middleware.GetUserAgent)
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 

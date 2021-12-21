@@ -20,17 +20,19 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		chatID   int
 		memberID int
 		holder   models.AllowHolder
+		//handledUserChoice string
 	)
 	if pl.RoomExists(roomID) ||
 		pl.GetChatIDByRoom(roomID, &chatID) ||
 		pl.GetMemberBy(clientID, chatID, &memberID) ||
 		pl.IsNotMuted(memberID) ||
 		pl.GetAllowHolder(clientID, chatID, &holder) ||
-		pl.IsAllowedTo(rules.AllowWrite, roomID, &holder) {
-		// todo roomhasform != nil && VALIDATEFORM
+		pl.IsAllowedTo(rules.AllowWrite, roomID, &holder) ||
+		r.Services.Repos.Rooms.FormIsSet(roomID) && pl.HandleChoice(input.Body, roomID, &input.Body) {
 		return pl.Err, nil
 	}
 	// todo if message is anonimus or room
+	// todo все allow.group.user заменить на member
 	message := &models.CreateMessage{
 		ReplyTo: input.ReplyTo,
 		Author:  &clientID,

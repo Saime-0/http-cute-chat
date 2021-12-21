@@ -6,6 +6,8 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
+	"strconv"
 
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -68,6 +70,8 @@ func (r *chatResolver) CountMembers(ctx context.Context, obj *model.Chat) (model
 
 func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.MembersResult, error) {
 	chatID := obj.Unit.ID
+	tl := tlog.Start("chatResolver > Members [cid:" + strconv.Itoa(chatID) + "]")
+	defer tl.Fine()
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(ctx, r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
@@ -77,13 +81,10 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 
 	members, err := r.Services.Repos.Chats.Members(chatID)
 	if err != nil {
-		println(err.Error())
+		println(err.Error()) // debug
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
-	for _, member := range members.Members {
-		member.Chat = obj
-	}
-	ctx = context.WithValue(ctx, rules.ChatIDFromChat, chatID)
+
 	return members, nil
 }
 
@@ -240,6 +241,8 @@ func (r *memberResolver) Chat(ctx context.Context, obj *model.Member) (*model.Ch
 
 func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.RoleResult, error) {
 	memberID := obj.ID
+	tl := tlog.Start("memberResolver > Role [mid:" + strconv.Itoa(memberID) + "]")
+	defer tl.Fine()
 	role := r.Services.Repos.Chats.MemberRole(memberID)
 
 	return role, nil
@@ -279,17 +282,32 @@ func (r *messageResolver) Author(ctx context.Context, obj *model.Message) (*mode
 
 func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (*model.Chat, error) {
 	chatID := obj.Chat.Unit.ID
+	tl := tlog.Start("roomResolver > Chat [cid:" + strconv.Itoa(chatID) + "]")
 	chat, err := r.Services.Repos.Chats.Chat(chatID)
 	if err != nil {
+		tl.FineWithReason(err.Error())
 		return nil, err
 	}
+	tl.Fine()
 	return chat, nil
 }
 
-func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (*model.Form, error) {
+func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFormResult, error) {
 	roomID := obj.RoomID
+	tl := tlog.Start("roomResolver > Form [rid:" + strconv.Itoa(roomID) + "]")
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	var (
+		chatID = obj.Chat.Unit.ID
+		holder models.AllowHolder
+	)
+	if pl.GetAllowHolder(clientID, chatID, &holder) ||
+		pl.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		tl.FineWithReason(pl.Err.Error)
+		return pl.Err, nil
+	}
 	form := r.Services.Repos.Rooms.RoomForm(roomID)
-
+	tl.Fine()
 	return form, nil
 }
 

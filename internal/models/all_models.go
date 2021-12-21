@@ -5,8 +5,6 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 )
 
-// INTERNAL models
-// RECEIVED models
 type CreateChat struct {
 	Domain  string `json:"domain"`
 	Name    string `json:"name"`
@@ -170,8 +168,7 @@ type RoomID struct {
 type RefreshSession struct {
 	RefreshToken string `json:"refresh_token"`
 	UserAgent    string `json:"user_agent"`
-	Exp          int64  `json:"exp"`
-	CreatedAt    int64  `json:"created_at"`
+	Lifetime     int64
 }
 
 type CustomClaims struct {
@@ -280,17 +277,6 @@ type AllowV2 struct {
 	Action rules.AllowActionType
 	Group  rules.AllowGroupType
 	Value  string
-}
-type FindMember struct {
-	ChatID   *int
-	UserID   *int
-	MemberID *int
-	Char     *model.CharType
-	RoleID   *int
-	Muted    *bool
-	Frozen   *bool
-	CanWrite *int
-	CanRead  *int
 }
 type FindMessage struct {
 	MemberID int

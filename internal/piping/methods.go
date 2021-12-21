@@ -1,6 +1,8 @@
 package piping
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/resp"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
@@ -8,6 +10,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/its"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"strconv"
 )
 
 func (p *Pipeline) ChatExists(chatId int) (fail bool) {
@@ -444,5 +447,106 @@ func (p *Pipeline) IsNotMuted(memberId int) (fail bool) {
 }
 
 func (p *Pipeline) GetMemberIDWhich(userId, chatId int, memberId *int) (fail bool) {
+	panic("Not Implemented")
+	return
+}
 
+func (p *Pipeline) HandleChoice(choiceString string, roomId int, handledChoice *string) (fail bool) {
+	var userChoice model.UserChoice
+	err := json.Unmarshal([]byte(choiceString), &userChoice)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrBadRequest, "невалидное тело запроса")
+		return true
+	}
+	form := p.repos.Rooms.RoomForm(roomId)
+
+	fmt.Printf("%s", form.Fields[0].Key) // debug
+	choice, aerr := matchMessageType(&userChoice, form)
+	if aerr != nil {
+		p.Err = resp.Error(resp.ErrBadRequest, aerr.Message)
+		return true
+	}
+	choiceBody, err := json.Marshal(choice)
+	if err != nil {
+		p.Err = resp.Error(resp.ErrInternalServerError, "ошибка при обработке запроса")
+		return true
+	}
+	*handledChoice = string(choiceBody)
+
+	return
+}
+
+func matchMessageType(input *model.UserChoice, sample *model.Form) (*model.UserChoice, *rules.AdvancedError) {
+	completed := make(map[string]string)
+	for _, field := range sample.Fields {
+		for _, choice := range input.Choice {
+			if choice.Key == field.Key {
+				var advErr *rules.AdvancedError
+				if field.Length != nil && len(choice.Value) > *field.Length {
+					advErr = rules.ErrChoiceValueLength
+				}
+				switch field.Type {
+				case model.FieldTypeText:
+					// nothing
+
+				case model.FieldTypeDate:
+					if _, err := strconv.ParseInt(choice.Value, 10, 64); err != nil {
+						advErr = rules.ErrInvalidChoiceDate
+					}
+
+				case model.FieldTypeEmail:
+					if !validator.ValidateEmail(choice.Value) {
+						advErr = rules.ErrInvalidEmail
+					}
+
+				case model.FieldTypeLink:
+					if !validator.ValidateLink(choice.Value) {
+						advErr = rules.ErrInvalidLink
+					}
+
+				case model.FieldTypeNumeric:
+					if _, err := strconv.Atoi(choice.Value); err != nil {
+						advErr = rules.ErrInvalidChoiceValue
+					}
+
+				default:
+					advErr = rules.ErrDataRetrieved
+				}
+				if advErr != nil {
+					return nil, advErr
+				}
+				if len(field.Items) != 0 {
+					contains := func(arr []string, str string) bool {
+						for _, a := range arr {
+							if a == str {
+								return true
+							}
+						}
+						return false
+					}(field.Items, choice.Value)
+
+					if !contains {
+						return nil, rules.ErrInvalidChoiceValue
+					}
+				}
+				completed[field.Key] = choice.Value
+			}
+
+		}
+		_, ok := completed[field.Key]
+		if !(ok || field.Optional) {
+			return nil, rules.ErrMissingChoicePair
+		}
+
+	}
+	form := &model.UserChoice{
+		Choice: []*model.Case{},
+	}
+	for k, v := range completed {
+		form.Choice = append(form.Choice, &model.Case{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return form, nil
 }

@@ -1,4 +1,4 @@
 extend type Query {
-    me: MeResult! @goField(forceResolver: true)
+    me: MeResult! @goField(forceResolver: true) @isAuth
 }
 

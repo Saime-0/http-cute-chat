@@ -7,6 +7,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 )
@@ -199,24 +200,36 @@ func (r *RoomsRepo) RoomIsPrivate(roomId int) (private bool) {
 	return
 }
 
-func (r *RoomsRepo) RoomForm(roomId int) (form *model.Form) {
-	var format *string
-	err := r.db.QueryRow(
+func (r *RoomsRepo) RoomForm(roomId int) *model.Form {
+	var err error
+	tl := tlog.Start("RoomsRepo > RoomForm [rid:" + strconv.Itoa(roomId) + "]")
+	defer tl.Fine()
+	var (
+		format *string
+		form   *model.Form
+	)
+	err = r.db.QueryRow(
 		`SELECT msg_format
 		FROM rooms
 		WHERE id = $1`,
 		roomId,
 	).Scan(&format)
 	if err != nil {
-		println(err) // debug
+		println(err.Error()) // debug
 		return nil
 	}
 	if format == nil {
+		println("form is nil") // debug
 		return nil
 	}
-	err = json.Unmarshal([]byte(*format), form)
 
-	return
+	err = json.Unmarshal([]byte(*format), &form)
+	if err != nil {
+		println(err.Error()) // debug
+		return nil
+	}
+
+	return form
 }
 
 func (r *RoomsRepo) UpdateRoomForm(roomId int, form *string) (err error) {
@@ -231,15 +244,18 @@ func (r *RoomsRepo) UpdateRoomForm(roomId int, form *string) (err error) {
 	return
 }
 
-func (r *RoomsRepo) RoomFormIsSet(roomId int) (isSet bool) {
-	r.db.QueryRow(
+func (r *RoomsRepo) FormIsSet(roomId int) (have bool) {
+	err := r.db.QueryRow(
 		`SELECT EXISTS(
-			SELECT 1
-			FROM rooms
-			WHERE id = $1 AND msg_format IS NOT NULL
-		)`,
+				SELECT 1
+				FROM rooms
+				WHERE id = $1 AND msg_format IS NOT NULL
+			)`,
 		roomId,
-	).Scan(&isSet)
+	).Scan(&have)
+	if err != nil {
+		println("FormIsSet:", err.Error())
+	}
 
 	return
 }
@@ -374,7 +390,9 @@ func (r *RoomsRepo) HasParent(roomId int) (has bool) {
 }
 
 func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *models.AllowHolder) (yes bool) {
-	r.db.QueryRow(
+	tl := tlog.Start("RoomsRepo > Allowed [rid:" + strconv.Itoa(roomId) + ",uid:" + strconv.Itoa(holder.UserID) + "]")
+	defer tl.Fine()
+	err := r.db.QueryRow(
 		`SELECT EXISTS(
 	    SELECT 1 
 	    FROM allows
@@ -393,11 +411,16 @@ func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *mo
 		holder.Char,
 		holder.UserID,
 	).Scan(&yes)
+	if err != nil {
+		println("Allowed:", err.Error()) //debug
+	}
 
 	return
 }
 
 func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error) {
+	tl := tlog.Start("RoomsRepo > AllowHolder [uid:" + strconv.Itoa(userId) + ",cid:" + strconv.Itoa(chatId) + "]")
+	defer tl.Fine()
 	holder := &models.AllowHolder{
 		RoleID: nil,
 		Char:   "",
@@ -413,6 +436,10 @@ func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error)
 		&holder.RoleID,
 		&holder.Char,
 	)
+	if err != nil {
+		println("AllowsHolder:", err.Error()) //debug
+		return nil, err
+	}
 	holder.UserID = userId
 
 	return holder, err
@@ -429,4 +456,68 @@ func (r *RoomsRepo) AllowsIsSet(roomId int) (have bool) {
 	).Scan(&have)
 
 	return
+}
+
+func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) *model.Rooms {
+	rooms := &model.Rooms{
+		Rooms: []*model.Room{},
+	}
+	if inp.NameFragment != nil {
+		*inp.NameFragment = "%" + *inp.NameFragment + "%"
+	}
+	// language=PostgreSQL
+	rows, err := r.db.Query(`
+		SELECT rooms.id, chats.id,  name, parent_id, note
+		FROM rooms
+		JOIN chats ON rooms.chat_id = chats.id
+		WHERE chat_id = $1
+			AND (
+			    $2::BIGINT IS NULL 
+			    OR rooms.id = $2 
+			)
+			AND (
+			    $3::VARCHAR IS NULL 
+			    OR rooms.name ILIKE $3
+			)
+			AND (
+			    $5::fetch_type IN (NULL, 'NEUTRAL') 
+			    OR $5::fetch_type = 'POSITIVE' 
+			           AND parent_id IS NOT NULL AND (
+			               $4::BIGINT IS NULL 
+			               OR parent_id = $4
+			           )
+			    OR $5::fetch_type = 'NEGATIVE' 
+			           AND parent_id IS NULL
+			)
+		LIMIT $6
+		OFFSET $7
+	`,
+		inp.ChatID,
+		inp.RoomID,
+		inp.NameFragment,
+		inp.ParentID,
+		inp.IsChild,
+		params.Limit,
+		params.Offset,
+	)
+	if err != nil {
+		println("FindRooms:", err.Error()) // debug
+		return rooms
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := &model.Room{
+			Chat: &model.Chat{
+				Unit: &model.Unit{},
+			},
+		}
+		if err = rows.Scan(&m.RoomID, &m.Chat.Unit.ID, &m.Name, &m.ParentID, &m.Note); err != nil {
+			println("rows.scan:", err.Error()) // debug
+			return rooms
+		}
+
+		rooms.Rooms = append(rooms.Rooms, m)
+	}
+
+	return rooms
 }

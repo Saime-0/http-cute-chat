@@ -89,7 +89,7 @@ func (h *Handler) SendMessageToRoom(w http.ResponseWriter, r *http.Request) {
 	message.Author = userId
 
 	msgType := rules.UserMsg
-	if h.Services.Repos.Rooms.RoomFormIsSet(roomId) {
+	if h.Services.Repos.Rooms.FormIsSet(roomId) {
 		msgType = rules.FormattedMsg
 		var inputChoice models.FormCompleted
 		err := json.Unmarshal([]byte(message.Body), &inputChoice)
@@ -321,7 +321,7 @@ func (h *Handler) GetRoomForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !h.Services.Repos.Rooms.RoomFormIsSet(roomId) {
+	if !h.Services.Repos.Rooms.FormIsSet(roomId) {
 		responder.Respond(w, http.StatusOK, nil)
 
 		return
@@ -380,7 +380,6 @@ func (h *Handler) SetRoomForm(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
 	format, err := io.ReadAll(r.Body)
 	if err != nil {
 		responder.Error(w, http.StatusInternalServerError, rules.ErrDataRetrieved)

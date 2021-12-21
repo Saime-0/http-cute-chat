@@ -3,6 +3,7 @@ CREATE TYPE char_type  AS ENUM ('ADMIN', 'MODER', 'NONE');
 CREATE TYPE message_type  AS ENUM ('SYSTEM', 'USER', 'FORMATTED');
 CREATE TYPE action_type  AS ENUM ('READ', 'WRITE');
 CREATE TYPE group_type  AS ENUM ('USERS', 'CHARS', 'ROLES');
+CREATE TYPE fetch_type  AS ENUM ('POSITIVE', 'NEUTRAL', 'NEGATIVE');
 
 CREATE TABLE units (
 	id bigserial primary key,
@@ -29,6 +30,9 @@ CREATE TABLE chat_banlist (
 create function generate_invite_code() returns text language sql as $$
   SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
   FROM generate_series(1, 16)
+$$;
+create function unix_utc_now(bigint = 0) returns bigint language sql as $$
+    SELECT (date_part('epoch'::text, now()))::bigint + $1
 $$;
 CREATE TABLE invites (
 	code varchar(16) primary key default generate_invite_code(),

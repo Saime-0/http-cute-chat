@@ -65,10 +65,13 @@ input UpdateRoomAllowsInput {
 }
 
 input FindMembers {
-    chatId: ID
+    chatId: ID!
+    userId: ID
     memberId: ID
-    roleId: ID
     char: CharType
+    roleId: ID
+    muted: Boolean
+    frozen: Boolean
 }
 
 input FindMessages {
@@ -81,9 +84,9 @@ input FindMessages {
 input FindRooms {
     chatId: ID!
     roomId: ID
+    nameFragment: String
     parentId: ID
-    isParent: FetchType
-
+    isChild: FetchType = NEUTRAL
 }
 
 input FindUnits {

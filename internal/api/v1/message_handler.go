@@ -72,6 +72,7 @@ func MatchMessageType(input *models.FormCompleted, sample *models.FormPattern) (
 		}
 
 	}
+
 	return mapToFormCompleted(&completed), nil
 }
 

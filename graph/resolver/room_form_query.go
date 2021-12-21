@@ -5,11 +5,30 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
 func (r *queryResolver) RoomForm(ctx context.Context, roomID int) (model.RoomFormResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	var (
+		chatID int
+		holder models.AllowHolder
+	)
+	if pl.ValidID(roomID) ||
+		pl.RoomExists(roomID) ||
+		pl.GetChatIDByRoom(roomID, &chatID) ||
+		pl.IsMember(clientID, chatID) ||
+		pl.GetAllowHolder(clientID, chatID, &holder) ||
+		pl.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		return pl.Err, nil
+	}
+
+	form := r.Services.Repos.Rooms.RoomForm(roomID)
+
+	return form, nil
 }

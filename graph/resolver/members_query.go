@@ -5,13 +5,27 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
 func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (model.MembersResult, error) {
-	// я думаю этот резольвер можно удалить
-	// upd: я думаю лучше не удалять
-	panic(fmt.Errorf("not implemented"))
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	var (
+		chatID  = find.ChatID
+		members *model.Members
+	)
+
+	if pl.ValidID(chatID) ||
+		pl.IsMember(clientID, chatID) ||
+		find.MemberID != nil && pl.ValidID(*find.MemberID) ||
+		find.RoleID != nil && pl.ValidID(*find.RoleID) {
+		return pl.Err, nil
+	}
+
+	members = r.Services.Repos.Chats.FindMembers(&find)
+	return members, nil
 }

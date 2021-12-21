@@ -96,7 +96,7 @@ type Room {
     name: String!
     parentId: ID
     note: String
-    form: Form @goField(forceResolver: true) # не проверено
+    form: RoomFormResult @goField(forceResolver: true) # не проверено
     allows: AllowsResult! @goField(forceResolver: true)
     messages(find: FindMessagesInRoomByUnionInput!, params: Params!): MessagesResult @goField(forceResolver: true)
     #todo next: prev: or symbolindex:
@@ -200,4 +200,11 @@ type Me {
     data: UserData!
     chats: [Chat!] @goField(forceResolver: true)
     ownedChats: [Chat!] @goField(forceResolver: true)
+}
+type Case {
+    key: String!
+    value: String!
+}
+type UserChoice {
+    choice: [Case!]
 }

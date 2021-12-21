@@ -77,7 +77,7 @@ func (h *Handler) AuthSignIn(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	tokenPair, session := GenerateNewSession(userId, r)
-	sessionsCount, err := h.Services.Repos.Auth.CreateNewUserRefreshSession(userId, session)
+	sessionsCount, err := h.Services.Repos.Auth.CreateRefreshSession(userId, session)
 	if err != nil {
 		panic(err)
 	}

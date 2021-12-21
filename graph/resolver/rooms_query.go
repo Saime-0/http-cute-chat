@@ -5,11 +5,33 @@ package resolver
 
 import (
 	"context"
-	"fmt"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
+	"strconv"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params model.Params) (model.RoomsResult, error) {
+	tl := tlog.Start("queryResolver > Rooms [cid:" + strconv.Itoa(find.ChatID) + "]")
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	var (
+		chatID = find.ChatID
+		rooms  *model.Rooms
+	)
+
+	if pl.ValidParams(&params) ||
+		pl.ValidID(chatID) ||
+		pl.IsMember(clientID, chatID) ||
+		find.RoomID != nil && pl.ValidID(*find.RoomID) ||
+		find.ParentID != nil && pl.ValidID(*find.ParentID) {
+		tl.FineWithReason(pl.Err.Error)
+		return pl.Err, nil
+	}
+
+	rooms = r.Services.Repos.Rooms.FindRooms(&find, &params)
+	tl.Fine()
+	return rooms, nil
 }
