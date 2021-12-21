@@ -130,14 +130,19 @@ func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId
 }
 
 func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
-	room := &model.Room{}
+	room := &model.Room{
+		Chat: &model.Chat{
+			Unit: &model.Unit{},
+		},
+	}
 	err := r.db.QueryRow(
-		`SELECT  id, parent_id, name, note
+		`SELECT  id, chat_id, parent_id, name, note
 		FROM rooms
 		WHERE id = $1`,
 		roomId,
 	).Scan(
 		&room.RoomID,
+		&room.Chat.Unit.ID,
 		&room.ParentID,
 		&room.Name,
 		&room.Note,
@@ -215,17 +220,16 @@ func (r *RoomsRepo) RoomForm(roomId int) *model.Form {
 		roomId,
 	).Scan(&format)
 	if err != nil {
-		println(err.Error()) // debug
+		println("RoomForm:", err.Error()) // debug
 		return nil
 	}
 	if format == nil {
-		println("form is nil") // debug
 		return nil
 	}
 
 	err = json.Unmarshal([]byte(*format), &form)
 	if err != nil {
-		println(err.Error()) // debug
+		println("RoomForm:", err.Error()) // debug
 		return nil
 	}
 

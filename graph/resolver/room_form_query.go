@@ -14,7 +14,7 @@ import (
 
 func (r *queryResolver) RoomForm(ctx context.Context, roomID int) (model.RoomFormResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var (
 		chatID int
 		holder models.AllowHolder

@@ -14,7 +14,7 @@ import (
 
 func (r *queryResolver) ChatRoles(ctx context.Context, chatID int) (model.ChatRolesResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) {
 		return pl.Err, nil

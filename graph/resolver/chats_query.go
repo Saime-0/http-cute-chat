@@ -13,7 +13,7 @@ import (
 
 func (r *queryResolver) Chats(ctx context.Context, nameFragment string, params *model.Params) (model.ChatsResult, error) {
 	//clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ValidParams(params) ||
 		pl.ValidNameFragment(nameFragment) {
 		return pl.Err, nil

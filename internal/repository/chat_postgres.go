@@ -1069,7 +1069,11 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Message{
-			Room: &model.Room{},
+			Room: &model.Room{
+				Chat: &model.Chat{
+					Unit: &model.Unit{ID: inp.ChatID},
+				},
+			},
 		}
 		var (
 			_replid   *int

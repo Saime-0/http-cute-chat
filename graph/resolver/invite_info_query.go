@@ -13,7 +13,7 @@ import (
 
 func (r *queryResolver) InviteInfo(ctx context.Context, code string) (model.InviteInfoResult, error) {
 	//clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.InviteIsRelevant(code) {
 		return pl.Err, nil
 	}

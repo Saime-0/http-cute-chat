@@ -15,7 +15,7 @@ import (
 
 func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, input model.CreateMessageInput) (model.SendMessageToRoomResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var (
 		chatID   int
 		memberID int

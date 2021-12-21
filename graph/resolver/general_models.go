@@ -20,7 +20,7 @@ import (
 func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	chatID := obj.Unit.ID
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
 		pl.Can.ObserveOwner(clientID, chatID) {
 		return pl.Err, nil
@@ -36,7 +36,7 @@ func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserRe
 func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsResult, error) {
 	chatID := obj.Unit.ID
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
 		pl.Can.ObserveRooms(clientID, chatID) {
 		return pl.Err, nil
@@ -56,7 +56,7 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 func (r *chatResolver) CountMembers(ctx context.Context, obj *model.Chat) (model.CountMembersResult, error) {
 	chatID := obj.Unit.ID
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
 		pl.Can.ObserveCountMembers(clientID, chatID) {
 		return pl.Err, nil
@@ -73,7 +73,7 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 	tl := tlog.Start("chatResolver > Members [cid:" + strconv.Itoa(chatID) + "]")
 	defer tl.Fine()
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
 		pl.Can.ObserveMembers(clientID, chatID) {
 		return pl.Err, nil
@@ -91,7 +91,7 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesResult, error) {
 	chatID := obj.Unit.ID
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
 		pl.Can.ObserveRoles(clientID, chatID) {
 		return pl.Err, nil
@@ -114,7 +114,7 @@ func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesR
 func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.InvitesResult, error) {
 	chatID := obj.Unit.ID
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
 		pl.Can.ObserveInvites(clientID, chatID) {
 		return pl.Err, nil
@@ -138,7 +138,7 @@ func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.Invi
 func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.UsersResult, error) {
 	chatID := obj.Unit.ID
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) ||
 		pl.Can.ObserveBanlist(clientID, chatID) {
 		return pl.Err, nil
@@ -165,7 +165,7 @@ func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.User
 func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberResult, error) {
 	chatID := obj.Unit.ID
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.IsMember(clientID, chatID) {
 		return pl.Err, nil
 	}
@@ -296,17 +296,22 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 	roomID := obj.RoomID
 	tl := tlog.Start("roomResolver > Form [rid:" + strconv.Itoa(roomID) + "]")
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	tl.TimeWithStatus("read clientID")
+	pl := piping.NewPipeline(r.Services.Repos)
+	tl.TimeWithStatus("create pipeline")
 	var (
 		chatID = obj.Chat.Unit.ID
 		holder models.AllowHolder
 	)
+	tl.TimeWithStatus("definition vars")
 	if pl.GetAllowHolder(clientID, chatID, &holder) ||
 		pl.IsAllowedTo(rules.AllowRead, roomID, &holder) {
 		tl.FineWithReason(pl.Err.Error)
 		return pl.Err, nil
 	}
+	tl.TimeWithStatus("pipline finally")
 	form := r.Services.Repos.Rooms.RoomForm(roomID)
+	tl.TimeWithStatus("final db query")
 	tl.Fine()
 	return form, nil
 }
@@ -332,12 +337,12 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 		holder models.AllowHolder
 	)
 
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.GetAllowHolder(clientID, chatID, &holder) ||
 		pl.IsAllowedTo(rules.AllowRead, roomID, &holder) {
 		return pl.Err, nil
 	}
-	room := r.Services.Repos.Messages.MessagesFromRoom(roomID, &find, &params)
+	room := r.Services.Repos.Messages.MessagesFromRoom(roomID, chatID, &find, &params)
 
 	return room, nil
 }

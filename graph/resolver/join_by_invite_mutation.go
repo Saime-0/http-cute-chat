@@ -14,7 +14,7 @@ import (
 
 func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var chatID int
 	if pl.InviteIsRelevant(code) ||
 		pl.GetChatByInvite(code, &chatID) ||

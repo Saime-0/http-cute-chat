@@ -14,7 +14,7 @@ import (
 
 func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int) (model.MutationResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.LeaveFromChat(clientID, chatID) {

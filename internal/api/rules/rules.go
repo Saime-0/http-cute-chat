@@ -79,14 +79,7 @@ const (
 	UserIDFromToken ContextKeys = iota
 	ChatIDFromChat
 	UserAgentFromHeaders
-	PipeLineUserID
-	PipeLineUserDomain
-	PipeLineChatID
-	PipeLineChatDomain
-	PipeLineFragmentName
-	PipeLineOffset
-	PipeLineUserUpdateDataModel
-	PipeLineUserUpdateSettingsModel
+	SecretKeyFromConfig
 )
 
 const (

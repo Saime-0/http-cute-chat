@@ -14,7 +14,7 @@ import (
 
 func (r *queryResolver) Chat(ctx context.Context, input model.FindByDomainOrID) (model.ChatResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if input.ID != nil && pl.ChatExists(*input.ID) ||
 		input.Domain != nil && pl.ChatExistsByDomain(*input.Domain) && pl.GetIDByDomain(*input.Domain, input.ID) ||
 		pl.IsNotBanned(clientID, *input.ID) {

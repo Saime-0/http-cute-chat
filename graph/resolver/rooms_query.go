@@ -16,7 +16,7 @@ import (
 func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params model.Params) (model.RoomsResult, error) {
 	tl := tlog.Start("queryResolver > Rooms [cid:" + strconv.Itoa(find.ChatID) + "]")
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var (
 		chatID = find.ChatID
 		rooms  *model.Rooms

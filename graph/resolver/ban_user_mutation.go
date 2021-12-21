@@ -25,7 +25,7 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 //  - You have helper methods in this file. Move them out to keep these resolver files clean.
 func (r *mutationResolver) BanUser(ctx context.Context, userID int, chatID int) (model.MutationResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.Ban(clientID, chatID) ||

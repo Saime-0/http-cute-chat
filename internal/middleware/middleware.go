@@ -5,18 +5,25 @@ import (
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/config"
 	"log"
 	"net/http"
-	"os"
 	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
 )
 
-var secretkey = os.Getenv("SECRET_SIGNING_KEY")
+type MiddlewaresSetup struct {
+	cfg *config.Config
+}
 
-func CheckAuth(next http.Handler) http.Handler {
+func Setup(cfg *config.Config) *MiddlewaresSetup {
+	return &MiddlewaresSetup{
+		cfg: cfg,
+	}
+}
+func (m *MiddlewaresSetup) CheckAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
 			expiresAt int64
@@ -29,7 +36,8 @@ func CheckAuth(next http.Handler) http.Handler {
 				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 				}
-				return []byte(secretkey), nil
+
+				return []byte(m.cfg.SecretKey), nil
 			})
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
@@ -44,7 +52,7 @@ func CheckAuth(next http.Handler) http.Handler {
 	})
 }
 
-func GetUserAgent(next http.Handler) http.Handler {
+func (m *MiddlewaresSetup) GetUserAgent(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), rules.UserAgentFromHeaders, r.UserAgent())
 		next.ServeHTTP(w, r.WithContext(ctx))
@@ -75,7 +83,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 	return
 }
-func LoggingMiddleware(next http.Handler) http.Handler {
+func (m *MiddlewaresSetup) Logging(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {

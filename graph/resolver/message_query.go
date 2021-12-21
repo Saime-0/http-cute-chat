@@ -14,7 +14,7 @@ import (
 
 func (r *queryResolver) Message(ctx context.Context, msgID int) (model.MessageResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var (
 		chatID  int
 		holder  models.AllowHolder

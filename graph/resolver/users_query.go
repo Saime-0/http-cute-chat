@@ -11,7 +11,7 @@ import (
 )
 
 func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params *model.Params) (model.UsersResult, error) {
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ValidParams(params) ||
 		find.UserID != nil && pl.ValidID(*find.UserID) ||
 		find.UserDomain != nil && pl.ValidDomain(*find.UserDomain) ||

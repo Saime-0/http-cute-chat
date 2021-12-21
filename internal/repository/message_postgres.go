@@ -127,7 +127,7 @@ func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (err error
 	return
 }
 
-func (r *MessagesRepo) MessagesFromRoom(roomId int, find *model.FindMessagesInRoomByUnionInput, params *model.Params) *model.Messages {
+func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMessagesInRoomByUnionInput, params *model.Params) *model.Messages {
 	messages := &model.Messages{
 		Messages: []*model.Message{},
 	}
@@ -160,7 +160,11 @@ func (r *MessagesRepo) MessagesFromRoom(roomId int, find *model.FindMessagesInRo
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Message{
-			Room: &model.Room{},
+			Room: &model.Room{
+				Chat: &model.Chat{
+					Unit: &model.Unit{ID: chatId},
+				},
+			},
 		}
 		var (
 			_replid   *int

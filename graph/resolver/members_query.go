@@ -13,7 +13,7 @@ import (
 
 func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (model.MembersResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var (
 		chatID  = find.ChatID
 		members *model.Members

@@ -16,7 +16,7 @@ import (
 
 func (r *mutationResolver) CreateInvite(ctx context.Context, chatID int, input model.CreateInviteInput) (model.MutationResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.CreateInvite(clientID, chatID) ||

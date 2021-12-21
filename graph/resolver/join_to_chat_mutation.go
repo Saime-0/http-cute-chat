@@ -14,7 +14,7 @@ import (
 
 func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.JoinToChatResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ChatExists(chatID) ||
 		pl.IsNotMember(clientID, chatID) ||
 		// todo UserIsNotBanned

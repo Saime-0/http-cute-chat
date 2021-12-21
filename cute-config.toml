@@ -1,0 +1,10 @@
+secret_key = ""
+app_port = "8080"
+
+[database]
+host = "localhost"
+port = 5432
+user = "postgres"
+password = "7050"
+db_name = "chat_db"
+

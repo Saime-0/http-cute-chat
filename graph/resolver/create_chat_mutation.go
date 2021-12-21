@@ -15,7 +15,7 @@ import (
 
 func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateChatInput) (model.MutationResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.OwnedLimit(clientID) ||
 		pl.ChatsLimit(clientID) ||
 		pl.ValidDomain(input.Domain) ||

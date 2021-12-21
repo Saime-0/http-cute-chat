@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-	"os"
 	"strconv"
 
 	"github.com/golang-jwt/jwt"
@@ -41,7 +40,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		ExpiresAt: expiresAt,
 		Subject:   strconv.Itoa(clientID),
-	}).SignedString([]byte(os.Getenv("SECRET_SIGNING_KEY")))
+	}).SignedString([]byte(r.Config.SecretKey))
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}

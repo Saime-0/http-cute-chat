@@ -19,7 +19,7 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 	tl := tlog.Start("queryResolver > Messages [cid:" + strconv.Itoa(find.ChatID) + "]")
 	defer tl.Fine()
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var (
 		chatID   = find.ChatID
 		holder   models.AllowHolder

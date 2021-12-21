@@ -15,7 +15,7 @@ import (
 
 func (r *mutationResolver) CreateRole(ctx context.Context, chatID int, input model.CreateRoleInput) (model.MutationResult, error) {
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ChatExists(chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.CreateRole(clientID, chatID) ||

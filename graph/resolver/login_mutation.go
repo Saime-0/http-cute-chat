@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-	"os"
 	"strconv"
 
 	"github.com/golang-jwt/jwt"
@@ -18,7 +17,7 @@ import (
 )
 
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error) {
-	pl := piping.NewPipeline(ctx, r.Services.Repos)
+	pl := piping.NewPipeline(r.Services.Repos)
 	var clientID int
 	if pl.UserExistsByInput(input) ||
 		pl.GetUserIDByInput(input, &clientID) {
@@ -43,7 +42,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
 		ExpiresAt: expiresAt,
 		Subject:   strconv.Itoa(clientID),
-	}).SignedString([]byte(os.Getenv("SECRET_SIGNING_KEY")))
+	}).SignedString([]byte(r.Config.SecretKey))
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}
