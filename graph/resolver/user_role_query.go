@@ -15,7 +15,7 @@ func (r *queryResolver) UserRole(ctx context.Context, memberID int) (model.UserR
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	pl := piping.NewPipeline(r.Services.Repos)
 	var chatID int
-	if pl.FindMember(memberID, &chatID) ||
+	if pl.GetChatIDByMember(memberID, &chatID) ||
 		pl.IsMember(clientID, chatID) {
 		return pl.Err, nil
 	}

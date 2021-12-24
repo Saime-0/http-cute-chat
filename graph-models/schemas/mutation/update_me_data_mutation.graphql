@@ -1,6 +1,5 @@
 extend type Mutation {
-    updateMeData(input: UpdateMeDataInput!): UpdateMeDataResult! @goField(forceResolver: true) @isAuth
+    updateMeData(input: UpdateMeDataInput!): MutationResult! @goField(forceResolver: true) @isAuth
 }
-# UpdateMeData ...
 
 

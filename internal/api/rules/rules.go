@@ -1,8 +1,17 @@
 package rules
 
-import "time"
+import (
+	"github.com/saime-0/http-cute-chat/graph/model"
+	"time"
+)
 
 const Year int64 = 31536000
+
+var CharLevels = []model.CharType{
+	model.CharTypeNone,
+	model.CharTypeModer,
+	model.CharTypeAdmin,
+}
 
 type FetchType string
 

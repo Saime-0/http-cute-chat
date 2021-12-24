@@ -1,9 +1,8 @@
-// go:generate go run github.com/99designs/gqlgen -v
-
 package resolver
 
 import (
 	"github.com/saime-0/http-cute-chat/internal/config"
+	"github.com/saime-0/http-cute-chat/internal/piper"
 	"github.com/saime-0/http-cute-chat/internal/service"
 )
 
@@ -13,4 +12,5 @@ import (
 type Resolver struct {
 	Services *service.Services
 	Config   *config.Config
+	Piper    *piper.Pipeline
 }

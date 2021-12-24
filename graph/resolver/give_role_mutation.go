@@ -17,7 +17,7 @@ func (r *mutationResolver) GiveRole(ctx context.Context, memberID int, roleID in
 	pl := piping.NewPipeline(r.Services.Repos)
 	var chatID int
 	// todo MemberExists-> chatid; RoleExists(cid, rid):
-	if pl.FindMember(memberID, &chatID) ||
+	if pl.GetChatIDByMember(memberID, &chatID) ||
 		pl.IsMember(clientID, chatID) ||
 		pl.Can.GiveRole(clientID, chatID) ||
 		pl.RoleExists(chatID, roleID) {

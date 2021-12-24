@@ -5,11 +5,32 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
-func (r *mutationResolver) UpdateChat(ctx context.Context, chatID int, input model.UpdateChatInput) (model.UpdateChatResult, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) UpdateChat(ctx context.Context, chatID int, input model.UpdateChatInput) (model.MutationResult, error) {
+	tl := tlog.Start("mutationResolver > UpdateChat [cid:", chatID, "]")
+	defer tl.Fine()
+
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+
+	node := r.Piper.CreateNode()
+	defer node.Kill()
+
+	if node.CanUpdateChat(clientID, chatID) ||
+		input.Name != nil && node.ValidName(*input.Name) ||
+		input.Domain != nil && node.ValidDomain(*input.Domain) {
+		return node.Err, nil
+	}
+
+	err := r.Services.Repos.Chats.UpdateChat(chatID, &input)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные чата"), nil
+	}
+
+	return resp.Success("данные чата обновлены"), nil
 }

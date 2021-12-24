@@ -3,13 +3,15 @@ package kit
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 )
 
-func IntPtr(i int) *int          { return &i }
-func StringPtr(s string) *string { return &s }
+func IntPtr(i int) *int              { return &i }
+func StringPtr(s string) *string     { return &s }
+func Ptr(i interface{}) *interface{} { return &i }
 
 func LeastOne(args ...bool) (discover bool) {
 	for _, arg := range args {
@@ -75,4 +77,16 @@ func match(v interface{}) string {
 		return fmt.Sprintf("'%v'", v)
 	}
 	return "NULL"
+}
+
+func SQLBracketArray(arr ...interface{}) string {
+	sqlArr := ""
+	for _, v := range arr {
+		switch v.(type) {
+		case string, rune:
+			v = spew.Sprint("'", v, "'")
+		}
+		sqlArr += fmt.Sprint(",", v)
+	}
+	return "(" + TrimFirstRune(sqlArr) + ")"
 }

@@ -274,7 +274,7 @@ func (h *Handler) UpdateRoomData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Services.Repos.Rooms.UpdateRoomData(roomId, roomData)
+	err = h.Services.Repos.Rooms.UpdateRoom(roomId, roomData)
 	finalInspectionDatabase(w, err)
 
 	responder.Respond(w, http.StatusOK, nil)

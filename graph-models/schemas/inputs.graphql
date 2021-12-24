@@ -26,11 +26,16 @@ input CreateMessageInput {
     replyTo: ID
     body: String!
 }
-
+input StringValueInput {
+    value: String!
+}
+input BoolValueInput {
+    value: Boolean!
+}
 input UpdateChatInput {
-    domain: String!
-    name: String!
-    private: Boolean!
+    domain: String
+    name: String
+    private: Boolean
 }
 
 input UpdateMeDataInput  {
@@ -46,9 +51,9 @@ input UpdateRoleInput {
 }
 
 input UpdateRoomInput {
-    name: String
-    parentId: ID
-    note: String
+    name: String @goField(forceResolver: true)
+    parentId: ID @goField(forceResolver: true)
+    note: String @goField(forceResolver: true)
 }
 input UpdateFormInput {
     fields: [FormFieldInput!]!
@@ -90,8 +95,8 @@ input FindRooms {
 }
 
 input FindUnits {
-    unitId: ID
-    unitDomain: String
+    id: ID
+    domain: String
     nameFragment: String
     unitType: UnitType
 }

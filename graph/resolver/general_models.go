@@ -6,7 +6,6 @@ package resolver
 import (
 	"context"
 	"fmt"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
 	"strconv"
 
 	"github.com/saime-0/http-cute-chat/graph/generated"
@@ -15,6 +14,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/piping"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
 func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserResult, error) {
@@ -297,17 +297,19 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 	tl := tlog.Start("roomResolver > Form [rid:" + strconv.Itoa(roomID) + "]")
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	tl.TimeWithStatus("read clientID")
-	pl := piping.NewPipeline(r.Services.Repos)
-	tl.TimeWithStatus("create pipeline")
+	node := r.Piper.CreateNode()
+	//time.Sleep(10 * time.Millisecond) // чтобы ускорть создание ноды, саиме пошел на небольшую хитрость
+	defer node.Kill()
+	tl.TimeWithStatus("create node")
 	var (
 		chatID = obj.Chat.Unit.ID
 		holder models.AllowHolder
 	)
 	tl.TimeWithStatus("definition vars")
-	if pl.GetAllowHolder(clientID, chatID, &holder) ||
-		pl.IsAllowedTo(rules.AllowRead, roomID, &holder) {
-		tl.FineWithReason(pl.Err.Error)
-		return pl.Err, nil
+	if node.GetAllowHolder(clientID, chatID, &holder) ||
+		node.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		tl.FineWithReason(node.Err.Error)
+		return node.Err, nil
 	}
 	tl.TimeWithStatus("pipline finally")
 	form := r.Services.Repos.Rooms.RoomForm(roomID)

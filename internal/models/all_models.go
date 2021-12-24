@@ -282,3 +282,11 @@ type FindMessage struct {
 	MemberID int
 	ChatID   int
 }
+
+type DemoMember struct {
+	UserID   int
+	MemberID int
+	IsOwner  bool
+	Char     *model.CharType
+	Muted    bool
+}

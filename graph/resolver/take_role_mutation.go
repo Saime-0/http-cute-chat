@@ -5,11 +5,38 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/api/resp"
+	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
 func (r *mutationResolver) TakeRole(ctx context.Context, memberID int) (model.MutationResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	tl := tlog.Start("mutationResolver > TakeRole [mid:", memberID, "]")
+	defer tl.Fine()
+
+	clientID := ctx.Value(rules.UserIDFromToken).(int)
+
+	node := r.Piper.CreateNode()
+	defer node.Kill()
+
+	var (
+		chatID         int
+		clientMemberID int
+	)
+
+	if node.ValidID(memberID) ||
+		node.GetChatIDByMember(memberID, &chatID) ||
+		node.GetMemberBy(clientID, chatID, &memberID) ||
+		node.CanTakeRole(clientMemberID, memberID, chatID) {
+
+		return node.Err, nil
+	}
+	// todo migrate to
+	err := r.Services.Repos.Chats.TakeRole(memberID)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	}
+	return resp.Success("успешно"), nil
 }

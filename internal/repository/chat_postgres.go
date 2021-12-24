@@ -766,13 +766,12 @@ func (r *ChatsRepo) DeleteRole(roleId int) (err error) {
 	return
 }
 
-func (r *ChatsRepo) TakeRole(userId int, chatId int) (err error) {
+func (r *ChatsRepo) TakeRole(memberId int) (err error) {
 	err = r.db.QueryRow(
 		`UPDATE chat_members
 		SET role_id = NULL
-		WHERE user_id = $1`,
-		userId,
-		chatId,
+		WHERE id = $1`,
+		memberId,
 	).Err()
 	if err != nil {
 		println("TakeRole:", err.Error()) // debug
@@ -1209,4 +1208,65 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 
 	return members
 
+}
+
+// DemoMembers selectType: 0 is filter by users, 1 - by members and chatid is not count
+func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) []*models.DemoMember {
+	var (
+		sqlArr      = kit.SQLBracketArray(ids)
+		demoMembers []*models.DemoMember
+	)
+	//language=PostgreSQL
+	rows, err := r.db.Query(`
+		SELECT user_id, chat_members.id, owner_id = user_id as is_owner, char, muted
+		FROM chat_members 
+		JOIN chats ON chats.id = chat_members.chat_id
+		WHERE $2 = 0 AND chats.id = $1 AND user_id IN `+sqlArr+`
+		    OR $2 = 1 AND chat_members.id IN `+sqlArr+`
+		`,
+		chatId,
+		selectType,
+	)
+	if err != nil {
+		println("DemoMembers:", err.Error()) // debug
+		return demoMembers
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := &models.DemoMember{}
+		if err = rows.Scan(&m.UserID, &m.MemberID, &m.IsOwner, &m.Char, &m.Muted); err != nil {
+			println("rows.scan:", err.Error()) // debug
+			return demoMembers
+		}
+		demoMembers = append(demoMembers, m)
+	}
+	return demoMembers
+}
+
+func (r *ChatsRepo) UpdateChat(chatId int, inp *model.UpdateChatInput) (err error) {
+	err = r.db.QueryRow(`
+		with chat as (
+			UPDATE units
+			SET 
+			    name = COALESCE($2::VARCHAR, name), 
+			    domain = COALESCE($3::VARCHAR, domain)
+			WHERE id = $1
+		)
+		UPDATE chats
+		SET private = COALESCE($4::BOOLEAN, private)
+		WHERE id = $1
+
+		`,
+		chatId,
+		inp.Name,
+		inp.Domain,
+		inp.Private,
+	).Err()
+	if err != nil {
+		println("UpdateChat:", err.Error()) // debug
+
+		return
+	}
+
+	return
 }

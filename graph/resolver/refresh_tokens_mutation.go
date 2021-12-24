@@ -30,8 +30,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),
 		Lifetime:     rules.RefreshTokenLiftime,
 	}
-	// todo UpdaateRefreshSession
-	// fixme удаление не тех записией
+
 	expiresAt, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить сессию"), nil

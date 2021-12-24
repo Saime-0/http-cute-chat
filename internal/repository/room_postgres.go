@@ -151,31 +151,24 @@ func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
 	return room, err
 }
 
-func (r *RoomsRepo) UpdateRoomData(roomId int, roomModel *models.UpdateRoomData) (err error) {
-	if roomModel.Name != "" {
-		err = r.db.QueryRow(
-			`UPDATE rooms
-			SET name = $2, private = $3
-			WHERE id = $1`,
-			roomId,
-			roomModel.Name,
-		).Err()
-		if err != nil {
-			return
-		}
-	}
-	if roomModel.Note != "" {
-		err = r.db.QueryRow(
-			`UPDATE rooms
-			SET note = $2, private = $3
-			WHERE id = $1`,
-			roomId,
-			roomModel.Note,
-			roomModel.Private,
-		).Err()
-		if err != nil {
-			return
-		}
+func (r *RoomsRepo) UpdateRoom(roomId int, inp *model.UpdateRoomInput) (err error) {
+
+	err = r.db.QueryRow(`
+		UPDATE rooms
+		SET 
+		    name = COALESCE($2::VARCHAR, name), 
+		    parent_id = COALESCE($3::BIGINT,parent_id), 
+		    note = COALESCE($4::VARCHAR,note)
+		WHERE id = $1
+		`,
+		roomId,
+		inp.Name,
+		inp.ParentID,
+		inp.Note,
+	).Err()
+	if err != nil {
+		println("UpdateRoom:", err.Error()) // debug
+		return
 	}
 
 	return
@@ -189,19 +182,9 @@ func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {
 		roomId,
 	).Scan(&chatId)
 	if err != nil {
+		println("GetChatIDByRoomID:", err.Error()) // debug
 		return
 	}
-	return
-}
-
-func (r *RoomsRepo) RoomIsPrivate(roomId int) (private bool) {
-	r.db.QueryRow(
-		`SELECT private
-		FROM rooms
-		WHERE id = $1`,
-		roomId,
-	).Scan(&private)
-
 	return
 }
 

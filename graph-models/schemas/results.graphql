@@ -83,6 +83,7 @@ union UpdateRoleResult =
     | AdvancedError
     | Role
 
+# deprecated
 union UpdateRoomResult =
     | AdvancedError
     | Room

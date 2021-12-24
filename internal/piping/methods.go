@@ -420,7 +420,7 @@ func (p *Pipeline) GetMessageByID(msgId int, message *model.Message) (fail bool)
 	return
 }
 
-func (p *Pipeline) FindMember(memberId int, chatId *int) (fail bool) {
+func (p *Pipeline) GetChatIDByMember(memberId int, chatId *int) (fail bool) {
 	chatId = p.repos.Chats.ChatIDByMemberID(memberId)
 	if chatId == nil {
 		p.Err = resp.Error(resp.ErrBadRequest, "участник не найден")

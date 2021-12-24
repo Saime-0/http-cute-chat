@@ -16,6 +16,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/resolver"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/middleware"
+	"github.com/saime-0/http-cute-chat/internal/piper"
 	"github.com/saime-0/http-cute-chat/internal/service"
 	"log"
 	"net/http"
@@ -49,6 +50,7 @@ func main() {
 		Resolvers: &resolver.Resolver{
 			Services: services,
 			Config:   cfg,
+			Piper:    piper.NewPipeline(services.Repos),
 		},
 		Directives: generated.DirectiveRoot{
 			HasChar: func(ctx context.Context, obj interface{}, next graphql.Resolver, char []*model.CharType) (res interface{}, err error) {

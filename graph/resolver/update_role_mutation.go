@@ -10,6 +10,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *mutationResolver) UpdateRole(ctx context.Context, roleID int, input model.UpdateRoleInput) (model.UpdateRoleResult, error) {
+func (r *mutationResolver) UpdateRole(ctx context.Context, roleID int, input model.UpdateRoleInput) (model.MutationResult, error) {
 	panic(fmt.Errorf("not implemented"))
 }

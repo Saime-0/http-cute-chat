@@ -359,3 +359,33 @@ func (r *UsersRepo) FindUsers(inp *model.FindUsers) *model.Users {
 
 	return users
 }
+
+func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (err error) {
+	err = r.db.QueryRow(`
+		with chat as (
+			UPDATE units
+			SET 
+			    name = COALESCE($2::VARCHAR, name), 
+			    domain = COALESCE($3::VARCHAR, domain)
+			WHERE id = $1
+		)
+		UPDATE users
+		SET 
+		    password = COALESCE($4::VARCHAR, password),
+		    email = COALESCE($4::VARCHAR, email)
+		WHERE id = $1
+
+		`,
+		userId,
+		inp.Name,
+		inp.Domain,
+		inp.Password,
+		inp.Email,
+	).Err()
+	if err != nil {
+		println("UpdateMe:", err.Error()) // debug
+		return
+	}
+
+	return
+}

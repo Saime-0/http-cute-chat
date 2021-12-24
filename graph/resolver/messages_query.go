@@ -5,47 +5,37 @@ package resolver
 
 import (
 	"context"
-	"fmt"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
-	"strconv"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/api/rules"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/piping"
+	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
 func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params model.Params) (model.MessagesResult, error) {
-	tl := tlog.Start("queryResolver > Messages [cid:" + strconv.Itoa(find.ChatID) + "]")
+	tl := tlog.Start("queryResolver > Messages [cid:", find.ChatID, "]")
 	defer tl.Fine()
+
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
+
+	node := r.Piper.CreateNode()
+	defer node.Kill()
+
 	var (
 		chatID   = find.ChatID
 		holder   models.AllowHolder
 		messages *model.Messages
 	)
 
-	if pl.ValidParams(&params) ||
-		pl.ValidID(chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		find.RoomID != nil && pl.ValidID(*find.RoomID) ||
-		find.AuthorID != nil && pl.ValidID(*find.AuthorID) ||
-		pl.GetAllowHolder(clientID, chatID, &holder) { // todo bodyfragment valid
-		return pl.Err, nil
+	if node.ValidParams(&params) ||
+		node.ValidID(chatID) ||
+		node.IsMember(clientID, chatID) ||
+		find.RoomID != nil && node.ValidID(*find.RoomID) ||
+		find.AuthorID != nil && node.ValidID(*find.AuthorID) ||
+		node.GetAllowHolder(clientID, chatID, &holder) { // todo bodyfragment valid
+		return node.Err, nil
 	}
 
 	messages = r.Services.Repos.Chats.FindMessages(&find, &params, &holder)
 	return messages, nil
-}
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-func dbg(str string) bool {
-	fmt.Println(str)
-	return true
 }

@@ -192,6 +192,10 @@ type AllowsInput struct {
 	AllowWrite *PermissionHoldersInput `json:"allowWrite"`
 }
 
+type BoolValueInput struct {
+	Value bool `json:"value"`
+}
+
 type Case struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
@@ -291,8 +295,8 @@ type FindRooms struct {
 }
 
 type FindUnits struct {
-	UnitID       *int      `json:"unitId"`
-	UnitDomain   *string   `json:"unitDomain"`
+	ID           *int      `json:"id"`
+	Domain       *string   `json:"domain"`
 	NameFragment *string   `json:"nameFragment"`
 	UnitType     *UnitType `json:"unitType"`
 }
@@ -464,6 +468,10 @@ type Rooms struct {
 
 func (Rooms) IsRoomsResult() {}
 
+type StringValueInput struct {
+	Value string `json:"value"`
+}
+
 type Successful struct {
 	Success string `json:"success"`
 }
@@ -500,9 +508,9 @@ type Units struct {
 func (Units) IsUnitsResult() {}
 
 type UpdateChatInput struct {
-	Domain  string `json:"domain"`
-	Name    string `json:"name"`
-	Private bool   `json:"private"`
+	Domain  *string `json:"domain"`
+	Name    *string `json:"name"`
+	Private *bool   `json:"private"`
 }
 
 type UpdateFormInput struct {

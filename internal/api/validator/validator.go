@@ -22,6 +22,12 @@ func ValidateName(name string) (valid bool) {
 	}
 	return true
 }
+func ValidateNote(note string) (valid bool) {
+	if len(note) > rules.NoteMaxLength {
+		return false
+	}
+	return true
+}
 func ValidatePassword(password string) (valid bool) { // todo
 
 	return len(password) <= rules.MaxPasswordLength && len(password) >= rules.MinPasswordLength
