@@ -58,3 +58,15 @@ deprocated
 4: на chat весит доп проверка на IsNotBanned
 
 **Если добавить ко всем объектам ID то найти объект которому он принадлежит будет проще
+
+Member
+
+-- Node console out (log) --
+
+Query Resolver > ChatRoles (
+	chatID = 3
+	Params {
+		limit = 20
+		offset = 0
+	}
+)

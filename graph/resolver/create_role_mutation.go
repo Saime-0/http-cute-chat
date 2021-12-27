@@ -7,28 +7,26 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/piping"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
-func (r *mutationResolver) CreateRole(ctx context.Context, chatID int, input model.CreateRoleInput) (model.MutationResult, error) {
+func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRoleInput) (model.MutationResult, error) {
+	node := r.Piper.CreateNode("mutationResolver > CreateRole [cid:", input.ChatID, "]")
+	defer node.Kill()
+
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ChatExists(chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		pl.Can.CreateRole(clientID, chatID) ||
-		pl.RolesLimit(chatID) {
-		return pl.Err, nil
+
+	if node.ChatExists(input.ChatID) ||
+		node.IsMember(clientID, input.ChatID) ||
+		node.CanCreateRole(clientID, input.ChatID) ||
+		node.RolesLimit(input.ChatID) {
+		return node.Err, nil
 	}
 
-	_, err := r.Services.Repos.Chats.CreateRoleInChat(chatID, &models.CreateRole{
-		Name:  input.Name,
-		Color: input.Color,
-	})
+	err := r.Services.Repos.Chats.CreateRoleInChat(&input)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалоось создать роль"), nil
 	}
 	return resp.Success("роль создана"), nil
 }

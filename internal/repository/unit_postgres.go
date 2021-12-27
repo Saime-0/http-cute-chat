@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 type UnitsRepo struct {
@@ -89,7 +89,9 @@ func (r *UnitsRepo) UnitByID(id int) (*model.Unit, error) {
 }
 
 func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) *model.Units {
-	units := &model.Units{}
+	units := &model.Units{
+		Units: []*model.Unit{},
+	}
 	if inp.NameFragment != nil {
 		*inp.NameFragment = "%" + *inp.NameFragment + "%"
 	}
@@ -113,13 +115,15 @@ func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) *model
 			    $4::char_type IS NULL 
 			    OR type = $4
 			)
-		LIMIT $6
-		OFFSET $7
+		LIMIT $5
+		OFFSET $6
 		`,
 		inp.ID,
 		inp.Domain,
 		inp.NameFragment,
 		inp.UnitType,
+		params.Limit,
+		params.Offset,
 	)
 	if err != nil {
 		println("FindUnits:", err.Error()) // debug

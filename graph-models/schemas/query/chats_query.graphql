@@ -1,4 +1,3 @@
 extend type Query {
-    chats(nameFragment: String!, params: Params): ChatsResult @goField(forceResolver: true)
-
+    chats(find: FindChats!, params: Params!): ChatsResult @goField(forceResolver: true)
 }

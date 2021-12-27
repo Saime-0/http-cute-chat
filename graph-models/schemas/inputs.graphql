@@ -4,11 +4,13 @@ input CreateChatInput {
     private: Boolean!
 }
 input CreateInviteInput {
+    chatId: ID!
     code: String!
     aliens: Int
     duration: Int64
 }
 input CreateRoleInput {
+    chatId: ID!
     name: String!
     color: String!
 }
@@ -103,9 +105,17 @@ input FindUnits {
 
 
 input FindUsers {
-    userId: ID
-    userDomain: String
+    id: ID
+    domain: String
     nameFragment: String
+}
+
+input FindChats {
+    id: ID
+    domain: String
+    nameFragment: String
+#    isPrivate: FetchType = NEUTRAL unable to find a private chat!!!
+
 }
 
 input FindMessagesInRoomByUnionInput {

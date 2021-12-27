@@ -2,8 +2,8 @@ package piper
 
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
@@ -38,7 +38,7 @@ func (n *Node) admin(userId, chatId int) (such bool) {
 
 func (n *Node) moder(userId, chatId int) (such bool) {
 	if !n.repos.Chats.UserIs(userId, chatId, rules.Moder) {
-		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является участником чата")
+		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является модером чата")
 		return
 	}
 	return true
@@ -51,11 +51,22 @@ func (n *Node) CanCreateInvite(uid, cid int) (fail bool) {
 	)
 }
 
-func (n *Node) CanBan(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
-	)
+func (n *Node) CanBan(userID, targetID, chatID int) (fail bool) {
+	demoMembers := n.repos.Chats.DemoMembers(chatID, 0, userID, targetID)
+	if demoMembers[0] == nil || demoMembers[1] == nil {
+		n.Err = resp.Error(resp.ErrBadRequest, "не удалось найти мембрса")
+		return true
+	}
+	if !(demoMembers[0].IsOwner ||
+		*demoMembers[0].Char == model.CharTypeAdmin) {
+		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
+		return true
+	}
+	if getCharLevel(demoMembers[0].Char) < getCharLevel(demoMembers[1].Char) {
+		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
+		return true
+	}
+	return false
 }
 
 func (n *Node) CanCreateRole(uid, cid int) (fail bool) {
@@ -126,7 +137,7 @@ func (n *Node) CanUpdateChat(uid, cid int) (fail bool) {
 }
 
 func (n *Node) CanTakeRole(MemberID, targetMemberID, chatID int) (fail bool) {
-	demoMembers := n.repos.Chats.DemoMembers(MemberID, targetMemberID)
+	demoMembers := n.repos.Chats.DemoMembers(0, 1, MemberID, targetMemberID)
 	if !demoMembers[0].IsOwner {
 		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
 		return true

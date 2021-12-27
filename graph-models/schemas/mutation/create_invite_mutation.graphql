@@ -1,4 +1,4 @@
 extend type Mutation {
-    createInvite(chatId: ID!, input: CreateInviteInput!): MutationResult! @goField(forceResolver: true) @isAuth
+    createInvite(input: CreateInviteInput!): MutationResult! @goField(forceResolver: true) @isAuth
 }
 

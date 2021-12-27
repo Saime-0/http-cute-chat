@@ -5,35 +5,29 @@ package resolver
 
 import (
 	"context"
-	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/piping"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
-func (r *mutationResolver) CreateInvite(ctx context.Context, chatID int, input model.CreateInviteInput) (model.MutationResult, error) {
+func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateInviteInput) (model.MutationResult, error) {
+	node := r.Piper.CreateNode("mutationResolver > CreateInvite [cid:", input.ChatID, "]")
+	defer node.Kill()
+
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ChatExists(chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		pl.Can.CreateInvite(clientID, chatID) ||
-		pl.InvitesLimit(chatID) ||
-		pl.ValidInviteInput(input) {
-		return pl.Err, nil
+
+	if node.ChatExists(input.ChatID) ||
+		node.IsMember(clientID, input.ChatID) ||
+		node.CanCreateInvite(clientID, input.ChatID) ||
+		node.InvitesLimit(input.ChatID) ||
+		node.ValidInviteInput(input) {
+		return node.Err, nil
 	}
 
-	_, err := r.Services.Repos.Chats.CreateInviteLink(
-		&models.CreateInvite{
-			ChatID: chatID,
-			Aliens: *input.Aliens,
-			Exp:    *input.Duration + time.Now().UTC().Unix(),
-		},
-	)
+	err := r.Services.Repos.Chats.CreateInvite(&input)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось создать инвайт"), nil
 	}
 	return resp.Success("инвайт создан"), nil
 }

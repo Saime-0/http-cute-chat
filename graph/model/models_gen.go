@@ -112,22 +112,6 @@ type UnitsResult interface {
 	IsUnitsResult()
 }
 
-type UpdateChatResult interface {
-	IsUpdateChatResult()
-}
-
-type UpdateMeDataResult interface {
-	IsUpdateMeDataResult()
-}
-
-type UpdateRoleResult interface {
-	IsUpdateRoleResult()
-}
-
-type UpdateRoomResult interface {
-	IsUpdateRoomResult()
-}
-
 type UserResult interface {
 	IsUserResult()
 }
@@ -163,10 +147,6 @@ func (AdvancedError) IsLoginResult()             {}
 func (AdvancedError) IsRefreshTokensResult()     {}
 func (AdvancedError) IsRegisterResult()          {}
 func (AdvancedError) IsSendMessageToRoomResult() {}
-func (AdvancedError) IsUpdateChatResult()        {}
-func (AdvancedError) IsUpdateMeDataResult()      {}
-func (AdvancedError) IsUpdateRoleResult()        {}
-func (AdvancedError) IsUpdateRoomResult()        {}
 func (AdvancedError) IsChatRolesResult()         {}
 func (AdvancedError) IsChatsResult()             {}
 func (AdvancedError) IsInviteInfoResult()        {}
@@ -218,10 +198,7 @@ type Chat struct {
 	Me           MemberResult       `json:"me"`
 }
 
-func (Chat) IsChatResult()         {}
-func (Chat) IsJoinByInviteResult() {}
-func (Chat) IsJoinToChatResult()   {}
-func (Chat) IsUpdateChatResult()   {}
+func (Chat) IsChatResult() {}
 
 type Chats struct {
 	Chats []*Chat `json:"chats"`
@@ -236,6 +213,7 @@ type CreateChatInput struct {
 }
 
 type CreateInviteInput struct {
+	ChatID   int    `json:"chatId"`
 	Code     string `json:"code"`
 	Aliens   *int   `json:"aliens"`
 	Duration *int64 `json:"duration"`
@@ -247,8 +225,9 @@ type CreateMessageInput struct {
 }
 
 type CreateRoleInput struct {
-	Name  string `json:"name"`
-	Color string `json:"color"`
+	ChatID int    `json:"chatId"`
+	Name   string `json:"name"`
+	Color  string `json:"color"`
 }
 
 type CreateRoomInput struct {
@@ -262,6 +241,12 @@ type CreateRoomInput struct {
 type FindByDomainOrID struct {
 	ID     *int    `json:"id"`
 	Domain *string `json:"domain"`
+}
+
+type FindChats struct {
+	ID           *int    `json:"id"`
+	Domain       *string `json:"domain"`
+	NameFragment *string `json:"nameFragment"`
 }
 
 type FindMembers struct {
@@ -302,8 +287,8 @@ type FindUnits struct {
 }
 
 type FindUsers struct {
-	UserID       *int    `json:"userId"`
-	UserDomain   *string `json:"userDomain"`
+	ID           *int    `json:"id"`
+	Domain       *string `json:"domain"`
 	NameFragment *string `json:"nameFragment"`
 }
 
@@ -437,9 +422,8 @@ type Role struct {
 	Color string `json:"color"`
 }
 
-func (Role) IsRoleResult()       {}
-func (Role) IsUpdateRoleResult() {}
-func (Role) IsUserRoleResult()   {}
+func (Role) IsRoleResult()     {}
+func (Role) IsUserRoleResult() {}
 
 type Roles struct {
 	Roles []*Role `json:"roles"`
@@ -459,8 +443,7 @@ type Room struct {
 	Messages MessagesResult `json:"messages"`
 }
 
-func (Room) IsUpdateRoomResult() {}
-func (Room) IsRoomResult()       {}
+func (Room) IsRoomResult() {}
 
 type Rooms struct {
 	Rooms []*Room `json:"rooms"`
@@ -479,8 +462,6 @@ type Successful struct {
 func (Successful) IsMutationResult()          {}
 func (Successful) IsJoinByInviteResult()      {}
 func (Successful) IsJoinToChatResult()        {}
-func (Successful) IsLoginResult()             {}
-func (Successful) IsRefreshTokensResult()     {}
 func (Successful) IsRegisterResult()          {}
 func (Successful) IsSendMessageToRoomResult() {}
 
@@ -553,8 +534,6 @@ type UserData struct {
 	Password string `json:"password"`
 	Email    string `json:"email"`
 }
-
-func (UserData) IsUpdateMeDataResult() {}
 
 type Users struct {
 	Users []*User `json:"users"`

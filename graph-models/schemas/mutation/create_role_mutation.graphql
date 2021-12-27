@@ -1,4 +1,4 @@
 extend type Mutation {
-    createRole(chatId: ID!, input: CreateRoleInput!): MutationResult! @goField(forceResolver: true) @isAuth
+    createRole(input: CreateRoleInput!): MutationResult! @goField(forceResolver: true) @isAuth
 
 }

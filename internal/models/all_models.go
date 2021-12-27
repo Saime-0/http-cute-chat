@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 type CreateChat struct {
@@ -289,4 +289,8 @@ type DemoMember struct {
 	IsOwner  bool
 	Char     *model.CharType
 	Muted    bool
+}
+type DefMember struct {
+	UserID int
+	ChatID int
 }

@@ -18,17 +18,19 @@ func NewPipeline(repos *repository.Repositories) *Pipeline {
 }
 
 type Node struct {
-	prev  *Node
-	next  *Node
-	repos *repository.Repositories
-	Err   *model.AdvancedError
+	prev     *Node
+	next     *Node
+	repos    *repository.Repositories
+	Err      *model.AdvancedError
+	timeline *TimeLine
 }
 
-func (p *Pipeline) CreateNode() *Node {
+func (p *Pipeline) CreateNode(processName ...interface{}) *Node {
 	n := &Node{
-		prev:  p.RootNode,
-		next:  p.RootNode.next,
-		repos: p.repos,
+		prev:     p.RootNode,
+		next:     p.RootNode.next,
+		repos:    p.repos,
+		timeline: Start(processName),
 	}
 	if p.RootNode.next != nil {
 		p.RootNode.next.prev = n
@@ -42,6 +44,13 @@ func (n *Node) Kill() *model.AdvancedError {
 	if n.next != nil {
 		n.next.prev = n.prev
 	}
-
+	n.timeline.Measure()
 	return n.Err
 }
+
+func (n *Node) printProcessline(timerID int) {
+
+}
+
+// todo у ноды должно быть поле с таймлайном, у поинтов таймлайна поля ид и время начала
+// и методы: завершить поинт и вывести таймлайн

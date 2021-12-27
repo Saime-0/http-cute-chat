@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/api/validator"
 	"github.com/saime-0/http-cute-chat/internal/its"
 	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/validator"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 )
@@ -564,4 +564,14 @@ func matchMessageType(input *model.UserChoice, sample *model.Form) (*model.UserC
 		})
 	}
 	return form, nil
+}
+
+func (n *Node) GetDefMember(memberId int, defMember *models.DefMember) (fail bool) {
+	_defMember, err := n.repos.Chats.DefMember(memberId)
+	if err != nil {
+		n.Err = resp.Error(resp.ErrBadRequest, "участник не найден")
+		return true
+	}
+	*defMember = _defMember
+	return
 }

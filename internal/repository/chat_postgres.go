@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/tlog"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
@@ -23,7 +23,7 @@ func NewChatsRepo(db *sql.DB) *ChatsRepo {
 	}
 }
 
-func (r *ChatsRepo) CreateChat(ownerId int, chatModel *models.CreateChat) (id int, err error) {
+func (r *ChatsRepo) CreateChat(ownerId int, inp *model.CreateChatInput) (id int, err error) {
 	err = r.db.QueryRow(
 		`WITH u AS (
 			INSERT INTO units (domain, name, type) 
@@ -34,12 +34,14 @@ func (r *ChatsRepo) CreateChat(ownerId int, chatModel *models.CreateChat) (id in
 		SELECT u.id, $3, $4
 		FROM u 
 		RETURNING id`,
-		chatModel.Domain,
-		chatModel.Name,
+		inp.Domain,
+		inp.Name,
 		ownerId,
-		chatModel.Private,
+		inp.Private,
 	).Scan(&id)
-
+	if err != nil {
+		println("CreateChat:", err.Error()) // debug
+	}
 	return
 }
 
@@ -331,21 +333,24 @@ func (r *ChatsRepo) UserIsChatOwner(userId int, chatId int) bool {
 	}
 	return isOwner
 }
-func (r *ChatsRepo) UserIsChatMember(userId int, chatId int) bool {
+func (r *ChatsRepo) UserIsChatMember(userId int, chatId int) (isMember bool) {
 	tl := tlog.Start("ChatsRepo > UserIsChatMember [uid:" + strconv.Itoa(userId) + ",cid:" + strconv.Itoa(chatId) + "]")
 	defer tl.Fine()
-	isMember := false
-	err := r.db.QueryRow(
-		`SELECT id
-		FROM chat_members 
-		WHERE user_id = $1 AND chat_id = $2`,
+	err := r.db.QueryRow(`
+		SELECT EXISTS(
+	        SELECT 1
+			FROM chat_members 
+			WHERE user_id = $1 AND chat_id = $2
+	    )
+		`,
 		userId,
 		chatId,
 	).Scan(&isMember)
-	if err != nil || !isMember {
-		return isMember
+	if err != nil {
+		println("UserIsChatMember:", err.Error()) // debug
+		return
 	}
-	return isMember
+	return
 }
 func (r *ChatsRepo) FindMemberBy(userId int, chatId int) *int {
 	var memberId *int
@@ -506,21 +511,19 @@ func (r *ChatsRepo) DeleteInviteLinkByCode(code string) (err error) {
 	return
 }
 
-func (r *ChatsRepo) CreateInviteLink(linkModel *models.CreateInvite) (link models.Invite, err error) {
-	err = r.db.QueryRow(
+func (r *ChatsRepo) CreateInvite(linkModel *model.CreateInviteInput) error {
+	err := r.db.QueryRow(
 		`INSERT INTO invites (chat_id, aliens, expires_at) 
-		VALUES ($1, $2, $3)
+		VALUES ($1, $2, unix_utc_now($3:BIGINT))
 		RETURNING code, aliens, expires_at`,
 		linkModel.ChatID,
 		linkModel.Aliens,
-		linkModel.Exp,
-	).Scan(
-		&link.Code,
-		&link.Aliens,
-		&link.Exp,
-	)
-
-	return
+		linkModel.Duration,
+	).Err()
+	if err != nil {
+		println("CreateInvite:", err.Error()) // debug
+	}
+	return err
 }
 
 // InviteIsRelevant
@@ -669,23 +672,24 @@ func (r *ChatsRepo) MemberRole(memberId int) *model.Role {
 	return nil
 }
 
-func (r *ChatsRepo) CreateRoleInChat(chatId int, roleModel *models.CreateRole) (roleId int, err error) {
+func (r *ChatsRepo) CreateRoleInChat(inp *model.CreateRoleInput) (err error) {
 	err = r.db.QueryRow(
 		`INSERT INTO roles
 		(chat_id, name, color)
 		VALUES ($1, $2, $3)
 		RETURNING id`,
-		chatId,
-		roleModel.Name,
-		roleModel.Color,
-	).Scan(&roleId)
+		inp.ChatID,
+		inp.Name,
+		inp.Color,
+	).Err()
 	if err != nil {
 		println("CreateRoleInChat:", err.Error()) // debug
 	}
 	return
 }
 
-func (r *ChatsRepo) Roles(chatId int) (roles []models.Role, err error) {
+func (r *ChatsRepo) Roles(chatId int) (*model.Roles, error) {
+	roles := &model.Roles{}
 	rows, err := r.db.Query(
 		`SELECT id, name, color
 		FROM roles 
@@ -694,18 +698,18 @@ func (r *ChatsRepo) Roles(chatId int) (roles []models.Role, err error) {
 	)
 	if err != nil {
 		println("Roles:", err.Error()) // debug
-		return
+		return roles, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := models.Role{}
+		m := &model.Role{}
 		if err = rows.Scan(&m.ID, &m.Name, &m.Color); err != nil {
-			return
+			return roles, err
 		}
-		roles = append(roles, m)
+		roles.Roles = append(roles.Roles, m)
 	}
 
-	return
+	return roles, nil
 }
 
 func (r *ChatsRepo) GetCountChatRoles(chatId int) (count int, err error) {
@@ -1211,11 +1215,12 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 }
 
 // DemoMembers selectType: 0 is filter by users, 1 - by members and chatid is not count
-func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) []*models.DemoMember {
+func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) []*models.DemoMember { // todo selectType to rules.SelectType
 	var (
-		sqlArr      = kit.SQLBracketArray(ids)
+		sqlArr      = kit.IntSQLArray(ids)
 		demoMembers []*models.DemoMember
 	)
+	fmt.Println()
 	//language=PostgreSQL
 	rows, err := r.db.Query(`
 		SELECT user_id, chat_members.id, owner_id = user_id as is_owner, char, muted
@@ -1269,4 +1274,69 @@ func (r *ChatsRepo) UpdateChat(chatId int, inp *model.UpdateChatInput) (err erro
 	}
 
 	return
+}
+
+func (r *ChatsRepo) DefMember(memberId int) (defMember models.DefMember, err error) {
+	err = r.db.QueryRow(`
+		SELECT user_id, chat_id
+		FROM chat_members
+		WHERE id = $1
+		`,
+		memberId,
+	).Scan(
+		&defMember.UserID,
+		&defMember.ChatID,
+	)
+	if err != nil {
+		println("DefMember:", err.Error()) // debug
+	}
+	return
+}
+
+func (r *ChatsRepo) FindChats(inp *model.FindChats, params *model.Params) (*model.Chats, error) {
+	chats := &model.Chats{
+		Chats: []*model.Chat{},
+	}
+	if inp.NameFragment != nil {
+		*inp.NameFragment = "%" + *inp.NameFragment + "%"
+	}
+	rows, err := r.db.Query(`
+		SELECT units.id, units.domain, units.name, units.type, chats.private
+		FROM units JOIN chats 
+		ON units.id = chats.id 
+		WHERE (
+		    $1::BIGINT IS NULL 
+			OR units.id = $1
+		)  
+		AND (
+		    $2::VARCHAR IS NULL 
+			OR domain = $2
+		)
+		AND (
+		    $3::VARCHAR IS NULL 
+		    OR name ILIKE $3
+		) 
+		LIMIT $4
+		OFFSET $5
+		`,
+		inp.ID,
+		inp.Domain,
+		inp.NameFragment,
+		params.Limit,
+		params.Offset,
+	)
+	if err != nil {
+		println("FindChats:", err.Error()) // debug
+		return chats, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		m := &model.Chat{}
+		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
+			println("rows:Scan:", err.Error()) // debug
+			return chats, err
+		}
+		chats.Chats = append(chats.Chats, m)
+	}
+	return chats, nil
 }

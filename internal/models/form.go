@@ -1,6 +1,8 @@
 package models
 
-import "github.com/saime-0/http-cute-chat/internal/api/rules"
+import (
+	"github.com/saime-0/http-cute-chat/internal/rules"
+)
 
 type FormField struct {
 	Key      string          `json:"key"`      // unique, but used for grouping radiobutton type fields

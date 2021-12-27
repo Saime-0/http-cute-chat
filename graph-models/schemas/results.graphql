@@ -45,21 +45,17 @@ union AllowsResult =
 union JoinByInviteResult =
     | AdvancedError
     | Successful
-    | Chat
 
 union JoinToChatResult =
     | AdvancedError
     | Successful
-    | Chat
 
 union LoginResult =
     | AdvancedError
-    | Successful
     | TokenPair
 
 union RefreshTokensResult =
     | AdvancedError
-    | Successful
     | TokenPair
 
 union RegisterResult =
@@ -71,22 +67,23 @@ union SendMessageToRoomResult =
     | Successful
     | Message
 
-union UpdateChatResult =
-    | AdvancedError
-    | Chat
-
-union UpdateMeDataResult =
-    | AdvancedError
-    | UserData
-
-union UpdateRoleResult =
-    | AdvancedError
-    | Role
-
-# deprecated
-union UpdateRoomResult =
-    | AdvancedError
-    | Room
+# Update... to MutationResult
+#union UpdateChatResult =
+#    | AdvancedError
+#    | Chat
+#
+#union UpdateMeDataResult =
+#    | AdvancedError
+#    | UserData
+#
+#union UpdateRoleResult =
+#    | AdvancedError
+#    | Role
+#
+## deprecated
+#union UpdateRoomResult =
+#    | AdvancedError
+#    | Room
 
 union ChatRolesResult =
     | AdvancedError

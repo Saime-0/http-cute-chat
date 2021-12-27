@@ -7,34 +7,25 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/api/rules"
-	"github.com/saime-0/http-cute-chat/internal/piping"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) ChatRoles(ctx context.Context, chatID int) (model.ChatRolesResult, error) {
+	node := r.Piper.CreateNode("queryResolver > ChatRoles [cid:", chatID, "]")
+	defer node.Kill()
+
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ChatExists(chatID) ||
-		pl.IsMember(clientID, chatID) {
-		return pl.Err, nil
+
+	if node.ChatExists(chatID) ||
+		node.IsMember(clientID, chatID) {
+		return node.Err, nil
 	}
 
 	roles, err := r.Services.Repos.Chats.Roles(chatID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось получить список ролей в комнате"), nil
 	}
 
-	m := model.Roles{
-		Roles: []*model.Role{},
-	}
-	for _, role := range roles {
-		m.Roles = append(m.Roles, &model.Role{
-			ID:    role.ID,
-			Name:  role.Name,
-			Color: role.Color,
-		})
-	}
-
-	return m, nil
+	return roles, nil
 }

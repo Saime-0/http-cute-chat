@@ -10,11 +10,11 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params *model.Params) (model.UsersResult, error) {
+func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params model.Params) (model.UsersResult, error) {
 	pl := piping.NewPipeline(r.Services.Repos)
 	if pl.ValidParams(params) ||
-		find.UserID != nil && pl.ValidID(*find.UserID) ||
-		find.UserDomain != nil && pl.ValidDomain(*find.UserDomain) ||
+		find.ID != nil && pl.ValidID(*find.ID) ||
+		find.Domain != nil && pl.ValidDomain(*find.Domain) ||
 		find.NameFragment != nil && pl.ValidNameFragment(*find.NameFragment) {
 		return pl.Err, nil
 	}

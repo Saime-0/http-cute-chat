@@ -1,18 +1,15 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"flag"
 	"fmt"
-	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/saime-0/http-cute-chat/graph/directive"
 	"github.com/saime-0/http-cute-chat/graph/generated"
-	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/graph/resolver"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/middleware"
@@ -53,9 +50,6 @@ func main() {
 			Piper:    piper.NewPipeline(services.Repos),
 		},
 		Directives: generated.DirectiveRoot{
-			HasChar: func(ctx context.Context, obj interface{}, next graphql.Resolver, char []*model.CharType) (res interface{}, err error) {
-				return next(ctx)
-			},
 			IsAuth:     directive.IsAuth,
 			InputUnion: directive.InputUnion,
 		},

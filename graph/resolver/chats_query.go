@@ -7,45 +7,24 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/api/resp"
-	"github.com/saime-0/http-cute-chat/internal/piping"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 )
 
-func (r *queryResolver) Chats(ctx context.Context, nameFragment string, params *model.Params) (model.ChatsResult, error) {
-	//clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ValidParams(params) ||
-		pl.ValidNameFragment(nameFragment) {
-		return pl.Err, nil
+func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params model.Params) (model.ChatsResult, error) {
+	node := r.Piper.CreateNode("queryResolver > Chats [_]")
+	defer node.Kill()
+
+	if node.ValidParams(&params) ||
+		find.ID != nil && node.ValidID(*find.ID) ||
+		find.Domain != nil && node.ValidDomain(*find.Domain) ||
+		find.NameFragment != nil && node.ValidNameFragment(*find.NameFragment) {
+		return node.Err, nil
 	}
 
-	chats, err := r.Services.Repos.Chats.GetChatsByNameFragment(nameFragment, *params.Limit, *params.Offset)
+	chats, err := r.Services.Repos.Chats.FindChats(&find, &params)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось получиться список чатов"), nil
 	}
 
-	m := model.Chats{
-		Chats: []*model.Chat{},
-	}
-	for _, chat := range chats {
-		m.Chats = append(m.Chats, &model.Chat{
-			Unit: &model.Unit{
-				ID:     chat.Unit.ID,
-				Domain: chat.Unit.Domain,
-				Name:   chat.Unit.Name,
-				Type:   model.UnitType(chat.Unit.Type),
-			},
-			Owner:        nil, // forced
-			Rooms:        nil, // forced
-			Private:      chat.Private,
-			CountMembers: nil, // forced
-			Members:      nil, // forced
-			Roles:        nil, // forced
-			Invites:      nil, // forced
-			Banlist:      nil, // forced
-			Me:           nil, // forced
-		})
-	}
-
-	return m, nil
+	return chats, nil
 }

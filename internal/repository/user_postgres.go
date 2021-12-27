@@ -337,8 +337,8 @@ func (r *UsersRepo) FindUsers(inp *model.FindUsers) *model.Users {
 			AND ($2 IS NULL OR units.domain = $2)
 			AND ($3 IS NULL OR units.name ILIKE $3)
 		`,
-		inp.UserID,
-		inp.UserDomain,
+		inp.ID,
+		inp.Domain,
 		inp.NameFragment,
 	)
 	if err != nil {

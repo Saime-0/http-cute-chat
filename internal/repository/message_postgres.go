@@ -154,7 +154,7 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 		params.Limit,
 	)
 	if err != nil {
-		println(err.Error())
+		println("MessagesFromRoom:", err.Error()) // debug
 		return messages
 	}
 	defer rows.Close()

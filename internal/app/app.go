@@ -12,7 +12,6 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/saime-0/http-cute-chat/internal/api"
 	"github.com/saime-0/http-cute-chat/internal/service"
 )
 

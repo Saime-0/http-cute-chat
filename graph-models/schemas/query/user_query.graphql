@@ -1,5 +1,0 @@
-extend type Query {
-    user(id: ID, domain: String): UserResult! @goField(forceResolver: true)
-}
-
-

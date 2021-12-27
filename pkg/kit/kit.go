@@ -3,7 +3,6 @@ package kit
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -79,13 +78,13 @@ func match(v interface{}) string {
 	return "NULL"
 }
 
-func SQLBracketArray(arr ...interface{}) string {
+func IntSQLArray(arr []int) string {
 	sqlArr := ""
 	for _, v := range arr {
-		switch v.(type) {
-		case string, rune:
-			v = spew.Sprint("'", v, "'")
-		}
+		//switch v.(type) {
+		//case string, rune:
+		//	v = spew.Sprint("'", v, "'")
+		//}
 		sqlArr += fmt.Sprint(",", v)
 	}
 	return "(" + TrimFirstRune(sqlArr) + ")"

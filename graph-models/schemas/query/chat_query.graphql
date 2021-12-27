@@ -1,5 +1,0 @@
-extend type Query {
-    chat(input: FindByDomainOrID! @inputUnion): ChatResult @goField(forceResolver: true)
-
-}
-
