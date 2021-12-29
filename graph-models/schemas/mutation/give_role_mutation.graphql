@@ -1,0 +1,4 @@
+extend type Mutation {
+    giveRole(memberId: ID!, roleId: ID!): MutationResult! @goField(forceResolver: true) @isAuth
+}
+

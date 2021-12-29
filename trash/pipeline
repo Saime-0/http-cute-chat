@@ -14,7 +14,7 @@ import (
 )
 
 type pipeline struct {
-	ctx    context.Context
+	Ctx    context.Context
 	w      http.ResponseWriter
 	r      *http.Request
 	h      *Handler
@@ -23,7 +23,7 @@ type pipeline struct {
 
 func initPipeline(w http.ResponseWriter, r *http.Request, h *Handler) *pipeline {
 	return &pipeline{
-		ctx:    r.Context(),
+		Ctx:    r.Context(),
 		w:      w,
 		r:      r,
 		h:      h,
@@ -32,11 +32,11 @@ func initPipeline(w http.ResponseWriter, r *http.Request, h *Handler) *pipeline 
 }
 
 func (p *pipeline) set(key, val interface{}) {
-	p.ctx = context.WithValue(p.ctx, key, val)
+	p.Ctx = context.WithValue(p.Ctx, key, val)
 }
 
 func (p *pipeline) get(key interface{}) (val interface{}) {
-	return p.ctx.Value(key)
+	return p.Ctx.Value(key)
 }
 
 func finalInspectionDatabase(w http.ResponseWriter, err error) {

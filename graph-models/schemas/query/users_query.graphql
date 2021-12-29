@@ -1,0 +1,3 @@
+extend type Query {
+    users(find: FindUsers!, params: Params!): UsersResult! @goField(forceResolver: true)
+}

@@ -1,0 +1,139 @@
+union UserResult =
+    | AdvancedError
+    | User
+
+union RoomsResult =
+    | AdvancedError
+    | Rooms
+
+union CountMembersResult =
+    | AdvancedError
+    | IntValue
+
+union MembersResult =
+    | AdvancedError
+    | Members
+
+union RolesResult =
+    | AdvancedError
+    | Roles
+
+union InvitesResult =
+    | AdvancedError
+    | Invites
+
+union UsersResult =
+    | AdvancedError
+    | Users
+
+union ChatResult =
+    | AdvancedError
+    | Chat
+
+union RoleResult =
+    | AdvancedError
+    | Role
+
+union MemberResult =
+    | AdvancedError
+    | Member
+
+union AllowsResult =
+    | AdvancedError
+    | Allows
+
+union JoinByInviteResult =
+    | AdvancedError
+    | Successful
+
+union JoinToChatResult =
+    | AdvancedError
+    | Successful
+
+union LoginResult =
+    | AdvancedError
+    | TokenPair
+
+union RefreshTokensResult =
+    | AdvancedError
+    | TokenPair
+
+union RegisterResult =
+    | AdvancedError
+    | Successful
+
+union SendMessageToRoomResult =
+    | AdvancedError
+    | Successful
+    | Message
+
+# Update... to MutationResult
+#union UpdateChatResult =
+#    | AdvancedError
+#    | Chat
+#
+#union UpdateMeDataResult =
+#    | AdvancedError
+#    | UserData
+#
+#union UpdateRoleResult =
+#    | AdvancedError
+#    | Role
+#
+## deprecated
+#union UpdateRoomResult =
+#    | AdvancedError
+#    | Room
+
+union ChatRolesResult =
+    | AdvancedError
+    | Roles
+
+union ChatsResult =
+    | AdvancedError
+    | Chats
+
+union InviteInfoResult =
+    | AdvancedError
+    | InviteInfo
+
+union MeResult =
+    | AdvancedError
+    | Me
+
+union MessageResult =
+    | AdvancedError
+    | Message
+
+union RoomFormResult =
+    | AdvancedError
+    | Form
+
+union MessagesResult =
+    | AdvancedError
+    | Messages
+
+union RoomResult =
+    | AdvancedError
+    | Room
+
+union UnitResult =
+    | AdvancedError
+    | Unit
+
+union UnitsResult =
+    | AdvancedError
+    | Units
+
+union UserRoleResult =
+    | AdvancedError
+    | Role
+
+
+
+
+
+
+
+
+

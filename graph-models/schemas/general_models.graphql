@@ -1,0 +1,210 @@
+enum UnitType {
+    CHAT
+    USER
+}
+enum FieldType {
+    EMAIL
+    DATE
+    LINK
+    TEXT
+    NUMERIC
+}
+enum MessageType {
+    SYSTEM
+    USER
+    FORMATTED
+}
+enum FetchType {
+    POSITIVE
+    NEUTRAL
+    NEGATIVE
+}
+enum CharType {
+    ADMIN
+    MODER
+    NONE
+}
+enum ActionType {
+    READ
+    WRITE
+}
+enum GroupType {
+    ROLE
+    CHAR
+    MEMBER
+}
+enum ModifyType {
+    ADD
+    REDUCE
+}
+type Chars {
+    chars: [CharType!]
+}
+
+# Union type be like
+input FindByDomainOrID {
+    id: Int
+    domain: String
+}
+
+type IntValue {
+    value: Int
+}
+# end
+
+
+input Params {
+    limit: Int = 20
+    offset: Int = 0
+}
+
+type TokenPair {
+    accessToken: String!
+    refreshToken: String!
+}
+
+type Unit {
+    id: ID!
+    domain: String!
+    name: String!
+    type: UnitType!
+}
+
+type Units {
+    units: [Unit!]
+}
+
+type Chat {
+    unit: Unit!
+    owner: UserResult! @goField(forceResolver: true)
+    rooms: RoomsResult @goField(forceResolver: true)
+    private: Boolean!
+    countMembers: CountMembersResult! @goField(forceResolver: true)
+    members: MembersResult @goField(forceResolver: true)
+    roles: RolesResult @goField(forceResolver: true)
+    invites: InvitesResult @goField(forceResolver: true)
+    banlist: UsersResult @goField(forceResolver: true)
+    me: MemberResult! @goField(forceResolver: true)
+}
+type Chats {
+    chats: [Chat!]
+}
+
+type Room {
+    roomId: ID!
+    chat: Chat! @goField(forceResolver: true)
+    name: String!
+    parentId: ID
+    note: String
+    form: RoomFormResult @goField(forceResolver: true) # не проверено
+    allows: AllowsResult! @goField(forceResolver: true)
+    messages(find: FindMessagesInRoomByUnionInput!, params: Params!): MessagesResult @goField(forceResolver: true)
+    #todo next: prev: or symbolindex:
+}
+
+
+type Rooms {
+    rooms: [Room!]
+}
+
+type Form {
+    fields: [FormField!]!
+}
+
+type FormField {
+    key: String!
+    type: FieldType!
+    optional: Boolean!
+    length: Int
+    items: [String!]
+}
+
+type Member {
+    id: ID!
+    chat: Chat! @goField(forceResolver: true) # зач тут чат?
+    user: User! # @goField(forceResolver: true)
+    role: RoleResult @goField(forceResolver: true)
+    char: CharType!
+    joinedAt: Int64!
+    muted: Boolean!
+    frozen: Boolean!
+}
+
+type Members {
+    members: [Member!]
+}
+
+type Role {
+    id: ID!
+    name: String!
+    color: String!
+}
+
+type Roles {
+    roles: [Role!]
+}
+
+type Message {
+    id: ID!
+    room: Room! @goField(forceResolver: true)
+    replyTo: Message @goField(forceResolver: true)
+    author: Member @goField(forceResolver: true)
+    body: String!
+    type: MessageType!
+    createdAt: Int64!
+}
+
+type Messages {
+    messages: [Message!]
+}
+
+type Invite {
+    code: String!
+    aliens: Int
+    expires_at: Int64
+}
+
+type Invites {
+    invites: [Invite!]
+}
+
+type InviteInfo {
+    unit: Unit!
+    private: Boolean!
+    countMembers: CountMembersResult! @goField(forceResolver: true)
+}
+type User {
+    unit: Unit!
+}
+
+type Users {
+    users: [User!]
+}
+
+type Allows {
+    room: Room! # 04.12 1:55 todo
+    allowRead: PermissionHolders
+    allowWrite: PermissionHolders
+}
+type PermissionHolders {
+    roles: Roles # @goField(forceResolver: true)
+    chars: Chars # @goField(forceResolver: true)
+    members: Members # @goField(forceResolver: true)
+}
+type UserData {
+    password: String!
+    email: String!
+}
+type Me {
+    user: User!
+    data: UserData!
+    chats: [Chat!] @goField(forceResolver: true)
+    ownedChats: [Chat!] @goField(forceResolver: true)
+}
+type Case {
+    key: String!
+    value: String!
+}
+type UserChoice {
+    choice: [Case!]
+}

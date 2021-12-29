@@ -1,0 +1,3 @@
+extend type Mutation {
+    login(input: LoginInput!): LoginResult! @goField(forceResolver: true)
+}

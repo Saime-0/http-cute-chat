@@ -1,0 +1,138 @@
+input CreateChatInput {
+    domain: String!
+    name: String!
+    private: Boolean!
+}
+input CreateInviteInput {
+    chatId: ID!
+    code: String!
+    aliens: Int
+    duration: Int64
+}
+input CreateRoleInput {
+    chatId: ID!
+    name: String!
+    color: String!
+}
+input LoginInput {
+    email: String!
+    password: String!
+}
+input RegisterInput {
+    domain: String!
+    name: String!
+    email: String!
+    password: String!
+}
+input CreateMessageInput {
+    replyTo: ID
+    body: String!
+}
+input StringValueInput {
+    value: String!
+}
+input BoolValueInput {
+    value: Boolean!
+}
+input UpdateChatInput {
+    domain: String
+    name: String
+    private: Boolean
+}
+
+input UpdateMeDataInput  {
+    domain: String
+    name: String
+    password: String
+    email: String
+}
+
+input UpdateRoleInput {
+    name: String
+    color: String
+}
+
+input UpdateRoomInput {
+    name: String @goField(forceResolver: true)
+    parentId: ID @goField(forceResolver: true)
+    note: String @goField(forceResolver: true)
+}
+input UpdateFormInput {
+    fields: [FormFieldInput!]!
+}
+input FormFieldInput {
+    key: String!
+    type: FieldType!
+    optional: Boolean!
+    length: Int
+    items: [String!]
+}
+input UpdateRoomAllowsInput {
+    allows: AllowsInput
+}
+
+input FindMembers {
+    chatId: ID!
+    userId: ID
+    memberId: ID
+    char: CharType
+    roleId: ID
+    muted: Boolean
+    frozen: Boolean
+}
+
+input FindMessages {
+    chatId: ID!
+    roomId: ID
+    authorId: ID
+    textFragment: String
+}
+
+input FindRooms {
+    chatId: ID!
+    roomId: ID
+    nameFragment: String
+    parentId: ID
+    isChild: FetchType = NEUTRAL
+}
+
+input FindUnits {
+    id: ID
+    domain: String
+    nameFragment: String
+    unitType: UnitType
+}
+
+
+input FindUsers {
+    id: ID
+    domain: String
+    nameFragment: String
+}
+
+input FindChats {
+    id: ID
+    domain: String
+    nameFragment: String
+#    isPrivate: FetchType = NEUTRAL unable to find a private chat!!!
+
+}
+
+input FindMessagesInRoomByUnionInput {
+    afterTime: Int64
+    beforeTime: Int64
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

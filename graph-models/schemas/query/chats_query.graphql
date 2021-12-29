@@ -1,0 +1,3 @@
+extend type Query {
+    chats(find: FindChats!, params: Params!): ChatsResult @goField(forceResolver: true)
+}

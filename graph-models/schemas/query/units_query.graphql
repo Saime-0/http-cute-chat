@@ -1,0 +1,3 @@
+extend type Query {
+    units(find: FindUnits!, params: Params!): UnitsResult! @goField(forceResolver: true)
+}

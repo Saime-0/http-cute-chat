@@ -1,15 +1,12 @@
 .PHONY: build
 build: 
-	go build -v ./cmd/app
+	go build -v .\server.go
 
-.PHONY: run
-run: 
-	./app.exe
 	
 .PHONY: bandr
-bandr: 
-	go build -v ./cmd/app
-	./app.exe
+go:
+	go build -v .\server.go
+	./server.exe
 
 
 
@@ -17,4 +14,4 @@ bandr:
 # test: 
 # 	go test -v -race -timeout 30s ./...
 	
-.DEFAULT_GOAL := bandr
+.DEFAULT_GOAL := go

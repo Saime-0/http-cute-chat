@@ -1,0 +1,4 @@
+extend type Mutation {
+    createInvite(input: CreateInviteInput!): MutationResult! @goField(forceResolver: true) @isAuth
+}
+

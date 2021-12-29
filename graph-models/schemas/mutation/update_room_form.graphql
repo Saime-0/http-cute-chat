@@ -1,0 +1,3 @@
+extend type Mutation {
+	updateRoomForm(roomId: ID!, form: UpdateFormInput): MutationResult! @goField(forceResolver: true) @isAuth
+}

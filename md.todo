@@ -1,0 +1,10 @@
+(#1) cchatus:
+- [x] 📃 controle expire session
+- [ ] 🍞 refactor database queries!
+- [ ] 🎨 messages by events
+- [ ] 🎉 vote
+- [ ] 🎉 migrate message between rooms(except formatted)
+- [ ] 🎉 after/before date message
+- [ ] 🎉 remove room,role,chat
+- [ ] 🎉 add role to room whitelist
+----

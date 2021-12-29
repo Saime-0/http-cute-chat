@@ -12,17 +12,16 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/saime-0/http-cute-chat/internal/api"
 	"github.com/saime-0/http-cute-chat/internal/service"
 )
 
 const (
-	server_addr = ":8081"
-	host        = "localhost"
-	db_port     = 5432
-	user        = "postgres"
-	password    = "7050"
-	dbname      = "chat_db"
+	serverAddr = ":8081"
+	host       = "localhost"
+	dbPort     = 5432
+	user       = "postgres"
+	password   = "7050"
+	dbname     = "chat_db"
 )
 
 type ApiServer struct {
@@ -32,14 +31,14 @@ type ApiServer struct {
 
 func newApiServer(db *sql.DB, handler http.Handler) *ApiServer {
 	a := &ApiServer{
-		httpServer: NewHttpServer(server_addr, handler),
+		httpServer: NewHttpServer(serverAddr, handler),
 		store:      NewStore(db),
 	}
 	return a
 }
 
 func Run() {
-	log.Println("Runned")
+	log.Println("Run")
 	start := time.Now()
 
 	// init database
@@ -47,7 +46,12 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Print("error when closing the database")
+		}
+	}(db)
 
 	// new services
 	services := service.NewServices(db)
@@ -78,7 +82,7 @@ func Run() {
 
 func initDB() (*sql.DB, error) {
 	// connection string
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, db_port, user, password, dbname)
+	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, dbPort, user, password, dbname)
 
 	// open database
 	db, err := sql.Open("postgres", psqlconn)

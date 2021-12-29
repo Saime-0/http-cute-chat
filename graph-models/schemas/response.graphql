@@ -1,0 +1,12 @@
+type AdvancedError {
+    code: String!
+    error: String!
+}
+
+type Successful {
+    success: String!
+}
+
+union MutationResult =
+    | AdvancedError
+    | Successful

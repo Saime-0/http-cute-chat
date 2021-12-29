@@ -1,0 +1,4 @@
+extend type Mutation {
+    register(input: RegisterInput!): RegisterResult! @goField(forceResolver: true)
+}
+
