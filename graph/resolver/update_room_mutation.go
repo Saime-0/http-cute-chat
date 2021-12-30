@@ -9,20 +9,15 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
 func (r *mutationResolver) UpdateRoom(ctx context.Context, roomID int, input model.UpdateRoomInput) (model.MutationResult, error) {
-	tl := tlog.Start("mutationResolver > UpdateRoom [rid:", roomID, "]")
-	defer tl.Fine()
-
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-
-	node := r.Piper.CreateNode()
+	node := r.Piper.CreateNode("mutationResolver > UpdateRoom [rid:", roomID, "]")
 	defer node.Kill()
 
 	var (
-		chatID int
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		chatID   int
 	)
 
 	if node.GetChatIDByRoom(roomID, &chatID) ||

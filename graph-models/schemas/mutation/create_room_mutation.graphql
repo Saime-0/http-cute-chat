@@ -1,22 +1,3 @@
 extend type Mutation {
-    createRoom(chatId: ID!, input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth
-}
-
-# CreateRoom ...
-input CreateRoomInput {
-    name: String!
-    parent: ID
-    note: String
-    form: UpdateFormInput
-    allows: AllowsInput
-}
-
-input AllowsInput {
-    allowRead: PermissionHoldersInput
-    allowWrite: PermissionHoldersInput
-}
-input PermissionHoldersInput {
-    roles: [ID!]
-    chars: [CharType!]
-    members: [ID!]
+    createRoom(input: CreateRoomInput!): MutationResult! @goField(forceResolver: true) @isAuth
 }

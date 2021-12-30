@@ -7,25 +7,27 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.JoinToChatResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ChatExists(chatID) ||
-		pl.IsNotMember(clientID, chatID) ||
+	node := r.Piper.CreateNode("mutationResolver > JoinToChat [cid:", chatID, "]")
+	defer node.Kill()
+
+	var clientID = ctx.Value(rules.UserIDFromToken).(int)
+
+	if node.ChatExists(chatID) ||
+		node.IsNotMember(clientID, chatID) ||
 		// todo UserIsNotBanned
-		pl.ChatIsNotPrivate(chatID) ||
-		pl.MembersLimit(chatID) ||
-		pl.ChatsLimit(clientID) {
-		return pl.Err, nil
+		node.ChatIsNotPrivate(chatID) ||
+		node.MembersLimit(chatID) ||
+		node.ChatsLimit(clientID) {
+		return node.Err, nil
 	}
 	err := r.Services.Repos.Chats.AddUserToChat(clientID, chatID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться"), nil
 	}
 	return resp.Success("успешно присоединился к чату"), nil
 }

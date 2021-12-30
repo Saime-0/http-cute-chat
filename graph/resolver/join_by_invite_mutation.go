@@ -7,27 +7,31 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	var chatID int
-	if pl.InviteIsRelevant(code) ||
-		pl.GetChatByInvite(code, &chatID) ||
-		pl.IsNotMember(clientID, chatID) ||
+	node := r.Piper.CreateNode("mutationResolver > JoinByInvite [code:", code, "]")
+	defer node.Kill()
+
+	var (
+		chatID   int
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+	)
+
+	if node.InviteIsRelevant(code) ||
+		node.GetChatByInvite(code, &chatID) ||
+		node.IsNotMember(clientID, chatID) ||
 		// todo UserIsNotBanned
-		pl.MembersLimit(chatID) ||
-		pl.ChatsLimit(clientID) {
-		return pl.Err, nil
+		node.MembersLimit(chatID) ||
+		node.ChatsLimit(clientID) {
+		return node.Err, nil
 	}
 
-	_, err := r.Services.Repos.Chats.AddUserByCode(code, clientID)
+	err := r.Services.Repos.Chats.AddUserByCode(code, clientID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться"), nil
 	}
 	return resp.Success("успешно присоединился к чату"), nil
 }

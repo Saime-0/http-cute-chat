@@ -5,8 +5,10 @@ import (
 	"flag"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
 	"github.com/saime-0/http-cute-chat/graph/directive"
 	"github.com/saime-0/http-cute-chat/graph/generated"
@@ -50,10 +52,24 @@ func main() {
 			Piper:    piper.NewPipeline(services.Repos),
 		},
 		Directives: generated.DirectiveRoot{
-			IsAuth:     directive.IsAuth,
-			InputUnion: directive.InputUnion,
+			IsAuth:        directive.IsAuth,
+			InputUnion:    directive.InputUnion,
+			InputLeastOne: directive.InputLeastOne,
 		},
 	}))
+	// srv.AddTransport(transport.POST{})
+	srv.AddTransport(&transport.Websocket{
+		KeepAlivePingInterval: 0,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool {
+				return true
+			},
+
+			EnableCompression: true,
+			ReadBufferSize:    1024,
+			WriteBufferSize:   1024,
+		},
+	})
 
 	router := mux.NewRouter()
 	mw := middleware.Setup(cfg)
@@ -62,6 +78,16 @@ func main() {
 		mw.CheckAuth,
 		mw.GetUserAgent,
 	)
+
+	//c := cors.New(cors.Options{
+	//	AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
+	//	AllowedHeaders:   []string{"Origin", "Accept", "Content-Type", "X-Requested-With", "Authorization"},
+	//	AllowCredentials: true,
+	//	AllowOriginFunc: func(origin string) bool {
+	//		return true
+	//	},
+	//})
+	//c := cors.Default().Handler(router)
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 

@@ -5,11 +5,31 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) UpdateRole(ctx context.Context, roleID int, input model.UpdateRoleInput) (model.MutationResult, error) {
-	panic(fmt.Errorf("not implemented"))
+	node := r.Piper.CreateNode("mutationResolver > UpdateRole [rid:", roleID, "]")
+	defer node.Kill()
+
+	var (
+		chatID   int
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+	)
+
+	if input.Name != nil && node.ValidName(*input.Name) ||
+		node.GetChatIDByRole(roleID, &chatID) ||
+		node.CanUpdateRole(clientID, chatID) {
+		return node.Err, nil
+	}
+
+	err := r.Services.Repos.Chats.UpdateRole(roleID, &input)
+	if err != nil {
+		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные"), nil
+	}
+
+	return resp.Success("данные успешно обновлены"), nil
 }

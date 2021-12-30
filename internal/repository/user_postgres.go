@@ -17,7 +17,7 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 	}
 }
 
-func (r *UsersRepo) CreateUser(userModel *models.CreateUser) (id int, err error) {
+func (r *UsersRepo) CreateUser(userModel *model.RegisterInput) (err error) {
 	err = r.db.QueryRow(
 		`WITH u AS (
 			INSERT INTO units (domain, name, type) 
@@ -32,8 +32,10 @@ func (r *UsersRepo) CreateUser(userModel *models.CreateUser) (id int, err error)
 		userModel.Name,
 		userModel.Password,
 		userModel.Email,
-	).Scan(&id)
-
+	).Err()
+	if err != nil {
+		println("CreateUser:", err.Error()) // debug
+	}
 	return
 }
 
@@ -251,26 +253,38 @@ func (r *UsersRepo) UserExistsByDomain(userDomain string) (exists bool) {
 	return
 }
 
-func (r *UsersRepo) Me(usersId int) (me models.Me, err error) {
-	err = r.db.QueryRow(
+func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
+	me := &model.Me{
+		User: &model.User{
+			Unit: &model.Unit{},
+		},
+		Data: &model.UserData{},
+	}
+	err := r.db.QueryRow(
 		`SELECT units.id, units.domain, units.name, units.type, users.email, users.password 
 		FROM units INNER JOIN users
 		ON units.id = users.id
 		WHERE units.id = $1`,
 		usersId,
 	).Scan(
-		&me.Unit.ID,
-		&me.Unit.Domain,
-		&me.Unit.Name,
-		&me.Unit.Type,
-		&me.User.Email,
-		&me.User.Password,
+		&me.User.Unit.ID,
+		&me.User.Unit.Domain,
+		&me.User.Unit.Name,
+		&me.User.Unit.Type,
+		&me.Data.Password,
+		&me.Data.Password,
 	)
-	return
+	if err != nil {
+		println("Me:", err.Error()) // debug
+	}
+
+	return me, err
 }
 
-// migrate x2
-func (r *UsersRepo) OwnedChats(userId int) (chats []models.Chat, err error) {
+func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
+	chats := &model.Chats{
+		Chats: []*model.Chat{},
+	}
 	rows, err := r.db.Query(
 		`SELECT units.id, units.domain, units.name, units.type, chats.private
 		FROM units INNER JOIN chats 
@@ -279,24 +293,30 @@ func (r *UsersRepo) OwnedChats(userId int) (chats []models.Chat, err error) {
 		userId,
 	)
 	if err != nil {
-		return
+		println("OwnedChats:", err.Error()) // debug
+		return chats, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := models.Chat{}
+		m := &model.Chat{}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
-			return
+			println("OwnedChats:", err.Error()) // debug
+			return chats, err
 		}
 
-		chats = append(chats, m) // 0_o
+		chats.Chats = append(chats.Chats, m)
 	}
 	if !rows.NextResultSet() {
-		return
+		println("OwnedChats:", err.Error()) // debug
+		return chats, err
 	}
-	return
+	return chats, nil
 }
 
-func (r *UsersRepo) Chats(userId int) (chats []models.Chat, err error) {
+func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
+	chats := &model.Chats{
+		Chats: []*model.Chat{},
+	}
 	rows, err := r.db.Query(
 		`SELECT units.id, units.domain, units.name, units.type, chats.private
 		FROM units 
@@ -308,21 +328,23 @@ func (r *UsersRepo) Chats(userId int) (chats []models.Chat, err error) {
 		userId,
 	)
 	if err != nil {
-		return
+		println("Chats:", err.Error()) // debug
+		return chats, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := models.Chat{}
+		m := &model.Chat{
+			Unit: &model.Unit{},
+		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
-			return
+			println("Chats:", err.Error()) // debug
+			return chats, err
 		}
 
-		chats = append(chats, m) // 0_o
+		chats.Chats = append(chats.Chats, m)
 	}
-	if !rows.NextResultSet() {
-		return
-	}
-	return
+
+	return chats, nil
 }
 
 func (r *UsersRepo) FindUsers(inp *model.FindUsers) *model.Users {

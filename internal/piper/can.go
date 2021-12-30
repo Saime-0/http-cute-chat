@@ -131,6 +131,12 @@ func (n *Node) CanUpdateRoom(uid, cid int) (fail bool) {
 		n.admin(uid, cid),
 	)
 }
+func (n *Node) CanUpdateRole(uid, cid int) (fail bool) {
+	return !kit.LeastOne(
+		n.owner(uid, cid),
+		n.admin(uid, cid),
+	)
+}
 
 func (n *Node) CanUpdateChat(uid, cid int) (fail bool) {
 	return !n.owner(uid, cid)

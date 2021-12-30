@@ -7,16 +7,17 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 )
 
-func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params model.Params) (model.UsersResult, error) {
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ValidParams(params) ||
-		find.ID != nil && pl.ValidID(*find.ID) ||
-		find.Domain != nil && pl.ValidDomain(*find.Domain) ||
-		find.NameFragment != nil && pl.ValidNameFragment(*find.NameFragment) {
-		return pl.Err, nil
+func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params *model.Params) (model.UsersResult, error) {
+	node := r.Piper.CreateNode("queryResolver > Users [_]")
+	defer node.Kill()
+
+	if node.ValidParams(&params) ||
+		find.ID != nil && node.ValidID(*find.ID) ||
+		find.Domain != nil && node.ValidDomain(*find.Domain) ||
+		find.NameFragment != nil && node.ValidNameFragment(*find.NameFragment) {
+		return node.Err, nil
 	}
 
 	users := r.Services.Repos.Users.FindUsers(&find)

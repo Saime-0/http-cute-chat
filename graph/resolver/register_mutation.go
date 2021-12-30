@@ -7,12 +7,14 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/validator"
 )
 
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (model.RegisterResult, error) {
+	node := r.Piper.CreateNode("mutationResolver > Register [_]")
+	defer node.Kill()
+
 	switch {
 	case !validator.ValidateDomain(input.Domain):
 		return resp.Error(resp.ErrBadRequest, "домен не соответствует требованиям"), nil
@@ -27,12 +29,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return resp.Error(resp.ErrBadRequest, "пароль не соответствует требованиям"), nil
 	}
 
-	_, err := r.Services.Repos.Users.CreateUser(&models.CreateUser{
-		Domain:   input.Domain,
-		Name:     input.Name,
-		Email:    input.Email,
-		Password: input.Password,
-	})
+	err := r.Services.Repos.Users.CreateUser(&input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}

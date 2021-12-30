@@ -7,14 +7,10 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
-func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params model.Params) (model.UnitsResult, error) {
-	tl := tlog.Start("queryResolver > Units [_]")
-	defer tl.Fine()
-
-	node := r.Piper.CreateNode()
+func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params *model.Params) (model.UnitsResult, error) {
+	node := r.Piper.CreateNode("queryResolver > Units [_]")
 	defer node.Kill()
 
 	var units *model.Units
@@ -26,6 +22,6 @@ func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params 
 		return node.Err, nil
 	}
 
-	units = r.Services.Repos.Units.FindUnits(&find, &params)
+	units = r.Services.Repos.Units.FindUnits(&find, params)
 	return units, nil
 }

@@ -36,6 +36,7 @@ func (n *Node) UserExists(userId int) (fail bool) {
 	return
 }
 
+// deprecated
 func (n *Node) UserIs(chatId, userId int, somes []its.Someone) (fail bool) {
 	for _, some := range somes {
 		switch some {
@@ -84,21 +85,31 @@ func (n *Node) GetIDByDomain(domain string, id *int) (fail bool) {
 
 // ValidParams
 //  with side effect
-func (n *Node) ValidParams(params *model.Params) (fail bool) {
-	if params == nil {
-		params = &model.Params{
+func (n *Node) ValidParams(params **model.Params) (fail bool) {
+	if *params == nil {
+		*params = &model.Params{
 			Limit:  kit.IntPtr(rules.MaxLimit), // ! unsafe
 			Offset: kit.IntPtr(0),
 		}
+		return
 	}
-	if !validator.ValidateLimit(*params.Limit) {
-		n.Err = resp.Error(resp.ErrBadRequest, "невалидное значение лимита")
-		return true
+	if (*params).Limit != nil {
+		if !validator.ValidateLimit(*(*params).Limit) {
+			n.Err = resp.Error(resp.ErrBadRequest, "невалидное значение лимита")
+			return true
+		}
+	} else {
+		(*params).Limit = kit.IntPtr(rules.MaxLimit)
 	}
-	if !validator.ValidateOffset(*params.Offset) {
-		n.Err = resp.Error(resp.ErrBadRequest, "невалидное значение смещения")
-		return true
+	if (*params).Offset != nil {
+		if !validator.ValidateOffset(*(*params).Offset) {
+			n.Err = resp.Error(resp.ErrBadRequest, "невалидное значение смещения")
+			return true
+		}
+	} else {
+		(*params).Offset = kit.IntPtr(0)
 	}
+
 	return
 }
 
@@ -316,6 +327,15 @@ func (n *Node) InviteIsExists(code string) (fail bool) {
 	}
 	return
 }
+func (n *Node) GetChatIDByRole(roleId int, chatId *int) (fail bool) {
+	_chatId, err := n.repos.Chats.ChatIDByRoleID(roleId)
+	if err != nil {
+		n.Err = resp.Error(resp.ErrInternalServerError, "не удалось определить чат")
+		return true
+	}
+	*chatId = _chatId
+	return
+}
 
 func (n *Node) GetChatByInvite(code string, chatId *int) (fail bool) {
 	_id, err := n.repos.Chats.ChatIDByInvite(code)
@@ -383,7 +403,7 @@ func (n *Node) IsNotBanned(userId, chatId int) (fail bool) {
 func (n *Node) GetChatIDByRoom(roomId int, chatId *int) (fail bool) {
 	_chatId, err := n.repos.Rooms.GetChatIDByRoomID(roomId)
 	if err != nil {
-		n.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
+		n.Err = resp.Error(resp.ErrInternalServerError, "не удалось найти комнату")
 		return true
 	}
 	*chatId = _chatId
@@ -407,9 +427,10 @@ func (n *Node) IsAllowedTo(action rules.AllowActionType, roomId int, holder *mod
 }
 
 func (n *Node) GetAllowHolder(userId, chatId int, holder *models.AllowHolder) (fail bool) {
+	fmt.Printf("userID: %d\n chatID: %d\n", userId, chatId) // debug
 	_holder, err := n.repos.Rooms.AllowHolder(userId, chatId)
 	if err != nil {
-		n.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
+		n.Err = resp.Error(resp.ErrInternalServerError, "не удалось связать пользователя с чатом")
 		return true
 	}
 	*holder = *_holder
@@ -446,10 +467,11 @@ func (n *Node) GetChatIDByMember(memberId int, chatId *int) (fail bool) {
 
 func (n *Node) GetMemberBy(userId, chatId int, memberId *int) (fail bool) {
 	by := n.repos.Chats.FindMemberBy(userId, chatId)
-	if by == nil {
+	if by == nil || *by == 0 {
 		n.Err = resp.Error(resp.ErrBadRequest, "не удалось определить участника чата")
 		return true
 	}
+	*memberId = *by
 	return
 }
 

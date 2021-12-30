@@ -33,48 +33,56 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 	return
 }
 
-func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId int, err error) {
-	var format *string
-	if input.Form != nil {
+func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (err error) {
+	var (
+		roomId int
+		format *string
+	)
+
+	if inp.Form != nil {
 		var marshal []byte
-		marshal, err = json.Marshal(*input.Form)
+		marshal, err = json.Marshal(*inp.Form)
 		if err != nil {
+			println("CreateRoom:", err.Error()) // debug
 			return
 		}
 		*format = string(marshal)
 	}
+
 	err = r.db.QueryRow(
 		`INSERT INTO rooms (chat_id, parent_id, name, note, msg_format)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id`,
-		chatId,
-		input.Parent,
-		input.Name,
-		input.Note,
-		input.Form,
+		`,
+		inp.ChatID,
+		inp.Parent,
+		inp.Name,
+		inp.Note,
+		inp.Form,
 	).Scan(&roomId)
 	if err != nil {
+		println("CreateRoom:", err.Error()) // debug
 		return
 	}
+
 	var allows *string
-	if input.Allows != nil {
+	if inp.Allows != nil {
 		var allowsDb []models.AllowsDB
-		if input.Allows.AllowWrite != nil {
-			for _, role := range input.Allows.AllowWrite.Roles {
+		if inp.Allows.AllowWrite != nil {
+			for _, role := range inp.Allows.AllowWrite.Roles {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowWrite,
 					Group:  rules.AllowRoles,
 					Value:  strconv.Itoa(role),
 				})
 			}
-			for _, char := range input.Allows.AllowWrite.Chars {
+			for _, char := range inp.Allows.AllowWrite.Chars {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowWrite,
 					Group:  rules.AllowChars,
 					Value:  char.String(),
 				})
 			}
-			for _, member := range input.Allows.AllowWrite.Members {
+			for _, member := range inp.Allows.AllowWrite.Members {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowWrite,
 					Group:  rules.AllowChars,
@@ -83,22 +91,22 @@ func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId
 			}
 		}
 
-		if input.Allows.AllowRead != nil {
-			for _, role := range input.Allows.AllowRead.Roles {
+		if inp.Allows.AllowRead != nil {
+			for _, role := range inp.Allows.AllowRead.Roles {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowRead,
 					Group:  rules.AllowRoles,
 					Value:  strconv.Itoa(role),
 				})
 			}
-			for _, char := range input.Allows.AllowRead.Chars {
+			for _, char := range inp.Allows.AllowRead.Chars {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowRead,
 					Group:  rules.AllowChars,
 					Value:  char.String(),
 				})
 			}
-			for _, member := range input.Allows.AllowRead.Members {
+			for _, member := range inp.Allows.AllowRead.Members {
 				allowsDb = append(allowsDb, models.AllowsDB{
 					Action: rules.AllowRead,
 					Group:  rules.AllowChars,
@@ -117,11 +125,13 @@ func (r *RoomsRepo) CreateRoom(chatId int, input *model.CreateRoomInput) (roomId
 	}
 
 	if allows != nil {
-
-		_, err = r.db.Exec(`INSERT INTO allows 
-    		(room_id, action_type, group_type, value)	
-			VALUES` + *allows)
+		// language=PostgreSQL
+		err = r.db.QueryRow(`
+			INSERT INTO allows (room_id, action_type, group_type, value)
+			VALUES` + *allows,
+		).Err()
 		if err != nil {
+			println("CreateRoom:", err.Error()) // debug
 			return
 		}
 
@@ -304,7 +314,7 @@ func (r *RoomsRepo) GetAllows(roomId int) (*model.Allows, error) {
 	}
 
 	allows := &model.Allows{
-		Room: nil, // outside
+		Room: &model.Room{RoomID: roomId},
 		AllowRead: &model.PermissionHolders{
 			Roles: &model.Roles{
 				Roles: []*model.Role{},

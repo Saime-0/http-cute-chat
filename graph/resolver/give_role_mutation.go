@@ -7,21 +7,25 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) GiveRole(ctx context.Context, memberID int, roleID int) (model.MutationResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	var chatID int
+	node := r.Piper.CreateNode("mutationResolver > GiveRole [mid:", memberID, ",rid:", roleID, "]")
+	defer node.Kill()
+
+	var (
+		chatID   int
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+	)
+
 	// todo MemberExists-> chatid; RoleExists(cid, rid):
-	if pl.GetChatIDByMember(memberID, &chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		pl.Can.GiveRole(clientID, chatID) ||
-		pl.RoleExists(chatID, roleID) {
-		return pl.Err, nil
+	if node.GetChatIDByMember(memberID, &chatID) ||
+		node.IsMember(clientID, chatID) ||
+		node.CanGiveRole(clientID, chatID) ||
+		node.RoleExists(chatID, roleID) {
+		return node.Err, nil
 	}
 
 	err := r.Services.Repos.Chats.GiveRole(memberID, roleID)

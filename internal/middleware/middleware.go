@@ -56,6 +56,7 @@ func (m *MiddlewaresSetup) GetUserAgent(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), rules.UserAgentFromHeaders, r.UserAgent())
 		next.ServeHTTP(w, r.WithContext(ctx))
+
 	})
 }
 
@@ -65,6 +66,7 @@ func wrapResponseWriter(w http.ResponseWriter) *responseWriter {
 
 type responseWriter struct {
 	http.ResponseWriter
+	http.Hijacker
 	status      int
 	wroteHeader bool
 }
@@ -84,7 +86,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 	return
 }
 func (m *MiddlewaresSetup) Logging(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -104,7 +106,6 @@ func (m *MiddlewaresSetup) Logging(next http.Handler) http.Handler {
 			"path", r.URL.EscapedPath(),
 			"duration", time.Since(start),
 		)
-	}
+	})
 
-	return http.HandlerFunc(fn)
 }
