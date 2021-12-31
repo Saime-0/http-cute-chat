@@ -54,8 +54,8 @@ type IntValue {
 
 
 input Params {
-    limit: Int = 20
-    offset: Int = 0
+    limit: Int
+    offset: Int
 }
 
 type TokenPair {
@@ -98,7 +98,7 @@ type Room {
     note: String
     form: RoomFormResult @goField(forceResolver: true) # не проверено
     allows: AllowsResult! @goField(forceResolver: true)
-    messages(find: FindMessagesInRoomByUnionInput!, params: Params!): MessagesResult @goField(forceResolver: true)
+    messages(find: FindMessagesInRoomByUnionInput!, params: Params): MessagesResult @goField(forceResolver: true)
     #todo next: prev: or symbolindex:
 }
 
@@ -137,7 +137,7 @@ type Members {
 type Role {
     id: ID!
     name: String!
-    color: String!
+    color: HexColor!
 }
 
 type Roles {
@@ -198,8 +198,8 @@ type UserData {
 type Me {
     user: User!
     data: UserData!
-    chats: [Chat!] @goField(forceResolver: true)
-    ownedChats: [Chat!] @goField(forceResolver: true)
+    chats: Chats @goField(forceResolver: true)
+    ownedChats: Chats @goField(forceResolver: true)
 }
 type Case {
     key: String!

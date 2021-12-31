@@ -12,7 +12,7 @@ input CreateInviteInput {
 input CreateRoleInput {
     chatId: ID!
     name: String!
-    color: String!
+    color: HexColor!
 }
 input LoginInput {
     email: String!
@@ -49,13 +49,13 @@ input UpdateMeDataInput  {
 
 input UpdateRoleInput {
     name: String
-    color: String
+    color: HexColor
 }
 
 input UpdateRoomInput {
-    name: String @goField(forceResolver: true)
-    parentId: ID @goField(forceResolver: true)
-    note: String @goField(forceResolver: true)
+    name: String
+    parentId: ID
+    note: String
 }
 input UpdateFormInput {
     fields: [FormFieldInput!]!
@@ -123,8 +123,24 @@ input FindMessagesInRoomByUnionInput {
     beforeTime: Int64
 }
 
+input CreateRoomInput {
+    chatId: ID!
+    name: String!
+    parent: ID
+    note: String
+    form: UpdateFormInput
+    allows: AllowsInput
+}
 
-
+input AllowsInput {
+    allowRead: PermissionHoldersInput
+    allowWrite: PermissionHoldersInput
+}
+input PermissionHoldersInput {
+    roles: [ID!]
+    chars: [CharType!]
+    members: [ID!]
+}
 
 
 

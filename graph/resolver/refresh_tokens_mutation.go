@@ -16,6 +16,9 @@ import (
 )
 
 func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken string) (model.RefreshTokensResult, error) {
+	node := r.Piper.CreateNode("mutationResolver > RefreshTokens [<token>]")
+	defer node.Kill()
+
 	_, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обрабработать токен"), nil

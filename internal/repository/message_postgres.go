@@ -110,18 +110,20 @@ func (r *MessagesRepo) GetMessagesFromRoom(roomId int, createdAfter int, offset 
 	return
 }
 
-func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (err error) {
+func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (msgId int, err error) {
 	err = r.db.QueryRow(`
 		INSERT INTO messages (reply_to, author, room_id, body, type)
 		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id
 		`,
 		inp.ReplyTo,
 		inp.Author,
 		inp.RoomID,
 		inp.Body,
 		inp.Type,
-	).Err()
+	).Scan(&msgId)
 	if err != nil {
+		println("CreateMessageInRoom:", err.Error()) // debug
 		return
 	}
 	return

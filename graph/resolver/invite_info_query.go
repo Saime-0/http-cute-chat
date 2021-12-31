@@ -7,20 +7,20 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 )
 
 func (r *queryResolver) InviteInfo(ctx context.Context, code string) (model.InviteInfoResult, error) {
-	//clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.InviteIsRelevant(code) {
-		return pl.Err, nil
+	node := r.Piper.CreateNode("queryResolver > InviteInfo [code:", code, "]")
+	defer node.Kill()
+
+	if node.InviteIsRelevant(code) {
+		return node.Err, nil
 	}
 
 	info, err := r.Services.Repos.Chats.InviteInfo(code)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось получить информацию"), nil
 	}
 	return info, nil
 }

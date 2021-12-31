@@ -7,23 +7,24 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (model.MembersResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
+	node := r.Piper.CreateNode("queryResolver > Members [cid:", find.ChatID, "]")
+	defer node.Kill()
+
 	var (
-		chatID  = find.ChatID
-		members *model.Members
+		chatID   int
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		members  *model.Members
 	)
 
-	if pl.ValidID(chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		find.MemberID != nil && pl.ValidID(*find.MemberID) ||
-		find.RoleID != nil && pl.ValidID(*find.RoleID) {
-		return pl.Err, nil
+	if node.ValidID(chatID) ||
+		node.IsMember(clientID, chatID) ||
+		find.MemberID != nil && node.ValidID(*find.MemberID) ||
+		find.RoleID != nil && node.ValidID(*find.RoleID) {
+		return node.Err, nil
 	}
 
 	members = r.Services.Repos.Chats.FindMembers(&find)

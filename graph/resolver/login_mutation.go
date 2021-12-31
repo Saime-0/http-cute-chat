@@ -10,18 +10,20 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/xlzd/gotp"
 )
 
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error) {
-	pl := piping.NewPipeline(r.Services.Repos)
+	node := r.Piper.CreateNode("mutationResolver > Login [_]")
+	defer node.Kill()
+
 	var clientID int
-	if pl.UserExistsByInput(input) ||
-		pl.GetUserIDByInput(input, &clientID) {
-		return pl.Err, nil
+
+	if node.UserExistsByInput(input) ||
+		node.GetUserIDByInput(input, &clientID) {
+		return node.Err, nil
 	}
 
 	var (

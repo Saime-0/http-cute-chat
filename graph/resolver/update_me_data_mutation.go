@@ -9,17 +9,13 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
 func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateMeDataInput) (model.MutationResult, error) {
-	tl := tlog.Start("mutationResolver > UpdateMeData [_]")
-	defer tl.Fine()
+	node := r.Piper.CreateNode("mutationResolver > UpdateMeData [_]")
+	defer node.Kill()
 
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-
-	node := r.Piper.CreateNode()
-	defer node.Kill()
 
 	if input.Name != nil && node.ValidName(*input.Name) ||
 		input.Domain != nil && node.ValidDomain(*input.Domain) ||

@@ -26,7 +26,8 @@ func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRol
 
 	err := r.Services.Repos.Chats.CreateRoleInChat(&input)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалоось создать роль"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось создать роль"), nil
 	}
+
 	return resp.Success("роль создана"), nil
 }

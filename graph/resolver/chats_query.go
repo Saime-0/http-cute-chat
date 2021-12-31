@@ -10,7 +10,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/resp"
 )
 
-func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params model.Params) (model.ChatsResult, error) {
+func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params *model.Params) (model.ChatsResult, error) {
 	node := r.Piper.CreateNode("queryResolver > Chats [_]")
 	defer node.Kill()
 
@@ -21,7 +21,7 @@ func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params 
 		return node.Err, nil
 	}
 
-	chats, err := r.Services.Repos.Chats.FindChats(&find, &params)
+	chats, err := r.Services.Repos.Chats.FindChats(&find, params)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось получиться список чатов"), nil
 	}

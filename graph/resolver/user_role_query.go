@@ -7,17 +7,21 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) UserRole(ctx context.Context, memberID int) (model.UserRoleResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	var chatID int
-	if pl.GetChatIDByMember(memberID, &chatID) ||
-		pl.IsMember(clientID, chatID) {
-		return pl.Err, nil
+	node := r.Piper.CreateNode("queryResolver > UserRole [mid:", memberID, "]")
+	defer node.Kill()
+
+	var (
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		chatID   int
+	)
+
+	if node.GetChatIDByMember(memberID, &chatID) ||
+		node.IsMember(clientID, chatID) {
+		return node.Err, nil
 	}
 	role := r.Services.Repos.Chats.MemberRole(memberID)
 

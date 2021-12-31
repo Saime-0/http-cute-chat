@@ -8,23 +8,28 @@ import (
 	"encoding/json"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
 func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form *model.UpdateFormInput) (model.MutationResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	var chatID int
-	if pl.RoomExists(roomID) ||
-		pl.GetChatIDByRoom(roomID, &chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		pl.Can.UpdateRoom(clientID, chatID) ||
-		form != nil && pl.ValidForm(form) {
-		return pl.Err, nil
+	node := r.Piper.CreateNode("mutationResolver > UpdateRoomForm [rid:", roomID, "]")
+	defer node.Kill()
+
+	var (
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		chatID   int
+	)
+
+	if node.RoomExists(roomID) ||
+		node.GetChatIDByRoom(roomID, &chatID) ||
+		node.IsMember(clientID, chatID) ||
+		node.CanUpdateRoom(clientID, chatID) ||
+		form != nil && node.ValidForm(form) {
+		return node.Err, nil
 	}
+
 	var (
 		err      error
 		bodyForm *string
@@ -41,5 +46,6 @@ func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form 
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось установить новую форму"), nil
 	}
+
 	return resp.Success("форма успешно обновлена"), nil
 }

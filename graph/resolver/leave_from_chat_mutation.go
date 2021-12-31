@@ -7,18 +7,20 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int) (model.MutationResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ChatExists(chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		pl.Can.LeaveFromChat(clientID, chatID) {
-		return pl.Err, nil
+	node := r.Piper.CreateNode("mutationResolver > LeaveFromChat [cid:", chatID, "]")
+	defer node.Kill()
+
+	var clientID = ctx.Value(rules.UserIDFromToken).(int)
+
+	if node.ChatExists(chatID) ||
+		node.IsMember(clientID, chatID) ||
+		node.CanLeaveFromChat(clientID, chatID) {
+		return node.Err, nil
 	}
 
 	err := r.Services.Repos.Chats.RemoveUserFromChat(clientID, chatID)

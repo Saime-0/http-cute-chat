@@ -1,3 +1,3 @@
 extend type Query {
-    rooms(find: FindRooms!, params: Params!): RoomsResult @goField(forceResolver: true) @isAuth
+    rooms(find: FindRooms!, params: Params): RoomsResult @goField(forceResolver: true) @isAuth
 }

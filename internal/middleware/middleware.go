@@ -1,12 +1,15 @@
 package middleware
 
 import (
+	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"log"
+	"net"
 	"net/http"
 	"runtime/debug"
 	"strconv"
@@ -23,8 +26,14 @@ func Setup(cfg *config.Config) *MiddlewaresSetup {
 		cfg: cfg,
 	}
 }
+func (m *MiddlewaresSetup) Empty() http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+
+	})
+}
 func (m *MiddlewaresSetup) CheckAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		println("CheckAuth start!") // debug
 		var (
 			expiresAt int64
 			userId    int
@@ -54,19 +63,33 @@ func (m *MiddlewaresSetup) CheckAuth(next http.Handler) http.Handler {
 
 func (m *MiddlewaresSetup) GetUserAgent(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		println("GetUserAgent start!") // debug
 		ctx := context.WithValue(r.Context(), rules.UserAgentFromHeaders, r.UserAgent())
 		next.ServeHTTP(w, r.WithContext(ctx))
+
 	})
 }
 
 func wrapResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{ResponseWriter: w}
+	return &responseWriter{
+		ResponseWriter: w,
+	}
+
 }
 
 type responseWriter struct {
+	http.Hijacker
 	http.ResponseWriter
 	status      int
 	wroteHeader bool
+}
+
+func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := rw.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+	return h.Hijack()
 }
 
 func (rw *responseWriter) Status() int {
@@ -84,7 +107,10 @@ func (rw *responseWriter) WriteHeader(code int) {
 	return
 }
 func (m *MiddlewaresSetup) Logging(next http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		println("proto:", r.Proto) // debug
+
+		println("Logging start!") // debug
 		defer func() {
 			if err := recover(); err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -104,7 +130,6 @@ func (m *MiddlewaresSetup) Logging(next http.Handler) http.Handler {
 			"path", r.URL.EscapedPath(),
 			"duration", time.Since(start),
 		)
-	}
+	})
 
-	return http.HandlerFunc(fn)
 }

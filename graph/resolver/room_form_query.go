@@ -8,24 +8,26 @@ import (
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) RoomForm(ctx context.Context, roomID int) (model.RoomFormResult, error) {
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
+	node := r.Piper.CreateNode("queryResolver > RoomForm [rid:", roomID, "]")
+	defer node.Kill()
+
 	var (
-		chatID int
-		holder models.AllowHolder
+		chatID   int
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		holder   models.AllowHolder
 	)
-	if pl.ValidID(roomID) ||
-		pl.RoomExists(roomID) ||
-		pl.GetChatIDByRoom(roomID, &chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		pl.GetAllowHolder(clientID, chatID, &holder) ||
-		pl.IsAllowedTo(rules.AllowRead, roomID, &holder) {
-		return pl.Err, nil
+
+	if node.ValidID(roomID) ||
+		node.RoomExists(roomID) ||
+		node.GetChatIDByRoom(roomID, &chatID) ||
+		node.IsMember(clientID, chatID) ||
+		node.GetAllowHolder(clientID, chatID, &holder) ||
+		node.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		return node.Err, nil
 	}
 
 	form := r.Services.Repos.Rooms.RoomForm(roomID)

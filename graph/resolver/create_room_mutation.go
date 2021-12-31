@@ -7,25 +7,29 @@ import (
 	"context"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/piping"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
-func (r *mutationResolver) CreateRoom(ctx context.Context, chatID int, input model.CreateRoomInput) (model.MutationResult, error) {
+func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.MutationResult, error) {
+	node := r.Piper.CreateNode("mutationResolver > CreateRoom [cid:", input.ChatID, "]")
+	defer node.Kill()
+
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
-	pl := piping.NewPipeline(r.Services.Repos)
-	if pl.ChatExists(chatID) ||
-		pl.IsMember(clientID, chatID) ||
-		pl.Can.CreateRoom(clientID, chatID) ||
-		pl.RoomsLimit(chatID) ||
-		pl.IsNotChild(*input.Parent) ||
-		input.Parent != nil && pl.RoomExists(*input.Parent) {
-		return pl.Err, nil
+
+	if node.ChatExists(input.ChatID) ||
+		node.IsMember(clientID, input.ChatID) ||
+		node.CanCreateRoom(clientID, input.ChatID) ||
+		node.RoomsLimit(input.ChatID) ||
+		node.IsNotChild(*input.Parent) ||
+		input.Parent != nil && node.RoomExists(*input.Parent) {
+		return node.Err, nil
 	}
-	_, err := r.Services.Repos.Rooms.CreateRoom(chatID, &input)
+
+	err := r.Services.Repos.Rooms.CreateRoom(&input)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось создать комнату"), nil
 	}
+
 	return resp.Success("комната создана"), nil
 }

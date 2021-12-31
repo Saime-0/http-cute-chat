@@ -4,12 +4,14 @@ directive @goField(
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
 directive @isAuth on INPUT_FIELD_DEFINITION
-    | FIELD_DEFINITION
+    | FIELD_DEFINITION | SUBSCRIPTION
 
 #directive @hasChar(char: [CharType]) on INPUT_FIELD_DEFINITION
 #    | FIELD_DEFINITION
 
 directive @inputUnion on INPUT_FIELD_DEFINITION
+    | ARGUMENT_DEFINITION
+directive @inputLeastOne on INPUT_FIELD_DEFINITION
     | ARGUMENT_DEFINITION
 #directive @notFrozen(char: [Char]) on INPUT_FIELD_DEFINITION
 #    | FIELD_DEFINITION |

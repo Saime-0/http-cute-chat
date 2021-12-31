@@ -130,7 +130,7 @@ type Role struct {
 type RoleReference struct {
 	ID    *int
 	Name  *string
-	Color *string
+	Color *model.HexColor
 }
 
 type RoleID struct {

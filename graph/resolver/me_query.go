@@ -12,26 +12,14 @@ import (
 )
 
 func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
+	node := r.Piper.CreateNode("queryResolver > Me [_]")
+	defer node.Kill()
+
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	me, err := r.Services.Repos.Users.Me(clientID)
 	if err != nil {
-		println(err.Error())
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось получить данные"), nil
 	}
-	return model.Me{
-		User: &model.User{
-			Unit: &model.Unit{
-				ID:     me.Unit.ID,
-				Domain: me.Unit.Domain,
-				Name:   me.Unit.Name,
-				Type:   model.UnitType(me.Unit.Type), // 0_o
-			},
-		},
-		Data: &model.UserData{
-			Email:    me.User.Email,
-			Password: me.User.Password,
-		},
-		Chats:      nil, // forced
-		OwnedChats: nil, // forced
-	}, nil
+
+	return me, nil
 }

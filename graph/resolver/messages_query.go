@@ -9,19 +9,14 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
 )
 
-func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params model.Params) (model.MessagesResult, error) {
-	tl := tlog.Start("queryResolver > Messages [cid:", find.ChatID, "]")
-	defer tl.Fine()
-
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
-
-	node := r.Piper.CreateNode()
+func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error) {
+	node := r.Piper.CreateNode("queryResolver > Messages [cid:", find.ChatID, "]")
 	defer node.Kill()
 
 	var (
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
 		chatID   = find.ChatID
 		holder   models.AllowHolder
 		messages *model.Messages
@@ -36,6 +31,6 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 		return node.Err, nil
 	}
 
-	messages = r.Services.Repos.Chats.FindMessages(&find, &params, &holder)
+	messages = r.Services.Repos.Chats.FindMessages(&find, params, &holder)
 	return messages, nil
 }
