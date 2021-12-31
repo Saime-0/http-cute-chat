@@ -9,7 +9,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/lib/pq v1.10.4
-	github.com/rs/cors v1.8.2
 	github.com/vektah/gqlparser/v2 v2.2.0
 	github.com/xlzd/gotp v0.0.0-20181030022105-c8557ba2c119
 )

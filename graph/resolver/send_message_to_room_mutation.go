@@ -56,6 +56,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		ReplyTo: _replyTo,
 		Author:  &model.Member{ID: memberID},
 		Type:    message.Type,
+		Body:    input.Body,
 	})
 
 	return resp.Success("сообщение успешно создано"), nil

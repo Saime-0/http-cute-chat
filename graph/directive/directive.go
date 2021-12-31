@@ -10,6 +10,8 @@ import (
 
 func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
 	inputObj, err := next(ctx)
+	println("IsAuth directive start!") // debug
+
 	if err != nil {
 		println("IsAuth:", err.Error()) // debug
 		return inputObj, err
@@ -20,7 +22,7 @@ func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res in
 		println("IsAuth:", err.Error()) // debug
 		return inputObj, err
 	}
-	return next(ctx)
+	return inputObj, nil
 }
 
 func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {

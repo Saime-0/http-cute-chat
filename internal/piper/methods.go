@@ -427,7 +427,7 @@ func (n *Node) IsAllowedTo(action rules.AllowActionType, roomId int, holder *mod
 }
 
 func (n *Node) GetAllowHolder(userId, chatId int, holder *models.AllowHolder) (fail bool) {
-	fmt.Printf("userID: %d\n chatID: %d\n", userId, chatId) // debug
+	fmt.Printf("userID: %d\nchatID: %d\n", userId, chatId) // debug
 	_holder, err := n.repos.Rooms.AllowHolder(userId, chatId)
 	if err != nil {
 		n.Err = resp.Error(resp.ErrInternalServerError, "не удалось связать пользователя с чатом")

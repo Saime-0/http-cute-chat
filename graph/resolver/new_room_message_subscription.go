@@ -22,22 +22,24 @@ func (r *subscriptionResolver) NewRoomMessage(ctx context.Context, roomID int) (
 		chatID   int
 		holder   models.AllowHolder
 	)
-	fmt.Printf("userID: %d\n chatID: %d\n", clientID, chatID) // debug
+	fmt.Printf("userID: %d\nchatID: %d\n", clientID, chatID) // debug
 
 	if node.ValidID(roomID) ||
 		node.GetChatIDByRoom(roomID, &chatID) ||
 		node.GetAllowHolder(clientID, chatID, &holder) ||
 		node.IsAllowedTo(rules.AllowRead, roomID, &holder) {
 		//println(node.Err.Error)
-		return nil, errors.New(node.Err.Error) // todo resp err
+		return nil, errors.New(node.Err.Error)
 	}
 
-	listener := r.Services.Events.SubscribeOnNewMessage(clientID, roomID)
-
+	sub := r.Services.Events.OnNewMessage.Register(roomID, make(chan *model.Message))
+	println("New sub chan", sub) // debug
+	//listener := r.Services.Events.SubscribeOnNewMessage(clientID, roomID)
 	go func() {
 		<-ctx.Done()
-		r.Services.Events.Unsubscribe(listener)
+		println("sub chan", sub, "is down.") // debug
+		r.Services.Events.Unsubscribe(&sub)
 	}()
 
-	return (*listener).Ch, nil
+	return sub.Ch.(chan *model.Message), nil
 }

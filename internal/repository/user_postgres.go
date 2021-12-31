@@ -271,7 +271,7 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 		&me.User.Unit.Domain,
 		&me.User.Unit.Name,
 		&me.User.Unit.Type,
-		&me.Data.Password,
+		&me.Data.Email,
 		&me.Data.Password,
 	)
 	if err != nil {

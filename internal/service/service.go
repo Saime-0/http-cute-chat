@@ -9,12 +9,12 @@ import (
 
 type Services struct {
 	Repos  *repository.Repositories
-	Events *mutexmaps.Events
+	Events *mutexmaps.EventHandler
 }
 
 func NewServices(db *sql.DB) *Services {
 	return &Services{
 		Repos:  repository.NewRepositories(db),
-		Events: mutexmaps.NewEvents(),
+		Events: mutexmaps.NewEventHandler(),
 	}
 }

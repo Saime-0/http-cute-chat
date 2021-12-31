@@ -1377,7 +1377,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 		}
 	case ast.Subscription:
-		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+		next := ec._subscriptionMiddleware(ctx, rc.Operation, func(ctx context.Context) (interface{}, error) {
+			return ec._Subscription(ctx, rc.Operation.SelectionSet), nil
+		})
 
 		var buf bytes.Buffer
 		return func(ctx context.Context) *graphql.Response {
@@ -1425,7 +1427,7 @@ var sources = []*ast.Source{
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 
 directive @isAuth on INPUT_FIELD_DEFINITION
-    | FIELD_DEFINITION
+    | FIELD_DEFINITION | SUBSCRIPTION
 
 #directive @hasChar(char: [CharType]) on INPUT_FIELD_DEFINITION
 #    | FIELD_DEFINITION
@@ -2878,6 +2880,35 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ***************************** args.gotpl *****************************
 
 // region    ************************** directives.gotpl **************************
+
+func (ec *executionContext) _subscriptionMiddleware(ctx context.Context, obj *ast.OperationDefinition, next func(ctx context.Context) (interface{}, error)) func() graphql.Marshaler {
+	for _, d := range obj.Directives {
+		switch d.Name {
+		case "isAuth":
+			n := next
+			next = func(ctx context.Context) (interface{}, error) {
+				if ec.directives.IsAuth == nil {
+					return nil, errors.New("directive isAuth is not implemented")
+				}
+				return ec.directives.IsAuth(ctx, obj, n)
+			}
+		}
+	}
+	tmp, err := next(ctx)
+	if err != nil {
+		ec.Error(ctx, err)
+		return func() graphql.Marshaler {
+			return graphql.Null
+		}
+	}
+	if data, ok := tmp.(func() graphql.Marshaler); ok {
+		return data
+	}
+	ec.Errorf(ctx, `unexpected type %T from directive, should be graphql.Marshaler`, tmp)
+	return func() graphql.Marshaler {
+		return graphql.Null
+	}
+}
 
 // endregion ************************** directives.gotpl **************************
 
