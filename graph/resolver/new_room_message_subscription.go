@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -17,11 +16,16 @@ func (r *subscriptionResolver) NewRoomMessage(ctx context.Context, roomID int) (
 	node := r.Piper.CreateNode("subscriptionResolver > NewRoomMessage [rid:", roomID, "]")
 	defer node.Kill()
 
+	if ctx.Value(rules.UserIDFromToken).(int) == 0 {
+		return nil, errors.New("не аутентифицирован")
+	}
+
 	var (
 		clientID = ctx.Value(rules.UserIDFromToken).(int)
 		chatID   int
 		holder   models.AllowHolder
 	)
+
 	fmt.Printf("userID: %d\nchatID: %d\n", clientID, chatID) // debug
 
 	if node.ValidID(roomID) ||

@@ -3,78 +3,98 @@ package middleware
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 	"log"
 	"net"
 	"net/http"
-	"runtime/debug"
-	"strconv"
 	"strings"
 	"time"
 )
 
-type MiddlewaresSetup struct {
+type chain struct {
+	r   *http.Request
 	cfg *config.Config
+	//ctx context.Context
 }
 
-func Setup(cfg *config.Config) *MiddlewaresSetup {
-	return &MiddlewaresSetup{
-		cfg: cfg,
-	}
-}
-func (m *MiddlewaresSetup) Empty() http.Handler {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-
-	})
-}
-func (m *MiddlewaresSetup) CheckAuth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		println("CheckAuth start!") // debug
-		var (
-			expiresAt int64
-			userId    int
-		)
-		authHeader := strings.Split(r.Header.Get("Authorization"), "Bearer ")
-		if len(authHeader) == 2 {
-			jwtToken := authHeader[1]
-			token, _ := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-				}
-
-				return []byte(m.cfg.SecretKey), nil
-			})
-
-			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-				expiresAt = int64(claims["exp"].(float64))
-				if expiresAt >= time.Now().Unix() { // handle expiresAt
-					userId, _ = strconv.Atoi(claims["sub"].(string))
-				}
+func ChainShip(cfg *config.Config) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			c := &chain{
+				r:   r,
+				cfg: cfg,
 			}
-		}
-		ctx := context.WithValue(r.Context(), rules.UserIDFromToken, userId)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
 
-func (m *MiddlewaresSetup) GetUserAgent(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		println("GetUserAgent start!") // debug
-		ctx := context.WithValue(r.Context(), rules.UserAgentFromHeaders, r.UserAgent())
-		next.ServeHTTP(w, r.WithContext(ctx))
+			if r.Header.Get("Sec-Websocket-Protocol") != "graphql-ws" {
+				c.checkAuth().getUserAgent()
+			} else {
+				println("WebsocketExeption working!") // debug
+			}
 
-	})
-}
-
-func wrapResponseWriter(w http.ResponseWriter) *responseWriter {
-	return &responseWriter{
-		ResponseWriter: w,
+			next.ServeHTTP(w, c.r)
+		})
 	}
+}
 
+// deprecated
+func WebsocketExeption() func(http.Handler) http.Handler {
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("Sec-Websocket-Protocol") == "graphql-ws" {
+				println("WebsocketExeption working!") // debug
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func (c *chain) checkAuth() *chain {
+	println("CheckAuth start!") // debug
+
+	println(c.r.Header.Get("Authorization")) // debug
+	ctx, err := auth(c.r.Context(), c.cfg, c.r.Header.Get("Authorization"))
+	if err != nil {
+		println("CheckAuth:", err.Error())
+	}
+	c.r = c.r.WithContext(ctx)
+	return c
+}
+
+func (c *chain) getUserAgent() *chain {
+	println("GetUserAgent start!") // debug
+
+	c.r = c.r.WithContext(context.WithValue(c.r.Context(), rules.UserAgentFromHeaders, c.r.UserAgent()))
+	return c
+}
+
+func Logging(cfg *config.Config) func(http.Handler) http.Handler {
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			b, _ := json.MarshalIndent(r.Header, "", " ")
+			fmt.Printf("header: %s\n", string(b)) // debug
+
+			println("Logging start!") // debug
+
+			start := time.Now()
+			wrapped := wrapResponseWriter(w)
+			next.ServeHTTP(wrapped, r)
+			log.Println(
+				"status", wrapped.status,
+				"method", r.Method,
+				"path", r.URL.EscapedPath(),
+				"duration", time.Since(start),
+			)
+		})
+	}
 }
 
 type responseWriter struct {
@@ -84,17 +104,16 @@ type responseWriter struct {
 	wroteHeader bool
 }
 
-func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	h, ok := rw.ResponseWriter.(http.Hijacker)
-	if !ok {
-		return nil, nil, errors.New("hijack not supported")
+func wrapResponseWriter(w http.ResponseWriter) *responseWriter {
+	return &responseWriter{
+		ResponseWriter: w,
 	}
-	return h.Hijack()
-}
 
+}
 func (rw *responseWriter) Status() int {
 	return rw.status
 }
+
 func (rw *responseWriter) WriteHeader(code int) {
 	if rw.wroteHeader {
 		return
@@ -106,30 +125,44 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 	return
 }
-func (m *MiddlewaresSetup) Logging(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		println("proto:", r.Proto) // debug
 
-		println("Logging start!") // debug
-		defer func() {
-			if err := recover(); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				log.Println(
-					"err", err,
-					"trace", debug.Stack(),
-				)
-			}
-		}()
+func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := rw.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+	return h.Hijack()
+}
 
-		start := time.Now()
-		wrapped := wrapResponseWriter(w)
-		next.ServeHTTP(wrapped, r)
-		log.Println(
-			"status", wrapped.status,
-			"method", r.Method,
-			"path", r.URL.EscapedPath(),
-			"duration", time.Since(start),
+func WebsocketInitFunc(cfg *config.Config) func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
+
+	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
+		println("INIT FUNC") // debug
+		ctx, err := auth(ctx, cfg, initPayload.Authorization())
+		if err != nil {
+			println("WebsocketInitFunc:", err.Error())
+			return nil, err
+		}
+		return ctx, nil
+	}
+}
+
+func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.Context, error) {
+	var (
+		userId int
+		err    error
+		data   *utils.TokenData
+	)
+	token := strings.Split(authHeader, "Bearer ")
+	if len(token) == 2 {
+		data, err = utils.ParseToken(
+			token[1],
+			cfg.SecretKey,
 		)
-	})
-
+		if err == nil && data.ExpiresAt >= time.Now().Unix() {
+			userId = data.UserID
+		}
+		fmt.Printf("%#v, %#v\n", data, err)
+	}
+	return context.WithValue(ctx, rules.UserIDFromToken, userId), err
 }

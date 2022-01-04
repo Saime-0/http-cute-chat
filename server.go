@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"database/sql"
 	"flag"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
@@ -19,12 +17,9 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/middleware"
 	"github.com/saime-0/http-cute-chat/internal/piper"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/service"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -52,7 +47,7 @@ func main() {
 	}(db)
 
 	services := service.NewServices(db)
-	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{
+	srv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: &resolver.Resolver{
 			Services: services,
 			Config:   cfg,
@@ -66,46 +61,24 @@ func main() {
 	}))
 
 	router := mux.NewRouter()
-	mw := middleware.Setup(cfg)
 	router.Use(
-		mw.Logging,
-		mw.CheckAuth,
-		mw.GetUserAgent,
+		middleware.Logging(cfg),
+		middleware.ChainShip(cfg),
 	)
-
+	srv.AddTransport(transport.POST{})
 	srv.AddTransport(&transport.Websocket{
-		KeepAlivePingInterval: 1,
+		KeepAlivePingInterval: 10 * time.Second,
 		Upgrader: websocket.Upgrader{
-			ReadBufferSize:  0, // reused buffers
-			WriteBufferSize: 0,
+			HandshakeTimeout: time.Minute,
+			CheckOrigin: func(r *http.Request) bool {
+				// todo we are already checking for CORS
+				return true
+			},
+			EnableCompression: true,
+			ReadBufferSize:    0, // reused buffers
+			WriteBufferSize:   0,
 		},
-		InitFunc: func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
-			println("INIT FUNC") // debug
-			var (
-				expiresAt int64
-				userId    int
-			)
-			authHeader := strings.Split(initPayload.Authorization(), "Bearer ")
-			if len(authHeader) == 2 {
-				jwtToken := authHeader[1]
-				token, _ := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
-					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-						return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-					}
-
-					return []byte(cfg.SecretKey), nil
-				})
-
-				if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-					expiresAt = int64(claims["exp"].(float64))
-					if expiresAt >= time.Now().Unix() { // handle expiresAt
-						userId, _ = strconv.Atoi(claims["sub"].(string))
-					}
-				}
-			}
-			ctx = context.WithValue(ctx, rules.UserIDFromToken, userId)
-			return ctx, nil
-		},
+		InitFunc: middleware.WebsocketInitFunc(cfg),
 	})
 	srv.Use(extension.Introspection{})
 

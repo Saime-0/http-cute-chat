@@ -5,13 +5,11 @@ package resolver
 
 import (
 	"context"
-	"strconv"
-
-	"github.com/golang-jwt/jwt"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/xlzd/gotp"
 )
 
@@ -39,10 +37,13 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить сессию"), nil
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		ExpiresAt: expiresAt,
-		Subject:   strconv.Itoa(clientID),
-	}).SignedString([]byte(r.Config.SecretKey))
+	token, err := utils.GenerateToken(
+		&utils.TokenData{
+			UserID:    clientID,
+			ExpiresAt: expiresAt,
+		},
+		r.Config.SecretKey,
+	)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}
