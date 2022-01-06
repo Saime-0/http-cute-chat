@@ -1050,44 +1050,45 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 	}
 
 	// language=PostgreSQL
-	rows, err := r.db.Query(`
-		SELECT messages.id, reply_to, author, messages.room_id, body, messages.type, created_at
-		FROM messages 
-		JOIN allows
-			ON messages.room_id = allows.room_id
-		WHERE messages.room_id IN (
-		    SELECT rooms.id 
-		    FROM chats
-		    INNER JOIN rooms
-		        ON chats.id = rooms.chat_id
-		    LEFT JOIN allows 
-		    	ON rooms.id = allows.room_id 
-		    WHERE chats.id = $1 
-			AND (
-			    $2::BIGINT IS NULL 
-			    OR rooms.id = $2 
+	var rows, err = r.db.Query(`
+			SELECT messages.id, reply_to, author, messages.room_id, body, messages.type, created_at
+			FROM messages 
+			LEFT JOIN allows
+				ON messages.room_id = allows.room_id
+			WHERE messages.room_id IN (
+			    SELECT rooms.id 
+			    FROM chats
+			    JOIN rooms
+			        ON chats.id = rooms.chat_id
+			    LEFT JOIN allows 
+				    ON rooms.id = allows.room_id 
+			    WHERE chats.id = $1 
+				AND (
+				    $2::BIGINT IS NULL 
+				    OR rooms.id = $2
+				)
+			    AND (
+			        action_type IS NULL 
+			        OR action_type = 'READ'
+			            AND (
+							group_type = 'ROLES' AND value = $3::VARCHAR 
+							OR group_type = 'CHARS' AND value = $4::VARCHAR  
+							OR group_type = 'USERS' AND value = $5::VARCHAR
+						)
+			        OR owner_id = $5::BIGINT 
+		        )
 			)
-	        AND (
-	            action_type IS NULL 
-				OR action_type = 'READ' 
-                AND (
-                    group_type = 'ROLES' AND value = $3
-                    OR group_type = 'CHARS' AND value = $4
-                    OR group_type = 'USERS' AND value = $5
-                )
-            )
-		)
-		AND (
-		    $6::BIGINT IS NULL 
-		    OR author = $6 
-		)
-		AND (
-		    $7::VARCHAR IS NULL 
-		    OR body ILIKE $7
-		)
-		LIMIT $8
-		OFFSET $9
-		`,
+			AND (
+			    $6::BIGINT IS NULL 
+			    OR author = $6 
+			)
+			AND (
+			    $7::VARCHAR IS NULL 
+			    OR body ILIKE $7
+			)
+			LIMIT $8
+			OFFSET $9
+			`,
 		inp.ChatID,
 		inp.RoomID,
 		holder.RoleID,

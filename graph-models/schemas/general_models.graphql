@@ -37,6 +37,11 @@ enum ModifyType {
     ADD
     REDUCE
 }
+enum EventSubjectAction {
+    CREATE
+    UPDATE
+    DELETE
+}
 type Chars {
     chars: [CharType!]
 }
@@ -49,6 +54,9 @@ input FindByDomainOrID {
 
 type IntValue {
     value: Int
+}
+type StringValue {
+    value: String
 }
 # end
 
@@ -121,7 +129,7 @@ type FormField {
 
 type Member {
     id: ID!
-    chat: Chat! @goField(forceResolver: true) # зач тут чат?
+    chat: Chat! @goField(forceResolver: true) # зач тут чат? нужен
     user: User! # @goField(forceResolver: true)
     role: RoleResult @goField(forceResolver: true)
     char: CharType!
@@ -143,6 +151,11 @@ type Role {
 type Roles {
     roles: [Role!]
 }
+
+# deprecated
+union MsgBody =
+    | StringValue
+    | UserChoice
 
 type Message {
     id: ID!
@@ -191,6 +204,11 @@ type PermissionHolders {
     chars: Chars # @goField(forceResolver: true)
     members: Members # @goField(forceResolver: true)
 }
+type PermissionHoldersSub {
+    roles: [ID!]
+    chars: Chars
+    members: [ID!]
+}
 type UserData {
     password: String!
     email: String!
@@ -201,6 +219,8 @@ type Me {
     chats: Chats @goField(forceResolver: true)
     ownedChats: Chats @goField(forceResolver: true)
 }
+
+# using internal code
 type Case {
     key: String!
     value: String!

@@ -294,3 +294,7 @@ type DefMember struct {
 	UserID int
 	ChatID int
 }
+
+type DistributeFilter struct {
+	RoomID int
+}

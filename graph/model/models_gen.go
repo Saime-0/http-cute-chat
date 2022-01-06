@@ -28,6 +28,10 @@ type CountMembersResult interface {
 	IsCountMembersResult()
 }
 
+type EventResult interface {
+	IsEventResult()
+}
+
 type InviteInfoResult interface {
 	IsInviteInfoResult()
 }
@@ -66,6 +70,10 @@ type MessageResult interface {
 
 type MessagesResult interface {
 	IsMessagesResult()
+}
+
+type MsgBody interface {
+	IsMsgBody()
 }
 
 type MutationResult interface {
@@ -399,6 +407,18 @@ type Messages struct {
 
 func (Messages) IsMessagesResult() {}
 
+type NewMessage struct {
+	ID        int         `json:"id"`
+	RoomID    int         `json:"roomId"`
+	ReplyToID *int        `json:"replyToId"`
+	AuthorID  *int        `json:"authorId"`
+	Body      string      `json:"body"`
+	Type      MessageType `json:"type"`
+	CreatedAt int64       `json:"createdAt"`
+}
+
+func (NewMessage) IsEventResult() {}
+
 type Params struct {
 	Limit  *int `json:"limit"`
 	Offset *int `json:"offset"`
@@ -414,6 +434,12 @@ type PermissionHoldersInput struct {
 	Roles   []int      `json:"roles"`
 	Chars   []CharType `json:"chars"`
 	Members []int      `json:"members"`
+}
+
+type PermissionHoldersSub struct {
+	Roles   []int  `json:"roles"`
+	Chars   *Chars `json:"chars"`
+	Members []int  `json:"members"`
 }
 
 type RegisterInput struct {
@@ -458,8 +484,20 @@ type Rooms struct {
 
 func (Rooms) IsRoomsResult() {}
 
+type StringValue struct {
+	Value *string `json:"value"`
+}
+
+func (StringValue) IsMsgBody() {}
+
 type StringValueInput struct {
 	Value string `json:"value"`
+}
+
+type SubscriptionBody struct {
+	Rev   int         `json:"rev"`
+	Event EventType   `json:"event"`
+	Body  EventResult `json:"body"`
 }
 
 type Successful struct {
@@ -495,15 +533,45 @@ type Units struct {
 
 func (Units) IsUnitsResult() {}
 
+type UpdateAllows struct {
+	RoomID     int                   `json:"roomId"`
+	AllowRead  *PermissionHoldersSub `json:"allowRead"`
+	AllowWrite *PermissionHoldersSub `json:"allowWrite"`
+}
+
+func (UpdateAllows) IsEventResult() {}
+
+type UpdateChat struct {
+	ID           int                `json:"id"`
+	Private      bool               `json:"private"`
+	CountMembers CountMembersResult `json:"countMembers"`
+}
+
+func (UpdateChat) IsEventResult() {}
+
 type UpdateChatInput struct {
 	Domain  *string `json:"domain"`
 	Name    *string `json:"name"`
 	Private *bool   `json:"private"`
 }
 
+type UpdateForm struct {
+	RoomID int   `json:"roomId"`
+	Form   *Form `json:"form"`
+}
+
+func (UpdateForm) IsEventResult() {}
+
 type UpdateFormInput struct {
 	Fields []*FormFieldInput `json:"fields"`
 }
+
+type UpdateInvites struct {
+	ChatID  int      `json:"chatId"`
+	Invites *Invites `json:"invites"`
+}
+
+func (UpdateInvites) IsEventResult() {}
 
 type UpdateMeDataInput struct {
 	Domain   *string `json:"domain"`
@@ -512,10 +580,37 @@ type UpdateMeDataInput struct {
 	Email    *string `json:"email"`
 }
 
+type UpdateMember struct {
+	ID     int      `json:"id"`
+	RoleID *int     `json:"roleId"`
+	Char   CharType `json:"char"`
+	Muted  bool     `json:"muted"`
+	Frozen bool     `json:"frozen"`
+}
+
+func (UpdateMember) IsEventResult() {}
+
+type UpdateRole struct {
+	ID    int      `json:"id"`
+	Name  string   `json:"name"`
+	Color HexColor `json:"color"`
+}
+
+func (UpdateRole) IsEventResult() {}
+
 type UpdateRoleInput struct {
 	Name  *string   `json:"name"`
 	Color *HexColor `json:"color"`
 }
+
+type UpdateRoom struct {
+	ID       int     `json:"id"`
+	Name     string  `json:"name"`
+	ParentID *int    `json:"parentId"`
+	Note     *string `json:"note"`
+}
+
+func (UpdateRoom) IsEventResult() {}
 
 type UpdateRoomAllowsInput struct {
 	Allows *AllowsInput `json:"allows"`
@@ -527,6 +622,15 @@ type UpdateRoomInput struct {
 	Note     *string `json:"note"`
 }
 
+type UpdateUnit struct {
+	ID     int      `json:"id"`
+	Domain string   `json:"domain"`
+	Name   string   `json:"name"`
+	Type   UnitType `json:"type"`
+}
+
+func (UpdateUnit) IsEventResult() {}
+
 type User struct {
 	Unit *Unit `json:"unit"`
 }
@@ -536,6 +640,8 @@ func (User) IsUserResult() {}
 type UserChoice struct {
 	Choice []*Case `json:"choice"`
 }
+
+func (UserChoice) IsMsgBody() {}
 
 type UserData struct {
 	Password string `json:"password"`
@@ -629,6 +735,104 @@ func (e *CharType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e CharType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type EventSubjectAction string
+
+const (
+	EventSubjectActionCreate EventSubjectAction = "CREATE"
+	EventSubjectActionUpdate EventSubjectAction = "UPDATE"
+	EventSubjectActionDelete EventSubjectAction = "DELETE"
+)
+
+var AllEventSubjectAction = []EventSubjectAction{
+	EventSubjectActionCreate,
+	EventSubjectActionUpdate,
+	EventSubjectActionDelete,
+}
+
+func (e EventSubjectAction) IsValid() bool {
+	switch e {
+	case EventSubjectActionCreate, EventSubjectActionUpdate, EventSubjectActionDelete:
+		return true
+	}
+	return false
+}
+
+func (e EventSubjectAction) String() string {
+	return string(e)
+}
+
+func (e *EventSubjectAction) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EventSubjectAction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EventSubjectAction", str)
+	}
+	return nil
+}
+
+func (e EventSubjectAction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type EventType string
+
+const (
+	EventTypeNewmessage    EventType = "NEWMESSAGE"
+	EventTypeUpdateunit    EventType = "UPDATEUNIT"
+	EventTypeUpdatemember  EventType = "UPDATEMEMBER"
+	EventTypeUpdaterole    EventType = "UPDATEROLE"
+	EventTypeUpdateroom    EventType = "UPDATEROOM"
+	EventTypeUpdateform    EventType = "UPDATEFORM"
+	EventTypeUpdateallows  EventType = "UPDATEALLOWS"
+	EventTypeUpdateinvites EventType = "UPDATEINVITES"
+	EventTypeUpdatechat    EventType = "UPDATECHAT"
+)
+
+var AllEventType = []EventType{
+	EventTypeNewmessage,
+	EventTypeUpdateunit,
+	EventTypeUpdatemember,
+	EventTypeUpdaterole,
+	EventTypeUpdateroom,
+	EventTypeUpdateform,
+	EventTypeUpdateallows,
+	EventTypeUpdateinvites,
+	EventTypeUpdatechat,
+}
+
+func (e EventType) IsValid() bool {
+	switch e {
+	case EventTypeNewmessage, EventTypeUpdateunit, EventTypeUpdatemember, EventTypeUpdaterole, EventTypeUpdateroom, EventTypeUpdateform, EventTypeUpdateallows, EventTypeUpdateinvites, EventTypeUpdatechat:
+		return true
+	}
+	return false
+}
+
+func (e EventType) String() string {
+	return string(e)
+}
+
+func (e *EventType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EventType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EventType", str)
+	}
+	return nil
+}
+
+func (e EventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

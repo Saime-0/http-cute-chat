@@ -389,18 +389,23 @@ func (r *RoomsRepo) HasParent(roomId int) (has bool) {
 func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *models.AllowHolder) (yes bool) {
 	tl := tlog.Start("RoomsRepo > Allowed [rid:" + strconv.Itoa(roomId) + ",uid:" + strconv.Itoa(holder.UserID) + "]")
 	defer tl.Fine()
-	err := r.db.QueryRow(
-		`SELECT EXISTS(
-	    SELECT 1 
-	    FROM allows
-	    WHERE 
-	    	action_type = $1 AND 
-			room_id = $2 AND
-			(
-				group_type = 'ROLES' AND value = $3 OR
-				group_type = 'CHARS' AND value = $4 OR
-				group_type = 'USERS' AND value = $5 
-			)
+	err := r.db.QueryRow(`
+		SELECT EXISTS(
+		    SELECT 1 
+		    FROM chats
+		    JOIN rooms r on chats.id = r.chat_id
+		    LEFT JOIN allows a on r.id = a.room_id
+		    WHERE r.id = $2 
+		    	AND (
+			        action_type IS NULL 
+			        OR action_type = $1 
+			            AND (
+							group_type = 'ROLES' AND value = $3 
+							OR group_type = 'CHARS' AND value = $4  
+							OR group_type = 'USERS' AND value = $5::VARCHAR
+						)
+			        OR owner_id = $5::BIGINT 
+		    	)
 	    )`,
 		action,
 		roomId,

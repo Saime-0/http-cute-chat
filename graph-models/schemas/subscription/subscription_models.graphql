@@ -1,0 +1,82 @@
+enum EventType {
+	NEWMESSAGE
+	UPDATEUNIT
+	UPDATEMEMBER
+	UPDATEROLE
+	UPDATEROOM
+	UPDATEFORM
+	UPDATEALLOWS
+	UPDATEINVITES
+	UPDATECHAT
+}
+
+type SubscriptionBody {
+	rev: Int!
+	event: EventType!
+#	action: EventSubjectAction
+	body: EventResult!
+}
+
+type NewMessage { # todo rename
+	id: ID!
+	roomId: ID!
+	replyToId: ID
+	authorId: ID
+	body: String!
+	type: MessageType!
+	createdAt: Int64!
+}
+
+type UpdateUnit {
+	id: ID!
+	domain: String!
+	name: String!
+	type: UnitType!
+}
+
+type UpdateMember {
+	id: ID!
+#	chatId: Chat!
+#	userId: User!
+	roleId: ID
+	char: CharType!
+#	joinedAt: Int64!
+	muted: Boolean!
+	frozen: Boolean!
+}
+
+type UpdateRole {
+	id: ID!
+	name: String!
+	color: HexColor!
+}
+
+type UpdateRoom {
+	id: ID!
+#	chatId: ID!
+	name: String!
+	parentId: ID
+	note: String
+}
+
+type UpdateForm {
+	roomId: ID!
+	form: Form
+}
+
+type UpdateAllows {
+	roomId: ID!
+	allowRead: PermissionHoldersSub
+	allowWrite: PermissionHoldersSub
+}
+
+type UpdateInvites {
+	chatId: ID!
+	invites: Invites
+}
+
+type UpdateChat {
+	id: ID!
+	private: Boolean!
+	countMembers: CountMembersResult! @goField(forceResolver: true)
+}
