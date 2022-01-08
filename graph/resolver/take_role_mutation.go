@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -24,7 +23,7 @@ func (r *mutationResolver) TakeRole(ctx context.Context, memberID int) (model.Mu
 	if node.ValidID(memberID) ||
 		node.GetChatIDByMember(memberID, &chatID) ||
 		node.GetMemberBy(clientID, chatID, &clientMemberID) ||
-		node.CanTakeRole(clientMemberID, memberID, chatID) {
+		node.CanTakeRole(clientMemberID, memberID) {
 
 		return node.Err, nil
 	}

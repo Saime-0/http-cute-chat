@@ -44,10 +44,6 @@ func PrettyPrint(v interface{}) (err error) {
 func IntSQLArray(arr []int) string {
 	sqlArr := ""
 	for _, v := range arr {
-		//switch v.(type) {
-		//case string, rune:
-		//	v = spew.Sprint("'", v, "'")
-		//}
 		sqlArr += fmt.Sprint(",", v)
 	}
 	return "(" + TrimFirstRune(sqlArr) + ")"

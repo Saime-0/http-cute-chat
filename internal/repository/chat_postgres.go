@@ -1172,12 +1172,15 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 }
 
 // DemoMembers selectType: 0 is filter by users, 1 - by members and chatid is not count
-func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) []*models.DemoMember { // todo selectType to rules.SelectType
+func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.DemoMember { // todo selectType to rules.SelectType
 	var (
 		sqlArr      = kit.IntSQLArray(ids)
-		demoMembers []*models.DemoMember
+		demoMembers [2]*models.DemoMember
 	)
-	fmt.Println()
+	if selectType != 0 && selectType != 1 {
+		selectType = 1
+	}
+
 	//language=PostgreSQL
 	rows, err := r.db.Query(`
 		SELECT user_id, chat_members.id, owner_id = user_id as is_owner, char, muted
@@ -1194,15 +1197,29 @@ func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) []*models.De
 		return demoMembers
 	}
 	defer rows.Close()
+	sort := func() [2]*models.DemoMember {
+		if demoMembers[1] == nil {
+			return demoMembers
+		}
+		for i, member := range demoMembers {
+			if selectType == 0 && member.UserID == ids[0] ||
+				selectType == 1 && member.MemberID == ids[0] {
+				demoMembers[0], demoMembers[1] = demoMembers[i], demoMembers[1-i]
+			}
+		}
+		return demoMembers
+	}
+	i := 0
 	for rows.Next() {
 		m := &models.DemoMember{}
 		if err = rows.Scan(&m.UserID, &m.MemberID, &m.IsOwner, &m.Char, &m.Muted); err != nil {
 			println("rows.scan:", err.Error()) // debug
-			return demoMembers
+			return sort()
 		}
-		demoMembers = append(demoMembers, m)
+		demoMembers[i] = m
+		i += 1
 	}
-	return demoMembers
+	return sort()
 }
 
 func (r *ChatsRepo) UpdateRole(roleId int, inp *model.UpdateRoleInput) (*model.UpdateRole, error) {

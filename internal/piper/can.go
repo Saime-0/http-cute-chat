@@ -3,8 +3,6 @@ package piper
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
 const all = false
@@ -20,104 +18,76 @@ type Can struct {
 	pl *Pipeline
 }
 
-func (n *Node) owner(userId, chatId int) (such bool) {
-	if !n.repos.Chats.UserIsChatOwner(userId, chatId) {
-		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является владельцем чата")
-		return
-	}
-	return true
-}
-
-func (n *Node) admin(userId, chatId int) (such bool) {
-	if !n.repos.Chats.UserIs(userId, chatId, rules.Admin) {
-		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является администратором чата")
-		return
-	}
-	return true
-}
-
-func (n *Node) moder(userId, chatId int) (such bool) {
-	if !n.repos.Chats.UserIs(userId, chatId, rules.Moder) {
-		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является модером чата")
-		return
-	}
-	return true
-}
-
 func (n *Node) CanCreateInvite(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 
 func (n *Node) CanBan(userID, targetID, chatID int) (fail bool) {
 	demoMembers := n.repos.Chats.DemoMembers(chatID, 0, userID, targetID)
-	if demoMembers[0] == nil || demoMembers[1] == nil {
-		n.Err = resp.Error(resp.ErrBadRequest, "не удалось найти мемберса")
-		return true
-	}
-	if !(demoMembers[0].IsOwner ||
-		*demoMembers[0].Char == model.CharTypeAdmin) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
-		return true
-	}
-	if getCharLevel(demoMembers[0].Char) < getCharLevel(demoMembers[1].Char) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
-		return true
-	}
-	return false
+	return n.diffLevelCheck(
+		false,
+		false,
+		model.CharTypeAdmin,
+		demoMembers[0],
+		demoMembers[1],
+	)
 }
 
 func (n *Node) CanCreateRole(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 
 func (n *Node) CanCreateRoom(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 
 func (n *Node) CanCreateAllow(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 
 func (n *Node) CanGiveRole(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 func (n *Node) CanGiveChar(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 func (n *Node) CanMuteMember(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
-		n.moder(uid, cid),
+	return n.levelCheck(
+		moder,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 func (n *Node) CanFreezeMember(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 
 func (n *Node) CanLeaveFromChat(uid, cid int) (fail bool) {
-	return !n.owner(uid, cid)
+	if n.repos.Chats.UserIsChatOwner(uid, cid) {
+		n.Err = resp.Error(resp.ErrBadRequest, "невозможно выйти из чата")
+		return
+	}
+	return true
 }
 
 func (n *Node) CanObserveInvites(uid, cid int) (fail bool) {
@@ -133,9 +103,9 @@ func (n *Node) CanObserveRoles(uid, cid int) (fail bool) {
 }
 
 func (n *Node) CanObserveBanlist(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 
@@ -152,47 +122,32 @@ func (n *Node) CanObserveRooms(uid, cid int) (fail bool) {
 }
 
 func (n *Node) CanUpdateRoom(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 func (n *Node) CanUpdateRole(uid, cid int) (fail bool) {
-	return !kit.LeastOne(
-		n.owner(uid, cid),
-		n.admin(uid, cid),
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
 
 func (n *Node) CanUpdateChat(uid, cid int) (fail bool) {
-	return !n.owner(uid, cid)
+	return n.levelCheck(
+		owner,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
+	)
 }
 
-func (n *Node) CanTakeRole(MemberID, targetMemberID, chatID int) (fail bool) {
+func (n *Node) CanTakeRole(MemberID, targetMemberID int) (fail bool) {
 	demoMembers := n.repos.Chats.DemoMembers(0, 1, MemberID, targetMemberID)
-	if !demoMembers[0].IsOwner {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
-		return true
-	}
-	if demoMembers[0] == nil ||
-		!(*demoMembers[0].Char == model.CharTypeAdmin ||
-			*demoMembers[0].Char == model.CharTypeModer) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
-		return true
-	}
-	if getCharLevel(demoMembers[0].Char) < getCharLevel(demoMembers[1].Char) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
-		return true
-	}
-	return false
-}
-
-func getCharLevel(char *model.CharType) int {
-	level := 0
-	for i, _char := range rules.CharLevels {
-		if *char == _char {
-			level = i + 1
-		}
-	}
-	return level
+	return n.diffLevelCheck(
+		false,
+		true,
+		model.CharTypeAdmin,
+		demoMembers[0],
+		demoMembers[1],
+	)
 }

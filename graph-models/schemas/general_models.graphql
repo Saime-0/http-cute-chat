@@ -22,7 +22,6 @@ enum FetchType {
 enum CharType {
     ADMIN
     MODER
-    NONE
 }
 enum ActionType {
     READ
@@ -137,7 +136,7 @@ type Member {
     chat: Chat! @goField(forceResolver: true) # зач тут чат? нужен
     user: User! # @goField(forceResolver: true)
     role: RoleResult @goField(forceResolver: true)
-    char: CharType!
+    char: CharType
     joinedAt: Int64!
     muted: Boolean!
     frozen: Boolean!
@@ -203,11 +202,7 @@ type Allows {
     room: Room! # 04.12 1:55 todo
     allows: [Allow]!
 }
-type PermissionHolders {
-    roles: Roles # @goField(forceResolver: true)
-    chars: Chars # @goField(forceResolver: true)
-    members: Members # @goField(forceResolver: true)
-}
+
 type PermissionHoldersSub {
     roles: [ID!]
     chars: Chars
