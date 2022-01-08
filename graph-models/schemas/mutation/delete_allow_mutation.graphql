@@ -1,0 +1,3 @@
+extend type Mutation {
+	deleteAllow(allowId: ID!): MutationResult! @goField(forceResolver: true) @isAuth
+}

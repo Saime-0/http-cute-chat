@@ -235,6 +235,7 @@ type UserChoice {
 # end
 
 type Allow {
+    id: ID!
     action: AllowAction!
     group: AllowGroup!
     value: String!

@@ -67,9 +67,6 @@ input FormFieldInput {
     length: Int
     items: [String!]
 }
-input UpdateRoomAllowsInput {
-    allows: AllowsInput
-}
 
 input FindMembers {
     chatId: ID!
@@ -135,6 +132,7 @@ input CreateRoomInput {
 input AllowsInput {
     allows: [AllowInput!]!
 }
+
 input AllowInput {
     action: AllowAction!
     group: AllowGroup!

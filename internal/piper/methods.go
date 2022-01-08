@@ -374,6 +374,15 @@ func (n *Node) GetChatIDByRoom(roomId int, chatId *int) (fail bool) {
 	*chatId = _chatId
 	return
 }
+func (n *Node) GetChatIDByAllow(allowID int, chatId *int) (fail bool) {
+	_chatId, err := n.repos.Rooms.GetChatIDByAllowID(allowID)
+	if err != nil {
+		n.Err = resp.Error(resp.ErrInternalServerError, "такого разрешения не существует")
+		return true
+	}
+	*chatId = _chatId
+	return
+}
 
 func (n *Node) MessageAvailable(msgId, roomId int) (fail bool) {
 	if !n.repos.Messages.MessageAvailableOnRoom(msgId, roomId) {
@@ -561,5 +570,53 @@ func (n *Node) GetDefMember(memberId int, defMember *models.DefMember) (fail boo
 		return true
 	}
 	*defMember = _defMember
+	return
+}
+
+func (n *Node) AllowNotExists(roomID int, inp *model.AllowInput) (fail bool) {
+	if n.repos.Rooms.AllowExists(roomID, inp) {
+		n.Err = resp.Error(resp.ErrBadRequest, "такое разрешение уже существует")
+		return true
+	}
+	return
+}
+func (n *Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
+	val := inp.Value
+	intVal, err := strconv.Atoi(val)
+	switch inp.Group {
+	case model.AllowGroupChar:
+		if model.CharTypeModer.String() != val &&
+			model.CharTypeAdmin.String() != val {
+			n.Err = resp.Error(resp.ErrBadRequest, "невалидное значение")
+			return true
+		}
+
+	case model.AllowGroupMember:
+		if err != nil {
+			n.Err = resp.Error(resp.ErrBadRequest, "невалидное значение")
+			return true
+		}
+		_chatID, err := n.repos.Chats.ChatIDByMemberID(intVal)
+		if err != nil || _chatID != chatID {
+			println("ValidAllowInput:", err.Error())
+			n.Err = resp.Error(resp.ErrBadRequest, "не удалось определить участника чата")
+			return true
+		}
+
+	case model.AllowGroupRole:
+		if err != nil {
+			n.Err = resp.Error(resp.ErrBadRequest, "невалидное значение")
+			return true
+		}
+		_chatID, err := n.repos.Chats.ChatIDByRoleID(intVal)
+		if err != nil || _chatID != chatID {
+			println("ValidAllowInput:", err.Error())
+			n.Err = resp.Error(resp.ErrBadRequest, "не удалось определить роль")
+			return true
+		}
+
+	default:
+		println("Not implemented")
+	}
 	return
 }

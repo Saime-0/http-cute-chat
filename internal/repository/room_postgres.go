@@ -33,11 +33,11 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 	return
 }
 
-func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.NewRoom, error) {
+func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, error) {
 	var (
 		roomId int
 		err    error
-		room   = &model.NewRoom{}
+		room   = &model.CreateRoom{}
 		format *string
 	)
 
@@ -79,7 +79,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.NewRoom, erro
 		}
 		allows = kit.TrimFirstRune(allows)
 
-		// language=PostgreSQL
+		//language=PostgreSQL
 		err = r.db.QueryRow(`
 			INSERT INTO allows (room_id, action_type, group_type, value)
 			VALUES` + allows,
@@ -142,6 +142,84 @@ func (r *RoomsRepo) UpdateRoom(roomId int, inp *model.UpdateRoomInput) (*model.U
 	return room, err
 }
 
+func (r *RoomsRepo) DeleteRoom(roomID int) (*model.DeleteRoom, error) {
+	room := &model.DeleteRoom{}
+	err := r.db.QueryRow(`
+		DELETE FROM rooms
+		WHERE id = $1
+		RETURNING id`,
+		roomID,
+	).Scan(&room.ID)
+	if err != nil {
+		println("DeleteRoom:", err.Error()) // debug
+	}
+
+	return room, err
+}
+
+func (r *RoomsRepo) DeleteAllow(allowID int) (*model.DeleteAllow, error) {
+	allow := &model.DeleteAllow{}
+	err := r.db.QueryRow(`
+		DELETE FROM allows
+		WHERE id = $1
+		RETURNING id`,
+		allowID,
+	).Scan(&allow.AllowID)
+	if err != nil {
+		println("DeleteAllow:", err.Error()) // debug
+	}
+
+	return allow, err
+}
+func (r *RoomsRepo) AllowExists(roomID int, inp *model.AllowInput) (exists bool) {
+	err := r.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1
+			FROM allows
+			WHERE room_id = $1 
+			  AND action_type = $2 
+			  AND group_type = $3 
+			  AND value = $4
+		)
+		`,
+		roomID,
+		inp.Action,
+		inp.Group,
+		inp.Value,
+	).Scan(&exists)
+	if err != nil {
+		println("AllowExists:", err.Error()) // debug
+	}
+
+	return
+}
+
+func (r *RoomsRepo) CreateAllow(roomID int, inp *model.AllowInput) (*model.CreateAllow, error) {
+	allow := &model.CreateAllow{
+		Allow: &model.Allow{},
+	}
+	err := r.db.QueryRow(`
+		INSERT INTO allows (room_id, action_type, group_type, value)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, room_id, action_type, group_type, value`,
+		roomID,
+		inp.Action,
+		inp.Group,
+		inp.Value,
+	).Scan(
+		&allow.RoomID,
+		&allow.Allow.ID,
+		&allow.Allow.Action,
+		&allow.Allow.Group,
+		&allow.Allow.Value,
+	)
+	if err != nil {
+		println("CreateAllow:", err.Error()) // debug
+	}
+
+	return allow, err
+}
+
 func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {
 	err = r.db.QueryRow(
 		`SELECT chat_id
@@ -151,7 +229,19 @@ func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {
 	).Scan(&chatId)
 	if err != nil {
 		println("GetChatIDByRoomID:", err.Error()) // debug
-		return
+	}
+	return
+}
+func (r *RoomsRepo) GetChatIDByAllowID(allowID int) (chatId int, err error) {
+	err = r.db.QueryRow(`
+		SELECT chat_id
+		FROM rooms r
+		JOIN allows a on r.id = a.room_id
+		WHERE a.id = $1`,
+		allowID,
+	).Scan(&chatId)
+	if err != nil {
+		println("GetChatIDByAllowID:", err.Error()) // debug
 	}
 	return
 }
@@ -395,30 +485,4 @@ func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) *model
 	}
 
 	return rooms
-}
-
-func (r *RoomsRepo) GetUpdateAllows(roomID int) (*model.UpdateAllows, error) {
-	allows := &model.UpdateAllows{
-		RoomID: roomID,
-		Allows: []*model.Allow{},
-	}
-	rows, err := r.db.Query(`
-		SELECT action_type, group_type, value
-		FROM allows
-		WHERE room_id = $1`,
-		roomID,
-	)
-	if err != nil {
-		println("GetUpdateAllows:", err.Error()) // debug
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		allow := &model.Allow{}
-		if err = rows.Scan(&allow.Action, &allow.Group, &allow.Value); err != nil {
-			panic(err)
-		}
-		allows.Allows = append(allows.Allows, allow)
-	}
-	return allows, nil
 }

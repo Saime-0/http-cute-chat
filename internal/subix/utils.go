@@ -40,21 +40,29 @@ func getEventType(body model.EventResult) model.EventType {
 	case *model.NewMessage:
 		return model.EventTypeNewmessage
 	case *model.UpdateUser:
-		return model.EventTypeUpdateunit
+		return model.EventTypeUpdateuser
 	case *model.UpdateMember:
 		return model.EventTypeUpdatemember
 	case *model.UpdateRole:
 		return model.EventTypeUpdaterole
-	case *model.UpdateRoom:
-		return model.EventTypeUpdateroom
 	case *model.UpdateForm:
 		return model.EventTypeUpdateform
-	case *model.UpdateAllows:
-		return model.EventTypeUpdateallows
+
+	case *model.CreateAllow:
+		return model.EventTypeCreateallow
+	case *model.DeleteAllow:
+		return model.EventTypeDeleteallow
+
 	case *model.UpdateChat:
 		return model.EventTypeUpdatechat
-	case *model.NewRoom:
-		return model.EventTypeNewroom
+
+	case *model.CreateRoom:
+		return model.EventTypeCreateroom
+	case *model.UpdateRoom:
+		return model.EventTypeUpdateroom
+	case *model.DeleteRoom:
+		return model.EventTypeDeleteroom
+
 	case *model.CreateInvite:
 		return model.EventTypeCreateinvite
 	case *model.DeleteInvite:

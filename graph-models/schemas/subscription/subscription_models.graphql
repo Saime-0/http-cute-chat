@@ -1,17 +1,24 @@
 enum EventType {
 	NEWMESSAGE
-	UPDATEUNIT
-	UPDATEMEMBER
-	UPDATEROLE
-	UPDATEROOM
-	UPDATEFORM
-	UPDATEALLOWS
-#	UPDATEINVITES
-	UPDATECHAT
-	NEWROOM
 
-	DELETEINVITE
+	UPDATEUSER
+	UPDATEMEMBER
+
+	UPDATEROLE
+
+	UPDATEFORM
+
+	CREATEALLOW
+	DELETEALLOW
+
+	UPDATECHAT
+
+	CREATEROOM
+	UPDATEROOM
+	DELETEROOM
+
 	CREATEINVITE
+	DELETEINVITE
 }
 
 type SubscriptionBody {
@@ -62,7 +69,7 @@ type UpdateRoom {
 	note: String
 }
 
-type NewRoom {
+type CreateRoom {
 	id: ID!
 	chatId: ID!
 	name: String!
@@ -70,19 +77,21 @@ type NewRoom {
 	note: String
 }
 
+type DeleteRoom {
+	id: ID!
+}
+
 type UpdateForm {
 	roomId: ID!
 	form: Form
 }
 
-type UpdateAllows {
+type CreateAllow {
 	roomId: ID!
-	allows: [Allow]!
+	allow: Allow!
 }
-
-type UpdateInvites {
-	chatId: ID!
-	invites: Invites
+type DeleteAllow {
+	allowId: ID
 }
 
 type UpdateChat {

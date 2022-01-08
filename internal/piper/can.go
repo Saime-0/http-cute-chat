@@ -83,6 +83,13 @@ func (n *Node) CanCreateRoom(uid, cid int) (fail bool) {
 	)
 }
 
+func (n *Node) CanCreateAllow(uid, cid int) (fail bool) {
+	return !kit.LeastOne(
+		n.owner(uid, cid),
+		n.admin(uid, cid),
+	)
+}
+
 func (n *Node) CanGiveRole(uid, cid int) (fail bool) {
 	return !kit.LeastOne(
 		n.owner(uid, cid),

@@ -21,7 +21,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 		node.IsMember(clientID, input.ChatID) ||
 		node.CanCreateRoom(clientID, input.ChatID) ||
 		node.RoomsLimit(input.ChatID) ||
-		node.IsNotChild(*input.Parent) ||
+		input.Parent != nil && node.IsNotChild(*input.Parent) ||
 		input.Parent != nil && node.RoomExists(*input.Parent) {
 		return node.Err, nil
 	}
