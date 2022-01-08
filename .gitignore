@@ -1,0 +1,5 @@
+/.idea
+/.repl
+server.exe
+/graph/generated
+/graph/model/models_gen.go
