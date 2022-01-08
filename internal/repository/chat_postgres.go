@@ -153,7 +153,7 @@ func (r *ChatsRepo) Members(chatId int) (*model.Members, error) {
 	rows, err := r.db.Query(
 		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
 		FROM units INNER JOIN chat_members AS member
-		ON units.id = member.id
+		ON units.id = member.user_id
 		WHERE member.chat_id = $1`,
 		chatId,
 	)
@@ -850,14 +850,16 @@ func (r *ChatsRepo) MemberBy(userId, chatId int) (*model.Member, error) {
 			Unit: &model.Unit{ID: chatId},
 		},
 	}
-	err := r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
-		FROM units INNER JOIN chat_members AS member
-		ON units.id = member.id
+	err := r.db.QueryRow(`
+		SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
+		FROM units 
+		JOIN chat_members AS member
+		ON units.id = member.user_id
 		WHERE member.user_id = $1 AND member.chat_id = $2`,
 		userId,
 		chatId,
 	).Scan(
+		&member.ID,
 		&member.User.Unit.ID,
 		&member.User.Unit.Domain,
 		&member.User.Unit.Name,
@@ -885,7 +887,7 @@ func (r *ChatsRepo) Member(memberId int) (*model.Member, error) {
 	err := r.db.QueryRow(
 		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
 		FROM units INNER JOIN chat_members AS member
-		ON units.id = member.id
+		ON units.id = member.user_id
 		WHERE member.id = $1`,
 		memberId,
 	).Scan(
