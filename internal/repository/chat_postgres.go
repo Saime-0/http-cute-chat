@@ -440,48 +440,68 @@ func (r *ChatsRepo) FindInviteLinkByCode(code string) (link models.Invite, err e
 
 	return
 }
-func (r *ChatsRepo) DeleteInvite(code string) (err error) {
-	err = r.db.QueryRow(
-		`DELETE FROM invites
-		WHERE code = $1`,
+func (r *ChatsRepo) DeleteInvite(code string) (*model.DeleteInvite, error) {
+	invite := &model.DeleteInvite{
+		Reason: model.DeleteInviteReasonByuser,
+	}
+	err := r.db.QueryRow(`
+		DELETE FROM invites
+		WHERE code = $1
+		RETURNING code`,
 		code,
-	).Err()
+	).Scan(&invite.Code)
 	if err != nil {
 		println("DeleteInvite:", err.Error()) // debug
 	}
-	return
+	return invite, err
 }
 
-func (r *ChatsRepo) CreateInvite(linkModel *model.CreateInviteInput) error {
+func (r *ChatsRepo) CreateInvite(linkModel *model.CreateInviteInput) (*model.CreateInvite, error) {
+	invite := &model.CreateInvite{}
 	err := r.db.QueryRow(
 		`INSERT INTO invites (chat_id, aliens, expires_at) 
-		VALUES ($1, $2, unix_utc_now($3:BIGINT))
+		VALUES ($1, $2, unix_utc_now($3::BIGINT))
 		RETURNING code, aliens, expires_at`,
 		linkModel.ChatID,
 		linkModel.Aliens,
 		linkModel.Duration,
-	).Err()
+	).Scan(
+		&invite.Code,
+		&invite.Aliens,
+		&invite.ExpiresAt,
+	)
 	if err != nil {
 		println("CreateInvite:", err.Error()) // debug
 	}
-	return err
+	return invite, err
 }
 
 // InviteIsRelevant
 //  alt: InviteIsExists
 func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
+	err := r.db.QueryRow(`
+		SELECT EXISTS(
 			SELECT 1
 			FROM invites
-			WHERE code = $1 AND aliens > 0 AND expires_at > $2
-			)`,
+			WHERE code = $1 
+			  	AND (
+			  	    aliens IS NULL 
+			    	OR aliens > 0
+				) 
+				AND (
+					expires_at IS NULL 
+					OR expires_at > $2
+				)
+		)`,
 		code,
 		time.Now().UTC().Unix(),
 	).Scan(&relevant)
+	if err != nil {
+		println("InviteIsRelevant:", err.Error()) // debug
+	}
 	if !relevant {
-		r.db.Exec(
-			`DELETE FROM invites
+		r.db.Exec(`
+			DELETE FROM invites
 			WHERE code = $1`,
 			code,
 		)
@@ -491,8 +511,8 @@ func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool) {
 }
 
 func (r *ChatsRepo) AddUserByCode(code string, userId int) (err error) {
-	err = r.db.QueryRow(
-		`WITH l AS (
+	err = r.db.QueryRow(`
+		WITH l AS (
 			UPDATE invites
 			SET aliens = aliens - 1
 			WHERE code = $1
@@ -729,11 +749,11 @@ func (r *ChatsRepo) TakeRole(memberId int) (*model.UpdateMember, error) {
 }
 
 func (r *ChatsRepo) HasInvite(chatId int, code string) (has bool) {
-	err := r.db.QueryRow(
-		`SELECT EXISTS(
-		SELECT 1 
-		FROM invites
-		WHERE chat_id = $1 AND code = $2
+	err := r.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1 
+			FROM invites
+			WHERE chat_id = $1 AND code = $2
 		)`,
 		chatId,
 		code,

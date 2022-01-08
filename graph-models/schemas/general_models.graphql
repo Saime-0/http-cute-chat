@@ -179,7 +179,7 @@ type Messages {
 type Invite {
     code: String!
     aliens: Int
-    expires_at: Int64
+    expiresAt: Int64
 }
 
 type Invites {

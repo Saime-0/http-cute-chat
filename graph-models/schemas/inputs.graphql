@@ -5,7 +5,7 @@ input CreateChatInput {
 }
 input CreateInviteInput {
     chatId: ID!
-    code: String!
+#    code: String!
     aliens: Int
     duration: Int64
 }

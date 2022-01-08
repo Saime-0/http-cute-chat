@@ -23,7 +23,7 @@ func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model
 	if node.InviteIsRelevant(code) ||
 		node.GetChatByInvite(code, &chatID) ||
 		node.IsNotMember(clientID, chatID) ||
-		// todo UserIsNotBanned
+		node.IsNotBanned(clientID, chatID) ||
 		node.MembersLimit(chatID) ||
 		node.ChatsLimit(clientID) {
 		return node.Err, nil

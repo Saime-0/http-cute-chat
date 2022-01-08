@@ -192,11 +192,11 @@ func (n *Node) InvitesLimit(chatId int) (fail bool) {
 }
 
 func (n *Node) ValidInviteInput(inp model.CreateInviteInput) (fail bool) {
-	if *inp.Duration != 0 && !validator.ValidateLifetime(*inp.Duration) {
+	if inp.Duration != nil && !validator.ValidateLifetime(*inp.Duration) {
 		n.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение времени жизни ссылки")
 		return true
 	}
-	if *inp.Aliens != 0 && !validator.ValidateAliens(*inp.Aliens) {
+	if inp.Aliens != nil && !validator.ValidateAliens(*inp.Aliens) {
 		n.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение количества ипользований ссылки")
 		return true
 	}

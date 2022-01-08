@@ -141,11 +141,13 @@ union EventResult =
     | UpdateRoom # всем участникам +
     | UpdateForm # всем писателям (с учетом того что клиент сможет без формы(не зная типов полей) правильно распарсить сообщение)
     | UpdateAllows #  всем участникам
-    | UpdateInvites # всем кто может их видеть
+#    | UpdateInvites # всем кто может их видеть
     | UpdateChat # всем участникам +
 
     | NewRoom # всем участникам +
 
+    | CreateInvite
+    | DeleteInvite
 
 
 

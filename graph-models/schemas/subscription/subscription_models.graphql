@@ -6,9 +6,12 @@ enum EventType {
 	UPDATEROOM
 	UPDATEFORM
 	UPDATEALLOWS
-	UPDATEINVITES
+#	UPDATEINVITES
 	UPDATECHAT
 	NEWROOM
+
+	DELETEINVITE
+	CREATEINVITE
 }
 
 type SubscriptionBody {
@@ -88,4 +91,18 @@ type UpdateChat {
 	name: String!
 	private: Boolean!
 #	countMembers: Int!
+}
+
+type CreateInvite {
+	code: String!
+	aliens: Int
+	expiresAt: Int64
+}
+enum DeleteInviteReason {
+	BYUSER
+	EXPIRED # todo, temporarily not supported
+}
+type DeleteInvite {
+	reason: DeleteInviteReason!
+	code: String!
 }

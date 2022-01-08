@@ -51,12 +51,14 @@ func getEventType(body model.EventResult) model.EventType {
 		return model.EventTypeUpdateform
 	case *model.UpdateAllows:
 		return model.EventTypeUpdateallows
-	case *model.UpdateInvites:
-		return model.EventTypeUpdateinvites
 	case *model.UpdateChat:
 		return model.EventTypeUpdatechat
 	case *model.NewRoom:
 		return model.EventTypeNewroom
+	case *model.CreateInvite:
+		return model.EventTypeCreateinvite
+	case *model.DeleteInvite:
+		return model.EventTypeDeleteinvite
 
 	}
 	panic("no matches found")

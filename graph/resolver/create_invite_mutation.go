@@ -25,9 +25,14 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.CreateInvite(&input)
+	eventReadyInvite, err := r.Services.Repos.Chats.CreateInvite(&input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать инвайт"), nil
 	}
+	r.Services.Subix.NotifyChatMembers(
+		[]int{input.ChatID},
+		eventReadyInvite,
+	)
+
 	return resp.Success("инвайт создан"), nil
 }
