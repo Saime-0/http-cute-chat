@@ -42,24 +42,15 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		Body:    input.Body,
 		Type:    model.MessageTypeUser,
 	}
-	msgID, err := r.Services.Repos.Messages.CreateMessageInRoom(message)
+	eventReadyMessage, err := r.Services.Repos.Messages.CreateMessageInRoom(message)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}
 
 	//r.Services.Events.NewMessage(roomID, &model.Message{ID:      msgID, ReplyTo: _replyTo, Author:  &model.Member{ID: memberID}, Type:    message.Type, Body:    input.Body})
-	r.Services.Subix.Spam(
-		roomID,
-		r.Services.Repos.Subscribers.RoomReaders,
-		&model.NewMessage{
-			ID:        msgID,
-			RoomID:    roomID,
-			ReplyToID: message.ReplyTo,
-			AuthorID:  &memberID,
-			Body:      input.Body,
-			Type:      message.Type,
-			CreatedAt: 0,
-		},
+	r.Services.Subix.NotifyRoomReaders(
+		[]int{roomID},
+		eventReadyMessage,
 	)
 
 	return resp.Success("сообщение успешно создано"), nil

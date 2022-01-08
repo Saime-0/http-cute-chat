@@ -54,7 +54,7 @@ func (n *Node) CanCreateInvite(uid, cid int) (fail bool) {
 func (n *Node) CanBan(userID, targetID, chatID int) (fail bool) {
 	demoMembers := n.repos.Chats.DemoMembers(chatID, 0, userID, targetID)
 	if demoMembers[0] == nil || demoMembers[1] == nil {
-		n.Err = resp.Error(resp.ErrBadRequest, "не удалось найти мембрса")
+		n.Err = resp.Error(resp.ErrBadRequest, "не удалось найти мемберса")
 		return true
 	}
 	if !(demoMembers[0].IsOwner ||
@@ -84,6 +84,25 @@ func (n *Node) CanCreateRoom(uid, cid int) (fail bool) {
 }
 
 func (n *Node) CanGiveRole(uid, cid int) (fail bool) {
+	return !kit.LeastOne(
+		n.owner(uid, cid),
+		n.admin(uid, cid),
+	)
+}
+func (n *Node) CanGiveChar(uid, cid int) (fail bool) {
+	return !kit.LeastOne(
+		n.owner(uid, cid),
+		n.admin(uid, cid),
+	)
+}
+func (n *Node) CanMuteMember(uid, cid int) (fail bool) {
+	return !kit.LeastOne(
+		n.owner(uid, cid),
+		n.admin(uid, cid),
+		n.moder(uid, cid),
+	)
+}
+func (n *Node) CanFreezeMember(uid, cid int) (fail bool) {
 	return !kit.LeastOne(
 		n.owner(uid, cid),
 		n.admin(uid, cid),

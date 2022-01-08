@@ -42,15 +42,19 @@ enum EventSubjectAction {
     UPDATE
     DELETE
 }
+enum AllowAction {
+    READ
+    WRITE
+}
+enum AllowGroup {
+    CHAR
+    ROLE
+    MEMBER
+}
 type Chars {
     chars: [CharType!]
 }
 
-# Union type be like
-input FindByDomainOrID {
-    id: Int
-    domain: String
-}
 
 type IntValue {
     value: Int
@@ -58,8 +62,9 @@ type IntValue {
 type StringValue {
     value: String
 }
-# end
-
+union UnionScalar =
+    | StringValue
+    | IntValue
 
 input Params {
     limit: Int
@@ -196,8 +201,7 @@ type Users {
 
 type Allows {
     room: Room! # 04.12 1:55 todo
-    allowRead: PermissionHolders
-    allowWrite: PermissionHolders
+    allows: [Allow]!
 }
 type PermissionHolders {
     roles: Roles # @goField(forceResolver: true)
@@ -227,4 +231,11 @@ type Case {
 }
 type UserChoice {
     choice: [Case!]
+}
+# end
+
+type Allow {
+    action: AllowAction!
+    group: AllowGroup!
+    value: String!
 }

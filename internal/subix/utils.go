@@ -39,7 +39,7 @@ func getEventType(body model.EventResult) model.EventType {
 
 	case *model.NewMessage:
 		return model.EventTypeNewmessage
-	case *model.UpdateUnit:
+	case *model.UpdateUser:
 		return model.EventTypeUpdateunit
 	case *model.UpdateMember:
 		return model.EventTypeUpdatemember
@@ -55,6 +55,9 @@ func getEventType(body model.EventResult) model.EventType {
 		return model.EventTypeUpdateinvites
 	case *model.UpdateChat:
 		return model.EventTypeUpdatechat
+	case *model.NewRoom:
+		return model.EventTypeNewroom
+
 	}
 	panic("no matches found")
 }

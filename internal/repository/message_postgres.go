@@ -79,54 +79,32 @@ func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 	return message, err
 }
 
-func (r *MessagesRepo) GetMessagesFromRoom(roomId int, createdAfter int, offset int) (messages models.MessagesList, err error) {
-	rows, err := r.db.Query(
-		`SELECT id, COALESCE(reply_to, 0), author, body, type
-		FROM messages
-		WHERE id IN (
-			SELECT message_id 
-			FROM room_msg_pool 
-			WHERE room_id = $1  AND time > $3
-			LIMIT 20
-			OFFSET $2
-			)`,
-		roomId,
-		offset,
-		createdAfter,
-	)
-	if err != nil {
-		return
-	}
-
-	defer rows.Close()
-	for rows.Next() {
-		m := models.MessageInfo{}
-		if err = rows.Scan(&m.ID, &m.ReplyTo, &m.Author, &m.Body, &m.Type); err != nil {
-			return
-		}
-		messages.Messages = append(messages.Messages, m)
-	}
-
-	return
-}
-
-func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (msgId int, err error) {
-	err = r.db.QueryRow(`
+func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (*model.NewMessage, error) {
+	message := &model.NewMessage{}
+	err := r.db.QueryRow(`
 		INSERT INTO messages (reply_to, author, room_id, body, type)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id
+		RETURNING id, room_id, reply_to, author, body, type, created_at
 		`,
 		inp.ReplyTo,
 		inp.Author,
 		inp.RoomID,
 		inp.Body,
 		inp.Type,
-	).Scan(&msgId)
+	).Scan(
+		&message.ID,
+		&message.RoomID,
+		&message.ReplyToID,
+		&message.AuthorID,
+		&message.Body,
+		&message.MsgType,
+		&message.CreatedAt,
+	)
 	if err != nil {
 		println("CreateMessageInRoom:", err.Error()) // debug
-		return
+		return message, err
 	}
-	return
+	return message, nil
 }
 
 func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMessagesInRoomByUnionInput, params *model.Params) *model.Messages {

@@ -23,10 +23,13 @@ func (r *mutationResolver) UpdateChat(ctx context.Context, chatID int, input mod
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.UpdateChat(chatID, &input)
+	eventReadyChat, err := r.Services.Repos.Chats.UpdateChat(chatID, &input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные чата"), nil
 	}
-
+	r.Services.Subix.NotifyChatMembers(
+		[]int{chatID},
+		eventReadyChat,
+	)
 	return resp.Success("данные чата обновлены"), nil
 }

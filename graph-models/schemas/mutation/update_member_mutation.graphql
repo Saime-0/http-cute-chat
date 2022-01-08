@@ -1,0 +1,5 @@
+extend type Mutation {
+	updateMember(memberId: ID!, input: UpdateMemberInput! @inputLeastOne): MutationResult! @goField(forceResolver: true) @isAuth
+}
+
+

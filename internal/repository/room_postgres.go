@@ -33,9 +33,11 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 	return
 }
 
-func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (err error) {
+func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.NewRoom, error) {
 	var (
 		roomId int
+		err    error
+		room   = &model.NewRoom{}
 		format *string
 	)
 
@@ -44,99 +46,51 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (err error) {
 		marshal, err = json.Marshal(*inp.Form)
 		if err != nil {
 			println("CreateRoom:", err.Error()) // debug
-			return
+			return room, err
 		}
 		*format = string(marshal)
 	}
 
-	err = r.db.QueryRow(
-		`INSERT INTO rooms (chat_id, parent_id, name, note, msg_format)
+	err = r.db.QueryRow(`
+		INSERT INTO rooms (chat_id, parent_id, name, note, msg_format)
 		VALUES ($1, $2, $3, $4, $5)
-		`,
+		RETURNING id, chat_id, name, parent_id, note`,
 		inp.ChatID,
 		inp.Parent,
 		inp.Name,
 		inp.Note,
 		inp.Form,
-	).Scan(&roomId)
+	).Scan(
+		&room.ID,
+		&room.ChatID,
+		&room.Name,
+		&room.ParentID,
+		&room.Note,
+	)
 	if err != nil {
 		println("CreateRoom:", err.Error()) // debug
-		return
+		return room, err
 	}
 
-	var allows *string
 	if inp.Allows != nil {
-		var allowsDb []models.AllowsDB
-		if inp.Allows.AllowWrite != nil {
-			for _, role := range inp.Allows.AllowWrite.Roles {
-				allowsDb = append(allowsDb, models.AllowsDB{
-					Action: rules.AllowWrite,
-					Group:  rules.AllowRoles,
-					Value:  strconv.Itoa(role),
-				})
-			}
-			for _, char := range inp.Allows.AllowWrite.Chars {
-				allowsDb = append(allowsDb, models.AllowsDB{
-					Action: rules.AllowWrite,
-					Group:  rules.AllowChars,
-					Value:  char.String(),
-				})
-			}
-			for _, member := range inp.Allows.AllowWrite.Members {
-				allowsDb = append(allowsDb, models.AllowsDB{
-					Action: rules.AllowWrite,
-					Group:  rules.AllowChars,
-					Value:  strconv.Itoa(member),
-				})
-			}
+		var allows string
+		for _, allow := range inp.Allows.Allows {
+			allows += fmt.Sprintf(",(%d, '%s','%s','%s')", roomId, allow.Action, allow.Group, allow.Value)
 		}
+		allows = kit.TrimFirstRune(allows)
 
-		if inp.Allows.AllowRead != nil {
-			for _, role := range inp.Allows.AllowRead.Roles {
-				allowsDb = append(allowsDb, models.AllowsDB{
-					Action: rules.AllowRead,
-					Group:  rules.AllowRoles,
-					Value:  strconv.Itoa(role),
-				})
-			}
-			for _, char := range inp.Allows.AllowRead.Chars {
-				allowsDb = append(allowsDb, models.AllowsDB{
-					Action: rules.AllowRead,
-					Group:  rules.AllowChars,
-					Value:  char.String(),
-				})
-			}
-			for _, member := range inp.Allows.AllowRead.Members {
-				allowsDb = append(allowsDb, models.AllowsDB{
-					Action: rules.AllowRead,
-					Group:  rules.AllowChars,
-					Value:  strconv.Itoa(member),
-				})
-			}
-		}
-
-		if len(allowsDb) != 0 {
-			for _, allow := range allowsDb {
-				*allows += fmt.Sprintf(",(%d, '%s','%s','%s')", roomId, allow.Action, allow.Group, allow.Value)
-			}
-			*allows = kit.TrimFirstRune(*allows)
-		}
-
-	}
-
-	if allows != nil {
 		// language=PostgreSQL
 		err = r.db.QueryRow(`
 			INSERT INTO allows (room_id, action_type, group_type, value)
-			VALUES` + *allows,
+			VALUES` + allows,
 		).Err()
 		if err != nil {
 			println("CreateRoom:", err.Error()) // debug
-			return
+			return room, err
 		}
 
 	}
-	return
+	return room, nil
 }
 
 func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
@@ -161,27 +115,31 @@ func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
 	return room, err
 }
 
-func (r *RoomsRepo) UpdateRoom(roomId int, inp *model.UpdateRoomInput) (err error) {
-
-	err = r.db.QueryRow(`
+func (r *RoomsRepo) UpdateRoom(roomId int, inp *model.UpdateRoomInput) (*model.UpdateRoom, error) {
+	room := &model.UpdateRoom{}
+	err := r.db.QueryRow(`
 		UPDATE rooms
 		SET 
 		    name = COALESCE($2::VARCHAR, name), 
 		    parent_id = COALESCE($3::BIGINT,parent_id), 
 		    note = COALESCE($4::VARCHAR,note)
 		WHERE id = $1
-		`,
+		RETURNING id, name, parent_id, note`,
 		roomId,
 		inp.Name,
 		inp.ParentID,
 		inp.Note,
-	).Err()
+	).Scan(
+		&room.ID,
+		&room.Name,
+		&room.ParentID,
+		&room.Note,
+	)
 	if err != nil {
 		println("UpdateRoom:", err.Error()) // debug
-		return
 	}
 
-	return
+	return room, err
 }
 
 func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {
@@ -257,119 +215,32 @@ func (r *RoomsRepo) FormIsSet(roomId int) (have bool) {
 	return
 }
 
-func (r *RoomsRepo) GetAllows(roomId int) (*model.Allows, error) {
-	rows, err := r.db.Query(
-		`SELECT action_type, group_type, value
-	FROM allows
-	WHERE room_id = $1`,
-		roomId)
+func (r *RoomsRepo) Allows(roomID int) (*model.Allows, error) {
+	allows := &model.Allows{
+		Room: &model.Room{
+			RoomID: roomID,
+		},
+		Allows: []*model.Allow{},
+	}
+	rows, err := r.db.Query(`
+		SELECT action_type, group_type, value
+		FROM allows
+		WHERE room_id = $1`,
+		roomID,
+	)
 	if err != nil {
-		return nil, err
+		println("Allows:", err.Error())
+		return allows, err
 	}
 	defer rows.Close()
 
-	_allows := &models.Allows{
-		Read:  models.AllowHolders{},
-		Write: models.AllowHolders{},
-	}
 	for rows.Next() {
-		d := models.AllowsDB{}
-		if err = rows.Scan(&d.Action, &d.Group, &d.Value); err != nil {
-			return nil, err
+		allow := &model.Allow{}
+		if err = rows.Scan(&allow.Action, &allow.Group, &allow.Value); err != nil {
+			panic(err)
 		}
-		var h *models.AllowHolders
-		switch d.Action {
-		case rules.AllowRead:
-			h = &_allows.Read
-		case rules.AllowWrite:
-			h = &_allows.Write
-		default:
-			panic("GetAllows lose action matching")
-		}
-		switch d.Group {
-		case rules.AllowChars:
-			switch d.Value {
-			case string(rules.Admin):
-				h.Chars = append(h.Chars, rules.Admin)
-			case string(rules.Moder):
-				h.Chars = append(h.Chars, rules.Moder)
-			default:
-				panic("GetAllows not identify value type")
-			}
-		case rules.AllowRoles:
-			value, err := strconv.Atoi(d.Value)
-			if err != nil {
-				panic("GetAllows int was expected but an error was found")
-			}
-			h.Roles = append(h.Roles, value)
-		case rules.AllowUsers:
-			value, err := strconv.Atoi(d.Value)
-			if err != nil {
-				panic("GetAllows int was expected but an error was found")
-			}
-			h.Users = append(h.Users, value)
-		default:
-			panic("GetAllows not identify group type")
-		}
+		allows.Allows = append(allows.Allows, allow)
 	}
-
-	allows := &model.Allows{
-		Room: &model.Room{RoomID: roomId},
-		AllowRead: &model.PermissionHolders{
-			Roles: &model.Roles{
-				Roles: []*model.Role{},
-			},
-			Chars: &model.Chars{
-				Chars: []model.CharType{},
-			},
-			Members: &model.Members{
-				Members: []*model.Member{},
-			},
-		},
-		AllowWrite: &model.PermissionHolders{
-			Roles: &model.Roles{
-				Roles: []*model.Role{},
-			},
-			Chars: &model.Chars{
-				Chars: []model.CharType{},
-			},
-			Members: &model.Members{
-				Members: []*model.Member{},
-			},
-		},
-	}
-	chatId, err := r.GetChatIDByRoomID(roomId)
-	if err != nil {
-		return nil, err
-	}
-	configAllows := func(aholdres *models.AllowHolders, phold *model.PermissionHolders) error {
-		if len(aholdres.Roles) != 0 {
-			roles, err := r.RolesByArray(&aholdres.Roles)
-			if err != nil {
-				return err
-			}
-			phold.Roles = roles
-		}
-		if len(aholdres.Users) != 0 {
-			members, err := r.MembersByArray(chatId, &aholdres.Users)
-			if err != nil {
-				return err
-			}
-			phold.Members = members
-
-		}
-		if len(aholdres.Chars) != 0 {
-			for _, char := range aholdres.Chars {
-				phold.Chars.Chars = append(phold.Chars.Chars, model.CharType(char))
-			}
-		}
-		return nil
-	}
-	if configAllows(&_allows.Read, allows.AllowRead) != nil ||
-		configAllows(&_allows.Write, allows.AllowWrite) != nil {
-		return nil, err
-	}
-
 	return allows, nil
 }
 
@@ -400,9 +271,9 @@ func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *mo
 			        action_type IS NULL 
 			        OR action_type = $1 
 			            AND (
-							group_type = 'ROLES' AND value = $3 
-							OR group_type = 'CHARS' AND value = $4  
-							OR group_type = 'USERS' AND value = $5::VARCHAR
+							group_type = 'ROLE' AND value = $3::VARCHAR 
+							OR group_type = 'CHAR' AND value = $4::VARCHAR  
+							OR group_type = 'MEMBER' AND value = $6::VARCHAR
 						)
 			        OR owner_id = $5::BIGINT 
 		    	)
@@ -412,6 +283,7 @@ func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *mo
 		holder.RoleID,
 		holder.Char,
 		holder.UserID,
+		holder.MemberID,
 	).Scan(&yes)
 	if err != nil {
 		println("Allowed:", err.Error()) //debug
@@ -429,12 +301,13 @@ func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error)
 		UserID: 0,
 	}
 	err := r.db.QueryRow(
-		`SELECT role_id, char
+		`SELECT id, role_id, char
 		FROM chat_members
 		WHERE user_id = $1 AND chat_id = $2`,
 		userId,
 		chatId,
 	).Scan(
+		&holder.MemberID,
 		&holder.RoleID,
 		&holder.Char,
 	)
@@ -522,4 +395,30 @@ func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) *model
 	}
 
 	return rooms
+}
+
+func (r *RoomsRepo) GetUpdateAllows(roomID int) (*model.UpdateAllows, error) {
+	allows := &model.UpdateAllows{
+		RoomID: roomID,
+		Allows: []*model.Allow{},
+	}
+	rows, err := r.db.Query(`
+		SELECT action_type, group_type, value
+		FROM allows
+		WHERE room_id = $1`,
+		roomID,
+	)
+	if err != nil {
+		println("GetUpdateAllows:", err.Error()) // debug
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		allow := &model.Allow{}
+		if err = rows.Scan(&allow.Action, &allow.Group, &allow.Value); err != nil {
+			panic(err)
+		}
+		allows.Allows = append(allows.Allows, allow)
+	}
+	return allows, nil
 }

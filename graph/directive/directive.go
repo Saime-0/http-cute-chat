@@ -3,6 +3,7 @@ package directive
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"reflect"
@@ -52,26 +53,34 @@ func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (re
 
 func InputLeastOne(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
 	println("InputLeastOne directive start!") // debug
-
-	v := reflect.ValueOf(nil)
-	if v.Kind() == reflect.Ptr {
-		v = v.Elem()
+	fmt.Printf("%#v %T\n", obj, obj)
+	input, ok := obj.(map[string]interface{})
+	if !ok {
+		panic("InputLeastOne: can not convert external map")
 	}
 
-	valueFound := false
-
-	for i := 0; i < v.NumField(); i++ {
-		if !v.Field(i).IsNil() {
-			valueFound = true
+	finded := false
+	for key, val := range input {
+		if key == "find" || key == "input" {
+			finded = true
+			input = val.(map[string]interface{})
 			break
+		}
+		//input, ok = val.(map[string]interface{})
+		//if !ok {
+		//	panic(err)
+		//}
+	}
+	if !finded {
+		panic("InputLeastOne: union input field not found")
+	}
+
+	for _, val := range input {
+		if fmt.Sprint(val) != "<nil>" {
+			return next(ctx)
 		}
 	}
 
-	if !valueFound {
-		println("InputLeastOne:", err.Error()) // debug
-		return nil, errors.New("one of the input fields must have the value")
-	}
-
-	return next(ctx)
+	return obj, errors.New("one of the input fields must have the value")
 
 }

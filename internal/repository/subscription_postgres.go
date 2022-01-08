@@ -2,9 +2,10 @@ package repository
 
 import (
 	"database/sql"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
-type QueryUserGroup func(objectID int) (users []int, err error)
+type QueryUserGroup func(objectIDs []int) (users []int, err error)
 
 type SubscribersRepo struct {
 	db          *sql.DB
@@ -20,27 +21,25 @@ func NewSubscribersRepo(db *sql.DB) *SubscribersRepo {
 	return sub
 }
 
-func completeUsers(rows *sql.Rows) (users []int, err error) {
+func completeIntArray(rows *sql.Rows) (arr []int, err error) {
 	for rows.Next() {
 		var id int
 		if err = rows.Scan(&id); err != nil {
-			return users, err
+			return arr, err
 		}
-		users = append(users, id)
+		arr = append(arr, id)
 	}
-	return users, nil
+	return arr, nil
 }
 
 func (r *SubscribersRepo) initFuncs() {
 
-	r.Members = func(chatID int) (users []int, err error) {
-
+	r.Members = func(chatIDs []int) (users []int, err error) {
+		//language=PostgreSQL
 		rows, err := r.db.Query(`
 		SELECT id 
 		FROM chat_members
-		WHERE chat_id = $1
-		`,
-			chatID,
+		WHERE chat_id IN ` + kit.IntSQLArray(chatIDs),
 		)
 		defer rows.Close()
 		if err != nil {
@@ -48,7 +47,7 @@ func (r *SubscribersRepo) initFuncs() {
 			return users, err
 		}
 
-		users, err = completeUsers(rows)
+		users, err = completeIntArray(rows)
 		if err != nil {
 			println("Members(Scan):", err.Error()) // debug
 			return users, err
@@ -57,38 +56,36 @@ func (r *SubscribersRepo) initFuncs() {
 		return users, nil
 	}
 
-	r.RoomReaders = func(roomID int) (users []int, err error) {
+	r.RoomReaders = func(roomIDs []int) (users []int, err error) {
+		//language=PostgreSQL
 		rows, err := r.db.Query(`
-		SELECT user_id
-		FROM chat_members m
+			SELECT user_id
+			FROM chat_members m
 		    
-		JOIN chats c on m.chat_id = c.id
-		JOIN rooms r on m.chat_id = r.chat_id
-		LEFT JOIN allows a on r.id = a.room_id
+			JOIN chats c on m.chat_id = c.id
+			JOIN rooms r on m.chat_id = r.chat_id
+			LEFT JOIN allows a on r.id = a.room_id
 		
-		WHERE r.id = $1 
-		  	AND (
-			    action_type IS NULL 
-			    OR action_type = 'READ' 
-                    AND (
-						group_type = 'ROLES' AND value = m.role_id::VARCHAR 
-					    OR group_type = 'CHARS' AND value = m.char::VARCHAR 
-					    OR group_type = 'USERS' AND value = m.user_id::VARCHAR
-					)
-			   	OR m.user_id = c.owner_id
-			)
-			
-		GROUP BY user_id
-		`,
-			roomID,
+			WHERE r.id IN ` + kit.IntSQLArray(roomIDs) + `
+		  		AND (
+				    action_type IS NULL 
+				    OR action_type = 'READ' 
+            	        AND (
+							group_type = 'ROLE' AND value = m.role_id::VARCHAR 
+						    OR group_type = 'CHAR' AND value = m.char::VARCHAR 
+						    OR group_type = 'MEMBER' AND value = m.id::VARCHAR
+						)
+				   	OR m.user_id = c.owner_id
+				)
+			GROUP BY user_id`,
 		)
-		defer rows.Close()
 		if err != nil {
 			println("Members:", err.Error()) // debug
 			return users, err
 		}
+		defer rows.Close()
 
-		users, err = completeUsers(rows)
+		users, err = completeIntArray(rows)
 		if err != nil {
 			println("Members(Scan):", err.Error()) // debug
 			return users, err

@@ -125,11 +125,11 @@ func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) *model
 		params.Limit,
 		params.Offset,
 	)
+	defer rows.Close()
 	if err != nil {
 		println("FindUnits:", err.Error()) // debug
 		return units
 	}
-	defer rows.Close()
 	for rows.Next() {
 		m := &model.Unit{}
 		if err = rows.Scan(&m.ID, &m.Domain, &m.Name, &m.Type); err != nil {

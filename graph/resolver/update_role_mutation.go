@@ -26,10 +26,15 @@ func (r *mutationResolver) UpdateRole(ctx context.Context, roleID int, input mod
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.UpdateRole(roleID, &input)
+	eventReadyRole, err := r.Services.Repos.Chats.UpdateRole(roleID, &input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные"), nil
 	}
+
+	r.Services.Subix.NotifyChatMembers(
+		[]int{chatID},
+		eventReadyRole,
+	)
 
 	return resp.Success("данные успешно обновлены"), nil
 }

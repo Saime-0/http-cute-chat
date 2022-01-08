@@ -20,7 +20,6 @@ func (r *mutationResolver) GiveRole(ctx context.Context, memberID int, roleID in
 		clientID = ctx.Value(rules.UserIDFromToken).(int)
 	)
 
-	// todo MemberExists-> chatid; RoleExists(cid, rid):
 	if node.GetChatIDByMember(memberID, &chatID) ||
 		node.IsMember(clientID, chatID) ||
 		node.CanGiveRole(clientID, chatID) ||
@@ -28,9 +27,13 @@ func (r *mutationResolver) GiveRole(ctx context.Context, memberID int, roleID in
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.GiveRole(memberID, roleID)
+	eventReadyMember, err := r.Services.Repos.Chats.GiveRole(memberID, roleID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
+	r.Services.Subix.NotifyChatMembers(
+		[]int{chatID},
+		eventReadyMember,
+	)
 	return resp.Success("роль выдана"), nil
 }

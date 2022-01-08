@@ -28,10 +28,15 @@ func (r *mutationResolver) UpdateRoom(ctx context.Context, roomID int, input mod
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Rooms.UpdateRoom(roomID, &input)
+	eventReadyRoom, err := r.Services.Repos.Rooms.UpdateRoom(roomID, &input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные комнаты"), nil
 	}
+
+	r.Services.Subix.NotifyChatMembers(
+		[]int{chatID},
+		eventReadyRoom,
+	)
 
 	return resp.Success("данные комнаты обновлены"), nil
 }

@@ -133,16 +133,21 @@ input CreateRoomInput {
 }
 
 input AllowsInput {
-    allowRead: PermissionHoldersInput
-    allowWrite: PermissionHoldersInput
+    allows: [AllowInput!]!
 }
-input PermissionHoldersInput {
-    roles: [ID!]
-    chars: [CharType!]
-    members: [ID!]
+input AllowInput {
+    action: AllowAction!
+    group: AllowGroup!
+    value: String!
 }
 
 
+input UpdateMemberInput {
+    roleId: ID
+    char: CharType
+    muted: Boolean
+    frozen: Boolean
+}
 
 
 

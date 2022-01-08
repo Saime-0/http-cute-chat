@@ -65,7 +65,6 @@ union RegisterResult =
 union SendMessageToRoomResult =
     | AdvancedError
     | Successful
-    | Message
 
 # Update... to MutationResult
 #union UpdateChatResult =
@@ -135,15 +134,17 @@ union NewRoomMessageSubscription =
     | Message
 
 union EventResult =
-    | NewMessage # только читателям
-    | UpdateUnit # всем участникам
-    | UpdateMember # всем участникам
-    | UpdateRole # всем участникам
-    | UpdateRoom # всем участникам
+    | NewMessage # только читателям +
+    | UpdateUser # всем участникам +
+    | UpdateMember # всем участникам +
+    | UpdateRole # всем участникам +
+    | UpdateRoom # всем участникам +
     | UpdateForm # всем писателям (с учетом того что клиент сможет без формы(не зная типов полей) правильно распарсить сообщение)
     | UpdateAllows #  всем участникам
     | UpdateInvites # всем кто может их видеть
-    | UpdateChat # всем участникам
+    | UpdateChat # всем участникам +
+
+    | NewRoom # всем участникам +
 
 
 

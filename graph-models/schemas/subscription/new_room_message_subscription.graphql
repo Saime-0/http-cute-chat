@@ -1,3 +1,0 @@
-extend type Subscription {
-	newRoomMessage(roomId: ID!): Message! @goField(forceResolver: true) @isAuth
-}

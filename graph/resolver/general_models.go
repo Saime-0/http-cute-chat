@@ -338,20 +338,16 @@ func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.Allow
 	node := r.Piper.CreateNode("roomResolver > Allows [rid:", obj.RoomID, "]")
 	defer node.Kill()
 
-	allows, err := r.Services.Repos.Rooms.GetAllows(obj.RoomID)
+	allows, err := r.Services.Repos.Rooms.Allows(obj.RoomID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при попытке получить данные"), nil
-	}
-
-	for _, member := range append(allows.AllowRead.Members.Members, allows.AllowWrite.Members.Members...) { // todo оптимизироватть
-		member.Chat = obj.Chat
 	}
 
 	return allows, nil
 }
 
 func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model.FindMessagesInRoomByUnionInput, params *model.Params) (model.MessagesResult, error) {
-	node := r.Piper.CreateNode("roomResolver > Allows [rid:", obj.RoomID, "]")
+	node := r.Piper.CreateNode("roomResolver > Messages [rid:", obj.RoomID, "]")
 	defer node.Kill()
 
 	var (

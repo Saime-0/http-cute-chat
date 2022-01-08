@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/its"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -33,40 +32,6 @@ func (n *Node) UserExists(userId int) (fail bool) {
 		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не найден")
 		return true
 	}
-	return
-}
-
-// deprecated
-func (n *Node) UserIs(chatId, userId int, somes []its.Someone) (fail bool) {
-	for _, some := range somes {
-		switch some {
-		case its.Owner:
-			if !n.repos.Chats.UserIsChatOwner(userId, chatId) {
-				n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является владельцем чата")
-			}
-			return
-
-		case its.Admin:
-			if !n.repos.Chats.UserIs(userId, chatId, rules.Admin) {
-				n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является администратором")
-			}
-			return
-
-		case its.Moder:
-			if !n.repos.Chats.UserIs(userId, chatId, rules.Moder) {
-				n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является модератором")
-			}
-			return
-
-		case its.Member:
-			if !n.repos.Chats.UserIsChatMember(userId, chatId) {
-				n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является участником чата")
-			}
-			return
-
-		}
-	}
-
 	return
 }
 
@@ -457,11 +422,12 @@ func (n *Node) GetMessageByID(msgId int, message *model.Message) (fail bool) {
 }
 
 func (n *Node) GetChatIDByMember(memberId int, chatId *int) (fail bool) {
-	chatId = n.repos.Chats.ChatIDByMemberID(memberId)
-	if chatId == nil {
+	_chatId, err := n.repos.Chats.ChatIDByMemberID(memberId)
+	if err != nil {
 		n.Err = resp.Error(resp.ErrBadRequest, "участник не найден")
 		return true
 	}
+	*chatId = _chatId
 	return
 }
 

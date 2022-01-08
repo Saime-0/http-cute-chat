@@ -51,37 +51,6 @@ const (
 	Chat UnitType = "CHAT"
 )
 
-type FieldType string
-
-const (
-	EmailField   FieldType = "EMAIL"
-	DateField    FieldType = "DATE"
-	LinkField    FieldType = "LINK"
-	TextField    FieldType = "TEXT"
-	NumericField FieldType = "NUMERIC"
-	// EventField FieldType = "event"
-)
-
-type MessageType string
-
-const (
-	SystemMsg    MessageType = "SYSTEM"
-	UserMsg      MessageType = "USER"
-	FormattedMsg MessageType = "FORMATTED"
-)
-
-type BindKeys string
-
-const (
-	BindUserDomain BindKeys = "USER-DOMAIN"
-	BindChatDomain BindKeys = "CHAT-DOMAIN"
-	BindUserID     BindKeys = "USER-ID"
-	BindChatID     BindKeys = "CHAT-ID"
-	BindRoomID     BindKeys = "ROOM-ID"
-	BindMessageID  BindKeys = "MESSAGE-ID"
-	BindInviteCode BindKeys = "INVITE-CODE"
-)
-
 type ContextKeys int
 
 const (
@@ -127,14 +96,6 @@ type AdvancedError struct {
 	// http status const
 	// Err     error  `json:"-"`
 }
-
-// func NewAdvancedError(code string, message string) *AdvancedError {
-// 	return &AdvancedError{
-// 		Err:     errors.New(message),
-// 		Code:    code,
-// 		Message: message,
-// 	}
-// }
 
 func (p *AdvancedError) Error() string {
 	return p.Message

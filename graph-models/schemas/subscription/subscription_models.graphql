@@ -8,6 +8,7 @@ enum EventType {
 	UPDATEALLOWS
 	UPDATEINVITES
 	UPDATECHAT
+	NEWROOM
 }
 
 type SubscriptionBody {
@@ -23,15 +24,14 @@ type NewMessage { # todo rename
 	replyToId: ID
 	authorId: ID
 	body: String!
-	type: MessageType!
+	msgType: MessageType!
 	createdAt: Int64!
 }
 
-type UpdateUnit {
+type UpdateUser {
 	id: ID!
 	domain: String!
 	name: String!
-	type: UnitType!
 }
 
 type UpdateMember {
@@ -59,6 +59,14 @@ type UpdateRoom {
 	note: String
 }
 
+type NewRoom {
+	id: ID!
+	chatId: ID!
+	name: String!
+	parentId: ID
+	note: String
+}
+
 type UpdateForm {
 	roomId: ID!
 	form: Form
@@ -66,8 +74,7 @@ type UpdateForm {
 
 type UpdateAllows {
 	roomId: ID!
-	allowRead: PermissionHoldersSub
-	allowWrite: PermissionHoldersSub
+	allows: [Allow]!
 }
 
 type UpdateInvites {
@@ -77,6 +84,8 @@ type UpdateInvites {
 
 type UpdateChat {
 	id: ID!
+	domain: String!
+	name: String!
 	private: Boolean!
-	countMembers: CountMembersResult! @goField(forceResolver: true)
+#	countMembers: Int!
 }

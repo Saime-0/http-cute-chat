@@ -116,6 +116,10 @@ type SendMessageToRoomResult interface {
 	IsSendMessageToRoomResult()
 }
 
+type UnionScalar interface {
+	IsUnionScalar()
+}
+
 type UnitResult interface {
 	IsUnitResult()
 }
@@ -172,17 +176,27 @@ func (AdvancedError) IsUnitsResult()                {}
 func (AdvancedError) IsUserRoleResult()             {}
 func (AdvancedError) IsNewRoomMessageSubscription() {}
 
+type Allow struct {
+	Action AllowAction `json:"action"`
+	Group  AllowGroup  `json:"group"`
+	Value  string      `json:"value"`
+}
+
+type AllowInput struct {
+	Action AllowAction `json:"action"`
+	Group  AllowGroup  `json:"group"`
+	Value  string      `json:"value"`
+}
+
 type Allows struct {
-	Room       *Room              `json:"room"`
-	AllowRead  *PermissionHolders `json:"allowRead"`
-	AllowWrite *PermissionHolders `json:"allowWrite"`
+	Room   *Room    `json:"room"`
+	Allows []*Allow `json:"allows"`
 }
 
 func (Allows) IsAllowsResult() {}
 
 type AllowsInput struct {
-	AllowRead  *PermissionHoldersInput `json:"allowRead"`
-	AllowWrite *PermissionHoldersInput `json:"allowWrite"`
+	Allows []*AllowInput `json:"allows"`
 }
 
 type BoolValueInput struct {
@@ -250,11 +264,6 @@ type CreateRoomInput struct {
 	Note   *string          `json:"note"`
 	Form   *UpdateFormInput `json:"form"`
 	Allows *AllowsInput     `json:"allows"`
-}
-
-type FindByDomainOrID struct {
-	ID     *int    `json:"id"`
-	Domain *string `json:"domain"`
 }
 
 type FindChats struct {
@@ -332,6 +341,7 @@ type IntValue struct {
 	Value *int `json:"value"`
 }
 
+func (IntValue) IsUnionScalar()        {}
 func (IntValue) IsCountMembersResult() {}
 
 type Invite struct {
@@ -397,7 +407,6 @@ type Message struct {
 	CreatedAt int64       `json:"createdAt"`
 }
 
-func (Message) IsSendMessageToRoomResult()    {}
 func (Message) IsMessageResult()              {}
 func (Message) IsNewRoomMessageSubscription() {}
 
@@ -413,11 +422,21 @@ type NewMessage struct {
 	ReplyToID *int        `json:"replyToId"`
 	AuthorID  *int        `json:"authorId"`
 	Body      string      `json:"body"`
-	Type      MessageType `json:"type"`
+	MsgType   MessageType `json:"msgType"`
 	CreatedAt int64       `json:"createdAt"`
 }
 
 func (NewMessage) IsEventResult() {}
+
+type NewRoom struct {
+	ID       int     `json:"id"`
+	ChatID   int     `json:"chatId"`
+	Name     string  `json:"name"`
+	ParentID *int    `json:"parentId"`
+	Note     *string `json:"note"`
+}
+
+func (NewRoom) IsEventResult() {}
 
 type Params struct {
 	Limit  *int `json:"limit"`
@@ -428,12 +447,6 @@ type PermissionHolders struct {
 	Roles   *Roles   `json:"roles"`
 	Chars   *Chars   `json:"chars"`
 	Members *Members `json:"members"`
-}
-
-type PermissionHoldersInput struct {
-	Roles   []int      `json:"roles"`
-	Chars   []CharType `json:"chars"`
-	Members []int      `json:"members"`
 }
 
 type PermissionHoldersSub struct {
@@ -488,7 +501,8 @@ type StringValue struct {
 	Value *string `json:"value"`
 }
 
-func (StringValue) IsMsgBody() {}
+func (StringValue) IsUnionScalar() {}
+func (StringValue) IsMsgBody()     {}
 
 type StringValueInput struct {
 	Value string `json:"value"`
@@ -534,17 +548,17 @@ type Units struct {
 func (Units) IsUnitsResult() {}
 
 type UpdateAllows struct {
-	RoomID     int                   `json:"roomId"`
-	AllowRead  *PermissionHoldersSub `json:"allowRead"`
-	AllowWrite *PermissionHoldersSub `json:"allowWrite"`
+	RoomID int      `json:"roomId"`
+	Allows []*Allow `json:"allows"`
 }
 
 func (UpdateAllows) IsEventResult() {}
 
 type UpdateChat struct {
-	ID           int                `json:"id"`
-	Private      bool               `json:"private"`
-	CountMembers CountMembersResult `json:"countMembers"`
+	ID      int    `json:"id"`
+	Domain  string `json:"domain"`
+	Name    string `json:"name"`
+	Private bool   `json:"private"`
 }
 
 func (UpdateChat) IsEventResult() {}
@@ -590,6 +604,13 @@ type UpdateMember struct {
 
 func (UpdateMember) IsEventResult() {}
 
+type UpdateMemberInput struct {
+	RoleID *int      `json:"roleId"`
+	Char   *CharType `json:"char"`
+	Muted  *bool     `json:"muted"`
+	Frozen *bool     `json:"frozen"`
+}
+
 type UpdateRole struct {
 	ID    int      `json:"id"`
 	Name  string   `json:"name"`
@@ -622,14 +643,13 @@ type UpdateRoomInput struct {
 	Note     *string `json:"note"`
 }
 
-type UpdateUnit struct {
-	ID     int      `json:"id"`
-	Domain string   `json:"domain"`
-	Name   string   `json:"name"`
-	Type   UnitType `json:"type"`
+type UpdateUser struct {
+	ID     int    `json:"id"`
+	Domain string `json:"domain"`
+	Name   string `json:"name"`
 }
 
-func (UpdateUnit) IsEventResult() {}
+func (UpdateUser) IsEventResult() {}
 
 type User struct {
 	Unit *Unit `json:"unit"`
@@ -692,6 +712,90 @@ func (e *ActionType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ActionType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type AllowAction string
+
+const (
+	AllowActionRead  AllowAction = "READ"
+	AllowActionWrite AllowAction = "WRITE"
+)
+
+var AllAllowAction = []AllowAction{
+	AllowActionRead,
+	AllowActionWrite,
+}
+
+func (e AllowAction) IsValid() bool {
+	switch e {
+	case AllowActionRead, AllowActionWrite:
+		return true
+	}
+	return false
+}
+
+func (e AllowAction) String() string {
+	return string(e)
+}
+
+func (e *AllowAction) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AllowAction(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AllowAction", str)
+	}
+	return nil
+}
+
+func (e AllowAction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type AllowGroup string
+
+const (
+	AllowGroupChar   AllowGroup = "CHAR"
+	AllowGroupRole   AllowGroup = "ROLE"
+	AllowGroupMember AllowGroup = "MEMBER"
+)
+
+var AllAllowGroup = []AllowGroup{
+	AllowGroupChar,
+	AllowGroupRole,
+	AllowGroupMember,
+}
+
+func (e AllowGroup) IsValid() bool {
+	switch e {
+	case AllowGroupChar, AllowGroupRole, AllowGroupMember:
+		return true
+	}
+	return false
+}
+
+func (e AllowGroup) String() string {
+	return string(e)
+}
+
+func (e *AllowGroup) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AllowGroup(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AllowGroup", str)
+	}
+	return nil
+}
+
+func (e AllowGroup) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -793,6 +897,7 @@ const (
 	EventTypeUpdateallows  EventType = "UPDATEALLOWS"
 	EventTypeUpdateinvites EventType = "UPDATEINVITES"
 	EventTypeUpdatechat    EventType = "UPDATECHAT"
+	EventTypeNewroom       EventType = "NEWROOM"
 )
 
 var AllEventType = []EventType{
@@ -805,11 +910,12 @@ var AllEventType = []EventType{
 	EventTypeUpdateallows,
 	EventTypeUpdateinvites,
 	EventTypeUpdatechat,
+	EventTypeNewroom,
 }
 
 func (e EventType) IsValid() bool {
 	switch e {
-	case EventTypeNewmessage, EventTypeUpdateunit, EventTypeUpdatemember, EventTypeUpdaterole, EventTypeUpdateroom, EventTypeUpdateform, EventTypeUpdateallows, EventTypeUpdateinvites, EventTypeUpdatechat:
+	case EventTypeNewmessage, EventTypeUpdateunit, EventTypeUpdatemember, EventTypeUpdaterole, EventTypeUpdateroom, EventTypeUpdateform, EventTypeUpdateallows, EventTypeUpdateinvites, EventTypeUpdatechat, EventTypeNewroom:
 		return true
 	}
 	return false

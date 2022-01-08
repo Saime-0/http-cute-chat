@@ -24,9 +24,21 @@ func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateM
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Users.UpdateMe(clientID, &input)
+	eventReadyUser, err := r.Services.Repos.Users.UpdateMe(clientID, &input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные"), nil
+	}
+
+	if input.Name != nil || input.Domain != nil {
+		chats, err := r.Services.Repos.Users.ChatsID(clientID)
+		if err != nil {
+			return nil, err
+		} else {
+			r.Services.Subix.NotifyChatMembers(
+				chats,
+				eventReadyUser,
+			)
+		}
 	}
 
 	return resp.Success("данные пользователя обновлены"), nil
