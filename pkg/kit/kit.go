@@ -1,9 +1,12 @@
 package kit
 
 import (
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strconv"
+	"time"
 	"unicode/utf8"
 )
 
@@ -47,4 +50,29 @@ func IntSQLArray(arr []int) string {
 		sqlArr += fmt.Sprint(",", v)
 	}
 	return "(" + TrimFirstRune(sqlArr) + ")"
+}
+
+func RandomSecret(length int) string {
+	rand.Seed(time.Now().UnixNano())
+	letterRunes := []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
+
+	bytes := make([]rune, length)
+
+	for i := range bytes {
+		bytes[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+
+	return string(bytes)
+}
+
+func CryptoSecret(blength int) string {
+	var result string
+	secret := make([]byte, blength)
+	gen, err := rand.Read(secret)
+	if err != nil || gen != blength {
+		return result
+	}
+	var encoder = base32.StdEncoding.WithPadding(base32.NoPadding)
+	result = encoder.EncodeToString(secret)
+	return result
 }

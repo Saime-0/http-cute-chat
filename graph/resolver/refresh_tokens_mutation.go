@@ -5,13 +5,13 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/utils"
-	"github.com/xlzd/gotp"
 )
 
 func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken string) (model.RefreshTokensResult, error) {
@@ -26,7 +26,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 	var (
 		session *models.RefreshSession
 	)
-	newRefreshToken := gotp.RandomSecret(rules.RefreshTokenLength)
+	newRefreshToken := kit.CryptoSecret(rules.RefreshTokenBytesLength)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
 		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),

@@ -5,13 +5,14 @@ package resolver
 
 import (
 	"context"
+	"fmt"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/utils"
-	"github.com/xlzd/gotp"
 )
 
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error) {
@@ -28,13 +29,13 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	var (
 		session *models.RefreshSession
 	)
-	newRefreshToken := gotp.RandomSecret(rules.RefreshTokenLength)
+	newRefreshToken := kit.CryptoSecret(rules.RefreshTokenBytesLength)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
 		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),
 		Lifetime:     rules.RefreshTokenLiftime,
 	}
-
+	fmt.Printf("%#v", session) // debug
 	expiresAt, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "неудачная попытка создать сессию пользователя"), nil

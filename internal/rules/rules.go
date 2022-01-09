@@ -63,6 +63,7 @@ const (
 	NoteMaxLength                  = 64
 	MessageBodyMaxLength           = 4096
 	RefreshTokenLength             = 16
+	RefreshTokenBytesLength        = 16
 	MaxCountRooms                  = 128
 	MaxUserChats                   = 128
 	MaxMembersOnChat               = 2_097_152
