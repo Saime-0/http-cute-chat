@@ -24,10 +24,15 @@ func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRol
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.CreateRoleInChat(&input)
+	eventReadyRole, err := r.Services.Repos.Chats.CreateRoleInChat(&input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать роль"), nil
 	}
+
+	r.Services.Subix.NotifyChatMembers(
+		[]int{input.ChatID},
+		eventReadyRole,
+	)
 
 	return resp.Success("роль создана"), nil
 }

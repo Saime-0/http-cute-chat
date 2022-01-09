@@ -1,29 +1,6 @@
-enum EventType {
-	NEWMESSAGE
-
-	UPDATEUSER
-	UPDATEMEMBER
-
-	UPDATEROLE
-
-	UPDATEFORM
-
-	CREATEALLOW
-	DELETEALLOW
-
-	UPDATECHAT
-
-	CREATEROOM
-	UPDATEROOM
-	DELETEROOM
-
-	CREATEINVITE
-	DELETEINVITE
-}
-
 type SubscriptionBody {
 	rev: Int!
-	event: EventType!
+	event: String!
 #	action: EventSubjectAction
 	body: EventResult!
 }
@@ -44,21 +21,39 @@ type UpdateUser {
 	name: String!
 }
 
+type CreateMember {
+	id: ID!
+	chatId: ID!
+	unit: Unit!
+}
+
 type UpdateMember {
 	id: ID!
-#	chatId: Chat!
-#	userId: User!
 	roleId: ID
 	char: CharType
-#	joinedAt: Int64!
 	muted: Boolean!
 	frozen: Boolean!
+}
+
+type DeleteMember {
+	id: ID!
+}
+
+type CreateRole {
+	chatId: ID!
+	id: ID!
+	name: String!
+	color: HexColor!
 }
 
 type UpdateRole {
 	id: ID!
 	name: String!
 	color: HexColor!
+}
+
+type DeleteRole {
+	id: ID!
 }
 
 type UpdateRoom {

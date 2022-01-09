@@ -18,20 +18,25 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
 	var (
-		defMember models.DefMember
+		member models.DefMember
 	)
 
-	if node.GetDefMember(memberID, &defMember) ||
-		node.CanBan(clientID, defMember.UserID, defMember.ChatID) {
+	if node.GetDefMember(memberID, &member) ||
+		node.CanBan(clientID, member.UserID, member.ChatID) {
 		return node.Err, nil
 	}
-	if r.Services.Repos.Chats.AddToBanlist(defMember.UserID, defMember.ChatID) != nil ||
-		// todo is deprecated
-		// todo banlist.userid > memberid
-		// chat_namlist > banlist
-		// + query banlist
-		r.Services.Repos.Chats.RemoveUserFromChat(defMember.UserID, defMember.ChatID) != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+	if r.Services.Repos.Chats.AddToBanlist(member.UserID, member.ChatID) != nil {
+		return resp.Error(resp.ErrInternalServerError, "не удалось забанить пользователя"), nil
 	}
+	eventReadyMember, err := r.Services.Repos.Chats.RemoveUserFromChat(member.UserID, member.ChatID)
+	if err != nil {
+		panic(err)
+	}
+
+	r.Services.Subix.NotifyChatMembers(
+		[]int{member.ChatID},
+		eventReadyMember,
+	)
+
 	return resp.Success("пользователь успешно забанен"), nil
 }

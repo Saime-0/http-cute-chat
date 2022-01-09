@@ -1,0 +1,76 @@
+package piper
+
+import (
+	"errors"
+	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/rules"
+)
+
+func (n *Node) owner(userId, chatId int) (such bool) {
+	if !n.repos.Chats.UserIsChatOwner(userId, chatId) {
+		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является владельцем чата")
+		return
+	}
+	return true
+}
+
+func (n *Node) admin(userId, chatId int) (such bool) {
+	if !n.repos.Chats.UserIs(userId, chatId, rules.Admin) {
+		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является администратором чата")
+		return
+	}
+	return true
+}
+
+func (n *Node) moder(userId, chatId int) (such bool) {
+	if !n.repos.Chats.UserIs(userId, chatId, rules.Moder) {
+		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является модером чата")
+		return
+	}
+	return true
+}
+
+func charPtr(m model.CharType) *model.CharType {
+	return &m
+}
+
+var charLevels = map[*model.CharType]int{
+	nil:                          0,
+	charPtr(model.CharTypeModer): 1,
+	charPtr(model.CharTypeAdmin): 2,
+}
+
+type mlevel = model.CharType
+const (
+	owner mlevel = model.CharTypeAdmin
+	admin mlevel = model.CharTypeAdmin
+	moder mlevel = model.CharTypeModer
+)
+
+func diffLevelCheck(applyToOwner, applyToSelfChar bool, minCharLevel mlevel, master, slave *models.DemoMember) error {
+	if master == nil || slave == nil {
+		return errors.New("мемберса не существует")
+	}
+	if !applyToOwner && slave.IsOwner {
+		return errors.New("невозможно применить на этого участника")
+	}
+	if master.IsOwner {
+		return nil
+	}
+	if !applyToSelfChar && (charLevels[master.Char] == charLevels[slave.Char]) {
+		return errors.New("недостотачный уровень")
+	}
+	if charLevels[master.Char] < charLevels[charPtr(minCharLevel)] && charLevels[master.Char] < charLevels[slave.Char] {
+		return errors.New("недостотачный уровень")
+	}
+	return nil
+}
+
+func levelCheck(minCharLevel mlevel, demo *models.DemoMember) error {
+	if !(demo.IsOwner || charLevels[demo.Char] >= charLevels[charPtr(minCharLevel)]) {
+		return errors.New("недостотачно прав")
+	}
+	return nil
+}

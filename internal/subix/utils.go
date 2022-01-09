@@ -3,6 +3,7 @@ package subix
 import (
 	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"strings"
 )
 
 func (s *Subscription) writeToUsers(ids []int, body model.EventResult) {
@@ -34,40 +35,14 @@ func (s *Subscription) writeToUsers(ids []int, body model.EventResult) {
 	}
 }
 
-func getEventType(body model.EventResult) model.EventType {
-	switch body.(type) {
-
-	case *model.NewMessage:
-		return model.EventTypeNewmessage
-	case *model.UpdateUser:
-		return model.EventTypeUpdateuser
-	case *model.UpdateMember:
-		return model.EventTypeUpdatemember
-	case *model.UpdateRole:
-		return model.EventTypeUpdaterole
-	case *model.UpdateForm:
-		return model.EventTypeUpdateform
-
-	case *model.CreateAllow:
-		return model.EventTypeCreateallow
-	case *model.DeleteAllow:
-		return model.EventTypeDeleteallow
-
-	case *model.UpdateChat:
-		return model.EventTypeUpdatechat
-
-	case *model.CreateRoom:
-		return model.EventTypeCreateroom
-	case *model.UpdateRoom:
-		return model.EventTypeUpdateroom
-	case *model.DeleteRoom:
-		return model.EventTypeDeleteroom
-
-	case *model.CreateInvite:
-		return model.EventTypeCreateinvite
-	case *model.DeleteInvite:
-		return model.EventTypeDeleteinvite
-
+func getEventType(body model.EventResult) string {
+	bodyType := fmt.Sprintf("%T", body)
+	dot := strings.LastIndex(
+		bodyType,
+		".",
+	)
+	if dot == -1 {
+		panic("invalid index")
 	}
-	panic("no matches found")
+	return strings.ToUpper(bodyType[dot+1:])
 }

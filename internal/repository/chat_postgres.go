@@ -300,18 +300,24 @@ func (r *ChatsRepo) FindMemberBy(userId int, chatId int) *int {
 	}
 	return memberId
 }
-func (r *ChatsRepo) AddUserToChat(userId int, chatId int) (err error) {
-	err = r.db.QueryRow(
-		`INSERT INTO chat_members (user_id, chat_id, role_id, char, joined_at, muted, frozen)
-		VALUES ($1, $2, NULL, 'NONE', $3, false, false)`,
+func (r *ChatsRepo) AddUserToChat(userId int, chatId int) (*model.CreateMember, error) {
+	member := &model.CreateMember{}
+	err := r.db.QueryRow(`
+		INSERT INTO chat_members (user_id, chat_id, role_id, char, joined_at, muted, frozen)
+		VALUES ($1, $2, NULL, 'NONE', $3, false, false)
+		RETURNING id, chat_id, user_id`,
 		userId,
 		chatId,
 		time.Now().UTC().Unix(),
-	).Err()
+	).Scan(
+		&member.ID,
+		&member.ChatID,
+		&member.UserID,
+	)
 	if err != nil {
-		return
+		println("AddUserToChat:", err.Error()) // debug
 	}
-	return
+	return member, err
 }
 
 func (r *ChatsRepo) GetCountUserChats(userId int) (count int, err error) {
@@ -367,15 +373,21 @@ func (r *ChatsRepo) ChatExistsByDomain(chatDomain string) (exists bool) {
 	return
 }
 
-func (r *ChatsRepo) RemoveUserFromChat(userId int, chatId int) (err error) {
-	err = r.db.QueryRow(
+func (r *ChatsRepo) RemoveUserFromChat(userId int, chatId int) (*model.DeleteMember, error) {
+	member := &model.DeleteMember{}
+	err := r.db.QueryRow(
 		`DELETE FROM chat_members
 		WHERE user_id = $1 AND chat_id = $2`,
 		userId,
 		chatId,
-	).Err()
+	).Scan(
+		&member.ID,
+	)
+	if err != nil {
+		println("RemoveUserFromChat:", err.Error()) // debug
+	}
 
-	return
+	return member, err
 }
 
 func (r *ChatsRepo) GetCountLinks(chatId int) (count int, err error) {
@@ -385,6 +397,9 @@ func (r *ChatsRepo) GetCountLinks(chatId int) (count int, err error) {
 		WHERE chat_id = $1`,
 		chatId,
 	).Scan(&count)
+	if err != nil {
+		println("GetCountLinks:", err.Error()) // debug
+	}
 
 	return
 }
@@ -510,8 +525,9 @@ func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool) {
 	return
 }
 
-func (r *ChatsRepo) AddUserByCode(code string, userId int) (err error) {
-	err = r.db.QueryRow(`
+func (r *ChatsRepo) AddUserByCode(code string, userId int) (*model.CreateMember, error) {
+	member := &model.CreateMember{}
+	err := r.db.QueryRow(`
 		WITH l AS (
 			UPDATE invites
 			SET aliens = aliens - 1
@@ -519,15 +535,20 @@ func (r *ChatsRepo) AddUserByCode(code string, userId int) (err error) {
 			RETURNING chat_id
 			)
 		INSERT INTO chat_members (user_id, chat_id, role_id, char, joined_at, muted, frozen)
-		VALUES ($2, l.chat_id, NULL, 'NONE', $3, false, false)`,
+		VALUES ($2, l.chat_id, NULL, 'NONE', $3, false, false)
+		RETURNING id, chat_id, user_id`,
 		code,
 		userId,
 		time.Now().UTC().Unix(),
-	).Err()
+	).Scan(
+		&member.ID,
+		&member.ChatID,
+		&member.UserID,
+	)
 	if err != nil {
 		println("AddUserByCode:", err.Error()) // debug
 	}
-	return
+	return member, err
 }
 
 func (r *ChatsRepo) ChatIsPrivate(chatId int) (private bool) {
@@ -640,20 +661,43 @@ func (r *ChatsRepo) MemberRole(memberId int) *model.Role {
 	return nil
 }
 
-func (r *ChatsRepo) CreateRoleInChat(inp *model.CreateRoleInput) (err error) {
-	err = r.db.QueryRow(
+func (r *ChatsRepo) CreateRoleInChat(inp *model.CreateRoleInput) (*model.CreateRole, error) {
+	role := &model.CreateRole{}
+	err := r.db.QueryRow(
 		`INSERT INTO roles
 		(chat_id, name, color)
 		VALUES ($1, $2, $3)
-		RETURNING id`,
+		RETURNING id, chat_id, name, color`,
 		inp.ChatID,
 		inp.Name,
 		inp.Color,
-	).Err()
+	).Scan(
+		&role.ID,
+		&role.ChatID,
+		&role.Name,
+		&role.Color,
+	)
 	if err != nil {
 		println("CreateRoleInChat:", err.Error()) // debug
 	}
-	return
+	return role, err
+}
+
+func (r *ChatsRepo) DeleteRole(roleID int) (*model.DeleteRole, error) {
+	role := &model.DeleteRole{}
+	err := r.db.QueryRow(`
+		DELETE FROM roles
+		WHERE id = $1
+		RETURNING id`,
+		roleID,
+	).Scan(
+		&role.ID,
+	)
+	if err != nil {
+		println("DeleteRole:", err.Error()) // debug
+	}
+
+	return role, err
 }
 
 func (r *ChatsRepo) Roles(chatId int) (*model.Roles, error) {
@@ -713,18 +757,6 @@ func (r *ChatsRepo) GiveRole(memberId, roleId int) (*model.UpdateMember, error) 
 		println("GiveRole:", err.Error()) // debug
 	}
 	return member, err
-}
-
-func (r *ChatsRepo) DeleteRole(roleId int) (err error) {
-	err = r.db.QueryRow(
-		`DELETE FROM roles
-		WHERE id = $1`,
-		roleId,
-	).Err()
-	if err != nil {
-		println("DeleteRole:", err.Error()) // debug
-	}
-	return
 }
 
 func (r *ChatsRepo) TakeRole(memberId int) (*model.UpdateMember, error) {

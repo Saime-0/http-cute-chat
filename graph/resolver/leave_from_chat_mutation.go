@@ -23,9 +23,15 @@ func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int) (model
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.RemoveUserFromChat(clientID, chatID)
+	eventReadyMember, err := r.Services.Repos.Chats.RemoveUserFromChat(clientID, chatID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
+
+	r.Services.Subix.NotifyChatMembers(
+		[]int{chatID},
+		eventReadyMember,
+	)
+
 	return resp.Success("успешно покинул чат"), nil
 }

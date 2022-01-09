@@ -25,9 +25,15 @@ func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.Jo
 		node.ChatsLimit(clientID) {
 		return node.Err, nil
 	}
-	err := r.Services.Repos.Chats.AddUserToChat(clientID, chatID)
+	eventReadyMember, err := r.Services.Repos.Chats.AddUserToChat(clientID, chatID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться"), nil
 	}
+
+	r.Services.Subix.NotifyChatMembers(
+		[]int{chatID},
+		eventReadyMember,
+	)
+
 	return resp.Success("успешно присоединился к чату"), nil
 }

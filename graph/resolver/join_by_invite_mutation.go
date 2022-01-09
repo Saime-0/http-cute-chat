@@ -29,9 +29,15 @@ func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model
 		return node.Err, nil
 	}
 
-	err := r.Services.Repos.Chats.AddUserByCode(code, clientID)
+	eventReadyMember, err := r.Services.Repos.Chats.AddUserByCode(code, clientID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться"), nil
 	}
+
+	r.Services.Subix.NotifyChatMembers(
+		[]int{chatID},
+		eventReadyMember,
+	)
+
 	return resp.Success("успешно присоединился к чату"), nil
 }
