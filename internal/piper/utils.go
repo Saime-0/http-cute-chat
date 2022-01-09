@@ -7,14 +7,6 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/resp"
 )
 
-func (n *Node) owner(userId, chatId int) (such bool) {
-	if !n.repos.Chats.UserIsChatOwner(userId, chatId) {
-		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является владельцем чата")
-		return
-	}
-	return true
-}
-
 func charPtr(m model.CharType) *model.CharType {
 	return &m
 }
