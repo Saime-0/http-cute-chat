@@ -50,6 +50,10 @@ func (n *Node) diffLevelCheck(applyToOwner, applyToSelfChar bool, minCharLevel m
 }
 
 func (n *Node) levelCheck(minCharLevel mlevel, demo *models.DemoMember) (bad bool) {
+	if demo == nil {
+		n.Err = resp.Error(resp.ErrBadRequest, "не является участником чата")
+		return true
+	}
 	if !(demo.IsOwner || charLevels[demo.Char] >= charLevels[charPtr(minCharLevel)]) {
 		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
 		return true

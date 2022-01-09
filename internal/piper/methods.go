@@ -203,6 +203,7 @@ func (n *Node) ValidInviteInput(inp model.CreateInviteInput) (fail bool) {
 	return
 }
 
+// IsMember does not need if the Can method is used..
 func (n *Node) IsMember(userId, chatId int) (fail bool) {
 	if !n.repos.Chats.UserIsChatMember(userId, chatId) {
 		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не является участником чата")

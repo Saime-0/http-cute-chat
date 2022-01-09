@@ -301,18 +301,26 @@ func (r *ChatsRepo) FindMemberBy(userId int, chatId int) *int {
 	return memberId
 }
 func (r *ChatsRepo) AddUserToChat(userId int, chatId int) (*model.CreateMember, error) {
-	member := &model.CreateMember{}
-	err := r.db.QueryRow(`
-		INSERT INTO chat_members (user_id, chat_id, role_id, char, joined_at, muted, frozen)
-		VALUES ($1, $2, NULL, 'NONE', $3, false, false)
-		RETURNING id, chat_id, user_id`,
+	member := &model.CreateMember{
+		Unit: &model.Unit{},
+	}
+	err := r.db.QueryRow(`		
+		WITH member AS (
+			    INSERT INTO chat_members (user_id, chat_id)
+				VALUES ($1, $2)
+				RETURNING id, chat_id, user_id
+		)
+		SELECT member.id, chat_id, user_id, domain, name, type
+		FROM member join units on user_id = units.id`,
 		userId,
 		chatId,
-		time.Now().UTC().Unix(),
 	).Scan(
 		&member.ID,
 		&member.ChatID,
-		&member.UserID,
+		&member.Unit.ID,
+		&member.Unit.Domain,
+		&member.Unit.Name,
+		&member.Unit.Type,
 	)
 	if err != nil {
 		println("AddUserToChat:", err.Error()) // debug
@@ -526,24 +534,32 @@ func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool) {
 }
 
 func (r *ChatsRepo) AddUserByCode(code string, userId int) (*model.CreateMember, error) {
-	member := &model.CreateMember{}
+	member := &model.CreateMember{
+		Unit: &model.Unit{},
+	}
 	err := r.db.QueryRow(`
-		WITH l AS (
+        WITH inv AS (
 			UPDATE invites
 			SET aliens = aliens - 1
-			WHERE code = $1
+			WHERE code = $2
 			RETURNING chat_id
-			)
-		INSERT INTO chat_members (user_id, chat_id, role_id, char, joined_at, muted, frozen)
-		VALUES ($2, l.chat_id, NULL, 'NONE', $3, false, false)
-		RETURNING id, chat_id, user_id`,
-		code,
+		), member AS (
+			    INSERT INTO chat_members (user_id, chat_id)
+				SELECT $1, inv.chat_id
+			    FROM inv
+				RETURNING id, user_id, chat_id 
+		)
+		SELECT member.id, chat_id, user_id, domain, name, type
+		FROM member join units on user_id = units.id`,
 		userId,
-		time.Now().UTC().Unix(),
+		code,
 	).Scan(
 		&member.ID,
 		&member.ChatID,
-		&member.UserID,
+		&member.Unit.ID,
+		&member.Unit.Domain,
+		&member.Unit.Name,
+		&member.Unit.Type,
 	)
 	if err != nil {
 		println("AddUserByCode:", err.Error()) // debug
@@ -761,11 +777,17 @@ func (r *ChatsRepo) GiveRole(memberId, roleId int) (*model.UpdateMember, error) 
 
 func (r *ChatsRepo) TakeRole(memberId int) (*model.UpdateMember, error) {
 	member := &model.UpdateMember{}
-	err := r.db.QueryRow(
-		`UPDATE chat_members
+	err := r.db.QueryRow(`
+		WITH x AS (
+		    SELECT id
+		    FROM chat_members
+		    where id = $1 AND role_id is not null 
+		)
+		UPDATE chat_members
 		SET role_id = NULL
-		WHERE id = $1
-		RETURNING id, role_id, char, muted, frozen`,
+		FROM x
+		WHERE chat_members.id = x.id
+		RETURNING x.id, role_id, char, muted, frozen`,
 		memberId,
 	).Scan(
 		&member.ID,
@@ -776,6 +798,33 @@ func (r *ChatsRepo) TakeRole(memberId int) (*model.UpdateMember, error) {
 	)
 	if err != nil {
 		println("TakeRole:", err.Error()) // debug
+	}
+	return member, err
+}
+
+func (r *ChatsRepo) TakeChar(memberId int) (*model.UpdateMember, error) {
+	member := &model.UpdateMember{}
+	err := r.db.QueryRow(`
+		WITH x AS (
+		    SELECT id
+		    FROM chat_members
+		    where id = $1 AND char is not null 
+		)
+		UPDATE chat_members
+		SET char = NULL
+		FROM x
+		WHERE chat_members.id = x.id
+		RETURNING x.id, role_id, char, muted, frozen`,
+		memberId,
+	).Scan(
+		&member.ID,
+		&member.RoleID,
+		&member.Char,
+		&member.Muted,
+		&member.Frozen,
+	)
+	if err != nil {
+		println("TakeChar:", err.Error()) // debug
 	}
 	return member, err
 }

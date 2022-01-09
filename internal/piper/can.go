@@ -151,3 +151,14 @@ func (n *Node) CanTakeRole(MemberID, targetMemberID int) (fail bool) {
 		demoMembers[1],
 	)
 }
+
+func (n *Node) CanTakeChar(MemberID, targetMemberID int) (fail bool) {
+	demoMembers := n.repos.Chats.DemoMembers(0, 1, MemberID, targetMemberID)
+	return n.diffLevelCheck(
+		true,
+		false,
+		model.CharTypeAdmin,
+		demoMembers[0],
+		demoMembers[1],
+	)
+}

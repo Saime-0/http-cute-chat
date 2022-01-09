@@ -139,25 +139,25 @@ union EventResult =
     | UpdateUser # всем участникам +
 
     | CreateMember # всем участникам +
-    | UpdateMember # всем участникам +
-    | DeleteMember # всем участникам +
+    | UpdateMember # +
+    | DeleteMember # +
 
     | CreateRole # всем участникам +
-    | UpdateRole # всем участникам +
-    | DeleteRole # всем участникам +
+    | UpdateRole # +
+    | DeleteRole # +
 
     | UpdateForm # всем писателям (с учетом того что клиент сможет без формы(не зная типов полей) правильно распарсить сообщение)
 
     | CreateAllow #  всем участникам +
-    | DeleteAllow #  всем участникам +
+    | DeleteAllow # +
 
     | UpdateChat # всем участникам +
 
     | CreateRoom # всем участникам +
-    | UpdateRoom # всем участникам +
-    | DeleteRoom
+    | UpdateRoom # +
+    | DeleteRoom # +
 
-    | CreateInvite # +
+    | CreateInvite # только определенным чарам +-
     | DeleteInvite # +-
 
 

@@ -278,24 +278,27 @@ func (r *RoomsRepo) RoomForm(roomId int) *model.Form {
 }
 
 func (r *RoomsRepo) UpdateRoomForm(roomId int, form *string) (err error) {
-	err = r.db.QueryRow(
-		`UPDATE rooms
+	err = r.db.QueryRow(`
+		UPDATE rooms
 		SET msg_format = $2
 		WHERE id = $1`,
 		roomId,
 		form,
 	).Err()
+	if err != nil {
+		println("UpdateRoomForm:", err.Error()) // debug
+	}
 
 	return
 }
 
 func (r *RoomsRepo) FormIsSet(roomId int) (have bool) {
-	err := r.db.QueryRow(
-		`SELECT EXISTS(
-				SELECT 1
-				FROM rooms
-				WHERE id = $1 AND msg_format IS NOT NULL
-			)`,
+	err := r.db.QueryRow(`
+		SELECT EXISTS(
+			SELECT 1
+			FROM rooms
+			WHERE id = $1 AND msg_format IS NOT NULL
+		)`,
 		roomId,
 	).Scan(&have)
 	if err != nil {

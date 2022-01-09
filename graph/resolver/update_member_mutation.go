@@ -21,7 +21,6 @@ func (r *mutationResolver) UpdateMember(ctx context.Context, memberID int, input
 	)
 
 	if node.GetChatIDByMember(memberID, &chatID) ||
-		node.IsMember(clientID, chatID) ||
 		input.RoleID != nil && node.CanGiveRole(clientID, chatID) && node.RoleExists(chatID, *input.RoleID) ||
 		input.Char != nil && node.CanGiveChar(clientID, chatID) ||
 		input.Muted != nil && node.CanMuteMember(clientID, chatID) ||

@@ -25,13 +25,14 @@ func (r *mutationResolver) TakeRole(ctx context.Context, memberID int) (model.Mu
 		node.GetChatIDByMember(memberID, &chatID) ||
 		node.GetMemberBy(clientID, chatID, &clientMemberID) ||
 		node.CanTakeRole(clientMemberID, memberID) {
-
 		return node.Err, nil
 	}
-	// todo migrate to..nonono..
+
 	eventReadyMember, err := r.Services.Repos.Chats.TakeRole(memberID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "ошибка при попытке забрать роль"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось забрать роль"), nil
+	} else if eventReadyMember.ID == 0 {
+		return resp.Error(resp.ErrInternalServerError, "у пользователя нет роли"), nil
 	}
 	r.Services.Subix.NotifyChatMembers(
 		[]int{chatID},
