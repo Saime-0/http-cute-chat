@@ -16,14 +16,6 @@ func NewUnitsRepo(db *sql.DB) *UnitsRepo {
 	}
 }
 
-func (r *UnitsRepo) GetDomainByID(unitId int) (domain string, err error) {
-	return
-}
-func (r *UnitsRepo) GetIDByDomain(unitDomain string) (id int, err error) {
-	panic("Not Implemented")
-	return
-}
-
 func (r *UnitsRepo) UnitExistsByID(unitId int, unitType rules.UnitType) (exists bool) {
 	err := r.db.QueryRow(
 		`SELECT EXISTS(
@@ -67,25 +59,6 @@ func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
 		println("DomainIsFree:", err.Error()) // debug
 	}
 	return !free
-}
-
-func (r *UnitsRepo) UnitByID(id int) (*model.Unit, error) {
-	unit := &model.Unit{}
-	err := r.db.QueryRow(`
-		SELECT id, domain, name, type 
-		FROM units
-		WHERE id = $1`,
-		id,
-	).Scan(
-		&unit.ID,
-		&unit.Domain,
-		&unit.Name,
-		&unit.Type,
-	)
-	if err != nil {
-		println("UnitByID:", err.Error()) // debug
-	}
-	return unit, err
 }
 
 func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) *model.Units {

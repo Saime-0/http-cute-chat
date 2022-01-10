@@ -372,6 +372,7 @@ func (n *Node) GetChatIDByAllow(allowID int, chatId *int) (fail bool) {
 	return
 }
 
+// todo *delete message*
 func (n *Node) MessageAvailable(msgId, roomId int) (fail bool) {
 	if !n.repos.Messages.MessageAvailableOnRoom(msgId, roomId) {
 		n.Err = resp.Error(resp.ErrBadRequest, "сообщение не найдено")
