@@ -10,6 +10,39 @@ create type fetch_type as enum ('POSITIVE', 'NEUTRAL', 'NEGATIVE');
 
 create type char_type as enum ('ADMIN', 'MODER');
 
+
+
+create or replace function generate_invite_code() returns text
+    language sql
+as $$
+SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
+FROM generate_series(1, 16)
+$$;
+
+create or replace function unix_utc_now(bigint DEFAULT 0) returns bigint
+    language sql
+as $$
+SELECT (date_part('epoch'::text, now()))::bigint + $1
+$$;
+
+create or replace function delete_allow() returns trigger
+    language plpgsql
+as $$
+BEGIN
+    IF tg_table_name = 'chat_members' THEN
+        DELETE FROM allows
+        WHERE group_type = 'MEMBER' AND value = old.id::VARCHAR;
+    ELSE
+        DELETE FROM allows
+        WHERE group_type = 'ROLE' AND value = OLD.ID::VARCHAR;
+    end if;
+    raise notice '%', old.id;
+    RETURN NULL;
+end;
+$$;
+
+
+
 create table if not exists schema_migrations
 (
     version bigint not null
@@ -41,7 +74,8 @@ create table if not exists chats
 (
     id bigint not null
         primary key
-        references units,
+        references units
+            on delete cascade,
     owner_id bigint not null
         references users,
     private boolean not null
@@ -50,7 +84,8 @@ create table if not exists chats
 create table if not exists chat_banlist
 (
     chat_id bigint not null
-        references chats,
+        references chats
+            on delete cascade,
     user_id bigint not null
         references users
 );
@@ -62,7 +97,8 @@ create table if not exists invites
             primary key,
     chat_id bigint not null
         constraint invite_links_chat_id_fkey
-            references chats,
+            references chats
+            on delete cascade,
     aliens smallint,
     expires_at bigint
 );
@@ -72,9 +108,11 @@ create table if not exists rooms
     id bigserial
         primary key,
     chat_id bigint not null
-        references chats,
+        references chats
+            on delete cascade,
     parent_id bigint
-        references rooms,
+                   references rooms
+                       on delete set null,
     name varchar(32) not null,
     note varchar(64) default NULL::character varying,
     msg_format varchar(8192) default NULL::character varying
@@ -85,10 +123,17 @@ create table if not exists roles
     id bigserial
         primary key,
     chat_id bigint not null
-        references chats,
+        references chats
+            on delete cascade,
     name varchar(32) not null,
     color varchar(7) not null
 );
+
+create trigger on_delete_role
+    after delete
+    on roles
+    for each row
+execute procedure delete_allow();
 
 create table if not exists chat_members
 (
@@ -97,25 +142,36 @@ create table if not exists chat_members
     user_id bigint not null
         references users,
     chat_id bigint not null
-        references chats,
+        references chats
+            on delete cascade,
     role_id bigint
-        references roles,
+                   references roles
+                       on delete set null,
     char char_type,
     joined_at bigint default unix_utc_now() not null,
     muted boolean default false not null,
     frozen boolean default false not null
 );
 
+create trigger on_delete_member
+    after delete
+    on chat_members
+    for each row
+execute procedure delete_allow();
+
 create table if not exists messages
 (
     id bigserial
         primary key,
     reply_to bigint
-        references messages,
-    author bigint
-        references chat_members,
+                                             references messages
+                                                 on delete set null,
+    user_id bigint
+        constraint messages_users_id_fk
+            references users,
     room_id bigint not null
-        references rooms,
+        references rooms
+            on delete cascade,
     body varchar(8192) not null,
     type message_type not null,
     created_at bigint default unix_utc_now() not null
@@ -138,7 +194,8 @@ create table if not exists votes
     id bigserial
         primary key,
     room_id bigint not null
-        references rooms,
+        references rooms
+            on delete cascade,
     question varchar(64) not null,
     date bigint not null
 );
@@ -148,7 +205,8 @@ create table if not exists vote_answers
     id bigserial
         primary key,
     vote_id bigint not null
-        references votes,
+        references votes
+            on delete cascade,
     answer varchar(64) not null
 );
 
@@ -157,7 +215,8 @@ create table if not exists voters
     id bigserial
         primary key,
     answer_id bigint not null
-        references vote_answers,
+        references vote_answers
+            on delete cascade,
     user_id bigint not null
         references users
 );
@@ -165,24 +224,11 @@ create table if not exists voters
 create table if not exists allows
 (
     room_id bigint not null
-        references rooms,
+        references rooms
+            on delete cascade,
     action_type action_type not null,
     group_type group_type not null,
     value varchar(19) not null,
     id bigserial
         primary key
 );
-
-create or replace function generate_invite_code() returns text
-    language sql
-as $$
-SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
-FROM generate_series(1, 16)
-$$;
-
-create or replace function unix_utc_now(bigint DEFAULT 0) returns bigint
-    language sql
-as $$
-SELECT (date_part('epoch'::text, now()))::bigint + $1
-$$;
-
