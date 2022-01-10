@@ -10,7 +10,6 @@ require (
 	github.com/lib/pq v1.10.4
 	github.com/robbert229/jwt v2.0.0+incompatible
 	github.com/vektah/gqlparser/v2 v2.2.0
-	github.com/xlzd/gotp v0.0.0-20220107120203-8b477b0b0578
 )
 
 require (

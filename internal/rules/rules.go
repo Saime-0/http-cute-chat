@@ -58,7 +58,6 @@ const (
 	NameMinLength                  = 1
 	DomainMaxLength                = 32
 	DomainMinLength                = 4
-	AppSettingsMaxLength           = 512
 	MaxCountOwnedChats             = 128
 	NoteMaxLength                  = 64
 	MessageBodyMaxLength           = 4096

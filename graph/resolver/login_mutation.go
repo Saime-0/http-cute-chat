@@ -6,13 +6,13 @@ package resolver
 import (
 	"context"
 	"fmt"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/utils"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error) {

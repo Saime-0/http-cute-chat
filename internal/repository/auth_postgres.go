@@ -64,15 +64,7 @@ func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
 	}
 	return
 }
-func (r *AuthRepo) DeleteOldestSession(userId int) (err error) {
-	err = r.db.QueryRow(
-		`DELETE FROM refresh_sessions 
-		WHERE ctid IN(SELECT ctid FROM refresh_sessions WHERE user_id=$1 LIMIT 1)`,
-		userId,
-	).Err()
 
-	return
-}
 func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, userId int, err error) {
 	err = r.db.QueryRow(
 		`SELECT id, user_id
@@ -84,21 +76,5 @@ func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, user
 		&userId,
 	)
 
-	return
-}
-func (r *AuthRepo) UpdateRefreshSession(sessionId int, sessionModel *models.RefreshSession) (expiresAt int64, err error) {
-	err = r.db.QueryRow(
-		`UPDATE refresh_sessions
-		SET refresh_token = $2, user_agent = $3, expires_at = (date_part('epoch'::text, now()))::bigint + $4, created_at = (date_part('epoch'::text, now()))::bigint
-		WHERE id = $1
-		RETURNING expires_at`,
-		sessionId,
-		sessionModel.RefreshToken,
-		sessionModel.UserAgent,
-		sessionModel.Lifetime,
-	).Err()
-	if err != nil {
-		println(err.Error()) // debug
-	}
 	return
 }

@@ -35,10 +35,6 @@ func ValidateEmail(email string) (valid bool) { // todo
 	valid, _ = regexp.MatchString(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`, email)
 	return
 }
-func ValidateAppSettings(settings string) (valid bool) {
-
-	return len(settings) <= rules.AppSettingsMaxLength
-}
 func ValidateLifetime(lt int64) (valid bool) {
 
 	return lt >= int64(time.Minute) && lt <= rules.Year
@@ -63,30 +59,6 @@ func ValidateNameFragment(fragment string) (valid bool) {
 func ValidateID(id int) (valid bool) {
 	return id > 0
 }
-
-// func handleDatabaseError(err error) error {
-// 	if err != nil {
-// 		if err == sql.ErrNoRows {
-// 			responder.Error(w, http.StatusInternalServerError, )
-// 			return ErrDataRetrieved
-// 		}
-// 		responder.Error(w, http.StatusInternalServerError, )
-// 		panic(err)
-// 	}
-// }
-
-// func validateDomain(domain string) (valid bool) {
-// return
-// }
-// func validateDomain(domain string) (valid bool) {
-// return
-// }
-// func validateDomain(domain string) (valid bool) {
-// return
-// }
-// func validateDomain(domain string) (valid bool) {
-// 	return
-// }
 
 func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 	if len(form.Fields) > rules.MaxFormFields {
