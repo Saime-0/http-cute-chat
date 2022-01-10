@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/tlog"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
@@ -350,7 +349,7 @@ func (r *RoomsRepo) HasParent(roomId int) (has bool) {
 	return
 }
 
-func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *models.AllowHolder) (yes bool) {
+func (r *RoomsRepo) Allowed(action model.ActionType, roomId int, holder *models.AllowHolder) (yes bool) {
 	tl := tlog.Start("RoomsRepo > Allowed [rid:" + strconv.Itoa(roomId) + ",uid:" + strconv.Itoa(holder.UserID) + "]")
 	defer tl.Fine()
 	err := r.db.QueryRow(`
@@ -358,16 +357,19 @@ func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *mo
 		    SELECT 1 
 		    FROM chats
 		    JOIN rooms r on chats.id = r.chat_id
-		    LEFT JOIN allows a on r.id = a.room_id
+		    LEFT JOIN (
+		        SELECT *
+		        FROM allows
+		        WHERE room_id = $2 AND action_type = $1
+		    ) a on r.id = a.room_id
 		    WHERE r.id = $2 
-		    	AND (
+				AND (
 			        action_type IS NULL 
-			        OR action_type = $1 
-			            AND (
-							group_type = 'ROLE' AND value = $3::VARCHAR 
-							OR group_type = 'CHAR' AND value = $4::VARCHAR  
-							OR group_type = 'MEMBER' AND value = $6::VARCHAR
-						)
+			        OR (
+						group_type = 'ROLE' AND value = $3::VARCHAR 
+						OR group_type = 'CHAR' AND value = $4::VARCHAR  
+						OR group_type = 'MEMBER' AND value = $6::VARCHAR
+					)
 			        OR owner_id = $5::BIGINT 
 		    	)
 	    )`,

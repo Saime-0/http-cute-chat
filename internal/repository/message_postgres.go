@@ -107,31 +107,35 @@ func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (*model.Ne
 	return message, nil
 }
 
-func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMessagesInRoomByUnionInput, params *model.Params) *model.Messages {
+func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMessagesInRoom) *model.Messages {
 	messages := &model.Messages{
 		Messages: []*model.Message{},
+	}
+
+	var direction int8 = 1
+
+	if find.Created == model.MessagesCreatedBefore {
+		direction = -1
 	}
 	rows, err := r.db.Query(`
 		SELECT id, reply_to, user_id, room_id, body, messages.type, created_at
 		FROM messages
 		WHERE room_id = $1
-		  AND (
-		      $2::BIGINT IS NULL 
-		      OR messages.created_at > $2
-		  )
-		  AND (
-		      $3::BIGINT IS NULL 
-		      OR messages.created_at <= $3
-		  )
-		ORDER BY created_at
-		OFFSET $4 
-		LIMIT $5
+		    AND (
+		        $2 = 0
+		        OR (
+		            $4 = 1 AND id >= $2 AND id <= ($2 + $3)
+		            OR $4 = -1 AND id <= $2
+		        )
+		    )
+		ORDER BY created_at DESC
+		OFFSET 0
+		LIMIT $3
 		`,
 		roomId,
-		find.AfterTime,
-		find.BeforeTime,
-		params.Offset,
-		params.Limit,
+		find.StartMessageID,
+		find.Count,
+		direction,
 	)
 	if err != nil {
 		println("MessagesFromRoom:", err.Error()) // debug

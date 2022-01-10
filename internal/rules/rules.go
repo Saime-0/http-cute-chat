@@ -60,6 +60,7 @@ const (
 	DomainMinLength                = 4
 	MaxCountOwnedChats             = 128
 	NoteMaxLength                  = 64
+	MaxMessagesCount               = 20
 	MessageBodyMaxLength           = 4096
 	RefreshTokenLength             = 16
 	RefreshTokenBytesLength        = 16

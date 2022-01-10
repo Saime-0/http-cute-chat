@@ -26,7 +26,7 @@ func (r *queryResolver) RoomForm(ctx context.Context, roomID int) (model.RoomFor
 		node.GetChatIDByRoom(roomID, &chatID) ||
 		node.IsMember(clientID, chatID) ||
 		node.GetAllowHolder(clientID, chatID, &holder) ||
-		node.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		node.IsAllowedTo(model.ActionTypeRead, roomID, &holder) {
 		return node.Err, nil
 	}
 

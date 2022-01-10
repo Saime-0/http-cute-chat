@@ -28,7 +28,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		node.GetMemberBy(clientID, chatID, &memberID) ||
 		node.IsNotMuted(memberID) ||
 		node.GetAllowHolder(clientID, chatID, &holder) ||
-		node.IsAllowedTo(rules.AllowWrite, roomID, &holder) ||
+		node.IsAllowedTo(model.ActionTypeWrite, roomID, &holder) ||
 		r.Services.Repos.Rooms.FormIsSet(roomID) && node.HandleChoice(input.Body, roomID, &input.Body) {
 		return node.Err, nil
 	}

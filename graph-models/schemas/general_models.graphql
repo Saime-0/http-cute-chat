@@ -110,7 +110,7 @@ type Room {
     note: String
     form: RoomFormResult @goField(forceResolver: true) # не проверено
     allows: AllowsResult! @goField(forceResolver: true)
-    messages(find: FindMessagesInRoomByUnionInput!, params: Params): MessagesResult @goField(forceResolver: true)
+    messages(find: FindMessagesInRoom!): MessagesResult @goField(forceResolver: true)
     #todo next: prev: or symbolindex:
 }
 

@@ -88,6 +88,21 @@ func (n *Node) ValidID(id int) (fail bool) {
 	return
 }
 
+func (n *Node) ValidFindMessagesInRoom(find *model.FindMessagesInRoom) (fail bool) {
+	if find.Count <= 0 ||
+		find.Count >= rules.MaxMessagesCount ||
+		find.Created == model.MessagesCreatedBefore && find.StartMessageID-find.Count < 0 {
+		n.Err = resp.Error(resp.ErrBadRequest, "неверное значение количества сообщений")
+		return true
+	}
+	if !validator.ValidateID(find.StartMessageID) {
+		n.Err = resp.Error(resp.ErrBadRequest, "неверный ID сообщения")
+		return true
+	}
+
+	return
+}
+
 func (n *Node) ValidPassword(password string) (fail bool) {
 	if !validator.ValidatePassword(password) {
 		n.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение для пароля")
@@ -381,7 +396,7 @@ func (n *Node) MessageAvailable(msgId, roomId int) (fail bool) {
 	return
 }
 
-func (n *Node) IsAllowedTo(action rules.AllowActionType, roomId int, holder *models.AllowHolder) (fail bool) {
+func (n *Node) IsAllowedTo(action model.ActionType, roomId int, holder *models.AllowHolder) (fail bool) {
 	if !n.repos.Rooms.Allowed(action, roomId, holder) {
 		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав на это действие")
 		return true

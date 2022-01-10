@@ -78,11 +78,24 @@ input FindMembers {
     frozen: Boolean
 }
 
+# возвращает в обратном хронологическом порядке
 input FindMessages {
     chatId: ID!
     roomId: ID
     userId: ID
     textFragment: String
+}
+
+# возвращает в обратном хронологическом порядке
+# если равно 0 то началом будет считаться самое новое сообщение
+input FindMessagesInRoom {
+    startMessageId: ID!
+    created: MessagesCreated!
+    count: Int!
+}
+enum MessagesCreated {
+    BEFORE
+    AFTER
 }
 
 input FindRooms {
@@ -113,11 +126,6 @@ input FindChats {
     nameFragment: String
 #    isPrivate: FetchType = NEUTRAL unable to find a private chat!!!
 
-}
-
-input FindMessagesInRoomByUnionInput {
-    afterTime: Int64
-    beforeTime: Int64
 }
 
 input CreateRoomInput {

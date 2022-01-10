@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -325,7 +326,7 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 	)
 
 	if node.GetAllowHolder(clientID, chatID, &holder) ||
-		node.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		node.IsAllowedTo(model.ActionTypeRead, roomID, &holder) {
 		return node.Err, nil
 	}
 	form := r.Services.Repos.Rooms.RoomForm(roomID)
@@ -345,7 +346,7 @@ func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.Allow
 	return allows, nil
 }
 
-func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model.FindMessagesInRoomByUnionInput, params *model.Params) (model.MessagesResult, error) {
+func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model.FindMessagesInRoom) (model.MessagesResult, error) {
 	node := r.Piper.CreateNode("roomResolver > Messages [rid:", obj.RoomID, "]")
 	defer node.Kill()
 
@@ -356,12 +357,12 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 		holder   models.AllowHolder
 	)
 
-	if node.ValidParams(&params) ||
+	if node.ValidFindMessagesInRoom(&find) ||
 		node.GetAllowHolder(clientID, chatID, &holder) ||
-		node.IsAllowedTo(rules.AllowRead, roomID, &holder) {
+		node.IsAllowedTo(model.ActionTypeRead, roomID, &holder) {
 		return node.Err, nil
 	}
-	room := r.Services.Repos.Messages.MessagesFromRoom(roomID, chatID, &find, params)
+	room := r.Services.Repos.Messages.MessagesFromRoom(roomID, chatID, &find)
 
 	return room, nil
 }
