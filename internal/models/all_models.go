@@ -14,7 +14,7 @@ type Invite struct {
 
 type CreateMessage struct {
 	ReplyTo *int
-	Author  *int
+	UserID  *int
 	RoomID  int
 	Body    string
 	Type    model.MessageType
@@ -78,7 +78,7 @@ type AllowsDB struct { // db table be like
 
 type AllowHolder struct {
 	RoleID   *int
-	Char     rules.CharType
+	Char     *model.CharType
 	UserID   int
 	MemberID int
 }

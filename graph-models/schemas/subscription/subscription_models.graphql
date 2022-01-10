@@ -9,7 +9,7 @@ type NewMessage { # todo rename
 	id: ID!
 	roomId: ID!
 	replyToId: ID
-	authorId: ID
+	userId: ID
 	body: String!
 	msgType: MessageType!
 	createdAt: Int64!

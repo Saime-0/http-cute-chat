@@ -35,19 +35,6 @@ func (n *Node) UserExists(userId int) (fail bool) {
 	return
 }
 
-// put ID ptr to 2 arg
-// deprecated
-func (n *Node) GetIDByDomain(domain string, id *int) (fail bool) {
-	_id, err := n.repos.Units.GetIDByDomain(domain)
-	if err != nil {
-		n.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
-		return true
-	}
-	*id = _id
-
-	return
-}
-
 // ValidParams
 //  with side effect
 func (n *Node) ValidParams(params **model.Params) (fail bool) {
@@ -456,11 +443,6 @@ func (n *Node) IsNotMuted(memberId int) (fail bool) {
 		n.Err = resp.Error(resp.ErrBadRequest, "участник чата заглушен")
 		return true
 	}
-	return
-}
-
-func (n *Node) GetMemberIDWhich(userId, chatId int, memberId *int) (fail bool) {
-	panic("Not Implemented")
 	return
 }
 

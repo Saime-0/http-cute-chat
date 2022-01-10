@@ -26,7 +26,7 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 		node.ValidID(chatID) ||
 		node.IsMember(clientID, chatID) ||
 		find.RoomID != nil && node.ValidID(*find.RoomID) ||
-		find.AuthorID != nil && node.ValidID(*find.AuthorID) ||
+		find.UserID != nil && node.ValidID(*find.UserID) ||
 		node.GetAllowHolder(clientID, chatID, &holder) { // todo bodyfragment valid
 		return node.Err, nil
 	}

@@ -37,7 +37,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 	// todo все allow.group.user заменить на member
 	message := &models.CreateMessage{
 		ReplyTo: input.ReplyTo,
-		Author:  &memberID,
+		UserID:  &memberID,
 		RoomID:  roomID,
 		Body:    input.Body,
 		Type:    model.MessageTypeUser,
@@ -47,7 +47,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}
 
-	//r.Services.Events.NewMessage(roomID, &model.Message{ID:      msgID, ReplyTo: _replyTo, Author:  &model.Member{ID: memberID}, Type:    message.Type, Body:    input.Body})
+	//r.Services.Events.NewMessage(roomID, &model.Message{ID:      msgID, ReplyTo: _replyTo, UserID:  &model.Member{ID: memberID}, Type:    message.Type, Body:    input.Body})
 	r.Services.Subix.NotifyRoomReaders(
 		[]int{roomID},
 		eventReadyMessage,

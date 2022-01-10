@@ -1055,7 +1055,7 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 
 	// language=PostgreSQL
 	var rows, err = r.db.Query(`
-			SELECT messages.id, reply_to, author, messages.room_id, body, messages.type, created_at
+			SELECT messages.id, reply_to, user_id, messages.room_id, body, messages.type, created_at
 			FROM messages 
 			LEFT JOIN allows
 				ON messages.room_id = allows.room_id
@@ -1084,7 +1084,7 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 			)
 			AND (
 			    $6::BIGINT IS NULL 
-			    OR author = $6 
+			    OR user_id = $6 
 			)
 			AND (
 			    $7::VARCHAR IS NULL 
@@ -1098,7 +1098,7 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 		holder.RoleID,
 		holder.Char,
 		holder.UserID,
-		inp.AuthorID,
+		inp.UserID,
 		inp.TextFragment,
 		params.Limit,
 		params.Offset,
@@ -1117,10 +1117,10 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 			},
 		}
 		var (
-			_replid   *int
-			_memberId *int
+			_replid *int
+			_userID *int
 		)
-		if err = rows.Scan(&m.ID, &_replid, &_memberId, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+		if err = rows.Scan(&m.ID, &_replid, &_userID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
 			println("rows.scan:", err.Error()) // debug
 			return messages
 		}
@@ -1129,9 +1129,9 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 				ID: *_replid,
 			}
 		}
-		if _memberId != nil {
-			m.Author = &model.Member{
-				ID: *_memberId,
+		if _userID != nil {
+			m.User = &model.User{
+				Unit: &model.Unit{ID: *_userID},
 			}
 		}
 		messages.Messages = append(messages.Messages, m)
@@ -1152,10 +1152,6 @@ func (r *ChatsRepo) ChatIDByMemberID(memberId int) (chatId int, err error) {
 		println("ChatIDByMemberID:", err.Error()) // debug
 	}
 	return
-}
-
-func (r *ChatsRepo) FindMessage(messageId int) *model.Message {
-	panic("Not implemented")
 }
 
 func (r *ChatsRepo) MemberIsMuted(memberId int) (muted bool) {

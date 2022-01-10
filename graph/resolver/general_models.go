@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -282,22 +281,22 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 	return message, nil
 }
 
-func (r *messageResolver) Author(ctx context.Context, obj *model.Message) (*model.Member, error) {
-	node := r.Piper.CreateNode("messageResolver > Author [mesid:", obj.ID, "]")
+func (r *messageResolver) User(ctx context.Context, obj *model.Message) (*model.User, error) {
+	node := r.Piper.CreateNode("messageResolver > User [mesid:", obj.ID, "]")
 	defer node.Kill()
 
-	if obj.Author == nil {
+	if obj.User == nil {
 		return nil, nil // так и надо
 	}
 
-	memberID := obj.Author.ID
+	userID := obj.User.Unit.ID
 
-	member, err := r.Services.Repos.Chats.Member(memberID)
+	user, err := r.Services.Repos.Users.User(userID)
 	if err != nil {
 		return nil, err // todo resp.Error
 	}
 
-	return member, nil
+	return user, nil
 }
 
 func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (*model.Chat, error) {

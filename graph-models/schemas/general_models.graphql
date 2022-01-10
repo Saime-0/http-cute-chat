@@ -165,7 +165,7 @@ type Message {
     id: ID!
     room: Room! @goField(forceResolver: true)
     replyTo: Message @goField(forceResolver: true)
-    author: Member @goField(forceResolver: true)
+    user: User @goField(forceResolver: true)
     body: String!
     type: MessageType!
     createdAt: Int64!

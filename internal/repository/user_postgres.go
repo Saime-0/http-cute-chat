@@ -23,8 +23,8 @@ func (r *UsersRepo) CreateUser(userModel *model.RegisterInput) (err error) {
 			VALUES ($1, $2, 'USER') 
 			RETURNING id
 			) 
-		INSERT INTO users (id, app_settings, password, email) 
-		SELECT u.id, 'default', $3, $4 
+		INSERT INTO users (id, password, email) 
+		SELECT u.id, $3, $4 
 		FROM u 
 		RETURNING id`,
 		userModel.Domain,
@@ -36,6 +36,27 @@ func (r *UsersRepo) CreateUser(userModel *model.RegisterInput) (err error) {
 		println("CreateUser:", err.Error()) // debug
 	}
 	return
+}
+
+func (r *UsersRepo) User(userID int) (*model.User, error) {
+	user := &model.User{
+		Unit: &model.Unit{},
+	}
+	err := r.db.QueryRow(`
+		SELECT id, domain, name, type
+		FROM units
+		WHERE id = $1`,
+		userID,
+	).Scan(
+		&user.Unit.ID,
+		&user.Unit.Domain,
+		&user.Unit.Name,
+		&user.Unit.Type,
+	)
+	if err != nil {
+		println("User:", err.Error()) // debug
+	}
+	return user, err
 }
 
 func (r *UsersRepo) UserExistsByInput(inputModel *models.UserInput) (exists bool) {
@@ -206,8 +227,8 @@ func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
 	chats := &model.Chats{
 		Chats: []*model.Chat{},
 	}
-	rows, err := r.db.Query(
-		`SELECT units.id, units.domain, units.name, units.type, chats.private
+	rows, err := r.db.Query(`
+		SELECT units.id, units.domain, units.name, units.type, chats.private
 		FROM units 
 		INNER JOIN chats 
 			ON units.id = chats.id 

@@ -32,7 +32,6 @@ create table if not exists users
     id bigint not null
         primary key
         references units,
-    app_settings varchar(256),
     password varchar(32) not null,
     email varchar(256) not null
         unique

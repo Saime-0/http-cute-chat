@@ -49,18 +49,18 @@ func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 		Room: &model.Room{},
 	}
 	var (
-		_replid   *int
-		_memberId *int
+		_replid *int
+		_userID *int
 	)
 	err := r.db.QueryRow(
-		`SELECT id, reply_to, author, room_id, body, type, created_at
+		`SELECT id, reply_to, user_id, room_id, body, type, created_at
 		FROM messages
 		WHERE id = $1`,
 		messageId,
 	).Scan(
 		&message.ID,
 		&_replid,
-		&_memberId,
+		&_userID,
 		&message.Room.RoomID,
 		&message.Body,
 		&message.Type,
@@ -71,9 +71,9 @@ func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 			ID: *_replid,
 		}
 	}
-	if _memberId != nil {
-		message.Author = &model.Member{
-			ID: *_memberId,
+	if _userID != nil {
+		message.User = &model.User{
+			Unit: &model.Unit{ID: *_userID},
 		}
 	}
 	return message, err
@@ -82,20 +82,20 @@ func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (*model.NewMessage, error) {
 	message := &model.NewMessage{}
 	err := r.db.QueryRow(`
-		INSERT INTO messages (reply_to, author, room_id, body, type)
+		INSERT INTO messages (room_id, reply_to, user_id, body, type)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, room_id, reply_to, author, body, type, created_at
+		RETURNING id, room_id, reply_to, user_id, body, type, created_at
 		`,
-		inp.ReplyTo,
-		inp.Author,
 		inp.RoomID,
+		inp.ReplyTo,
+		inp.UserID,
 		inp.Body,
 		inp.Type,
 	).Scan(
 		&message.ID,
 		&message.RoomID,
 		&message.ReplyToID,
-		&message.AuthorID,
+		&message.UserID,
 		&message.Body,
 		&message.MsgType,
 		&message.CreatedAt,
@@ -112,7 +112,7 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 		Messages: []*model.Message{},
 	}
 	rows, err := r.db.Query(`
-		SELECT id, reply_to, author, room_id, body, messages.type, created_at
+		SELECT id, reply_to, user_id, room_id, body, messages.type, created_at
 		FROM messages
 		WHERE room_id = $1
 		  AND (
@@ -147,10 +147,10 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 			},
 		}
 		var (
-			_replid   *int
-			_memberId *int
+			_replid *int
+			_userID *int
 		)
-		if err = rows.Scan(&m.ID, &_replid, &_memberId, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
+		if err = rows.Scan(&m.ID, &_replid, &_userID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
 			println("rows.scan:", err.Error()) // debug
 			return messages
 		}
@@ -159,9 +159,9 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 				ID: *_replid,
 			}
 		}
-		if _memberId != nil {
-			m.Author = &model.Member{
-				ID: *_memberId,
+		if _userID != nil {
+			m.User = &model.User{
+				Unit: &model.Unit{ID: *_userID},
 			}
 		}
 		messages.Messages = append(messages.Messages, m)

@@ -81,7 +81,7 @@ input FindMembers {
 input FindMessages {
     chatId: ID!
     roomId: ID
-    authorId: ID
+    userId: ID
     textFragment: String
 }
 

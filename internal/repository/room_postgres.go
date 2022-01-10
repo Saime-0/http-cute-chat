@@ -388,11 +388,8 @@ func (r *RoomsRepo) Allowed(action rules.AllowActionType, roomId int, holder *mo
 func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error) {
 	tl := tlog.Start("RoomsRepo > AllowHolder [uid:" + strconv.Itoa(userId) + ",cid:" + strconv.Itoa(chatId) + "]")
 	defer tl.Fine()
-	holder := &models.AllowHolder{
-		RoleID: nil,
-		Char:   "",
-		UserID: 0,
-	}
+
+	holder := &models.AllowHolder{}
 	err := r.db.QueryRow(
 		`SELECT id, role_id, char
 		FROM chat_members
