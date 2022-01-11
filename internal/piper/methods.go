@@ -90,7 +90,7 @@ func (n *Node) ValidID(id int) (fail bool) {
 
 func (n *Node) ValidFindMessagesInRoom(find *model.FindMessagesInRoom) (fail bool) {
 	if find.Count <= 0 ||
-		find.Count >= rules.MaxMessagesCount ||
+		find.Count > rules.MaxMessagesCount ||
 		find.Created == model.MessagesCreatedBefore && find.StartMessageID-find.Count < 0 {
 		n.Err = resp.Error(resp.ErrBadRequest, "неверное значение количества сообщений")
 		return true

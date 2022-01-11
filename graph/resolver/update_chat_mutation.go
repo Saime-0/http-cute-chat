@@ -27,7 +27,7 @@ func (r *mutationResolver) UpdateChat(ctx context.Context, chatID int, input mod
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные чата"), nil
 	}
-	r.Services.Subix.NotifyChatMembers(
+	go r.Services.Subix.NotifyChatMembers(
 		[]int{chatID},
 		eventReadyChat,
 	)

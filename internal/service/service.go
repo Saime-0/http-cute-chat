@@ -2,20 +2,27 @@ package service
 
 import (
 	"database/sql"
-	"github.com/saime-0/http-cute-chat/internal/subix"
-
 	"github.com/saime-0/http-cute-chat/internal/repository"
+	"github.com/saime-0/http-cute-chat/internal/scheduler"
+	"github.com/saime-0/http-cute-chat/internal/subix"
 )
 
 type Services struct {
-	Repos *repository.Repositories
-	Subix *subix.Subscription
+	Repos     *repository.Repositories
+	Subix     *subix.Subscription
+	Scheduler *scheduler.Scheduler
 }
 
 func NewServices(db *sql.DB) *Services {
-	service := &Services{
-		Repos: repository.NewRepositories(db),
+	s := &Services{
+		Repos:     repository.NewRepositories(db),
+		Scheduler: scheduler.NewScheduler(),
 	}
-	service.Subix = subix.NewSubscription(service.Repos)
-	return service
+	s.Subix = subix.NewSubscription(s.Repos, s.Scheduler)
+
+	err := s.prepareScheduleInvites()
+	if err != nil {
+		panic(err)
+	}
+	return s
 }

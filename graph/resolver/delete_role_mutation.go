@@ -30,7 +30,7 @@ func (r *mutationResolver) DeleteRole(ctx context.Context, roleID int) (model.Mu
 		return resp.Error(resp.ErrInternalServerError, "не удалось удалить роль"), nil
 	}
 
-	r.Services.Subix.NotifyChatMembers(
+	go r.Services.Subix.NotifyChatMembers(
 		[]int{chatID},
 		eventReadyRole,
 	)

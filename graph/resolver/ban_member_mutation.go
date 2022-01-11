@@ -33,7 +33,7 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 		panic(err)
 	}
 
-	r.Services.Subix.NotifyChatMembers(
+	go r.Services.Subix.NotifyChatMembers(
 		[]int{member.ChatID},
 		eventReadyMember,
 	)

@@ -30,7 +30,7 @@ func (r *mutationResolver) DeleteRoom(ctx context.Context, roomID int) (model.Mu
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось удалить комнату"), nil
 	}
-	r.Services.Subix.NotifyChatMembers(
+	go r.Services.Subix.NotifyChatMembers(
 		[]int{chatID},
 		eventReadyRoom,
 	)

@@ -33,14 +33,14 @@ func NewScheduler() *Scheduler {
 	return s
 }
 
-func (s *Scheduler) Start() {
+func (s *Scheduler) Resume() {
 	s.Status = RUNNING
 	select {
 	case s.Ch <- RUNNING:
 	}
 
 }
-func (s *Scheduler) Stop() {
+func (s *Scheduler) Pause() {
 	s.Status = IDLE
 	select {
 	case s.Ch <- IDLE:

@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/scheduler"
 )
 
 type Invite struct {
@@ -105,4 +106,11 @@ type DemoMember struct {
 type DefMember struct {
 	UserID int
 	ChatID int
+}
+
+type ScheduleInvite struct {
+	ChatID int
+	Code   string
+	Exp    *int64
+	Task   *scheduler.Task
 }

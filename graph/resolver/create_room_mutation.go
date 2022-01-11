@@ -30,7 +30,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать комнату"), nil
 	}
-	r.Services.Subix.NotifyChatMembers(
+	go r.Services.Subix.NotifyChatMembers(
 		[]int{input.ChatID},
 		eventReadyRoom,
 	)

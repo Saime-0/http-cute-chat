@@ -33,7 +33,7 @@ func (r *mutationResolver) CreateAllow(ctx context.Context, roomID int, input mo
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать разрешение"), nil
 	}
-	r.Services.Subix.NotifyChatMembers(
+	go r.Services.Subix.NotifyChatMembers(
 		[]int{chatID},
 		eventReadyAllow,
 	)

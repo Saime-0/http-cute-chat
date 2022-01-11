@@ -30,7 +30,7 @@ func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.Jo
 		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться"), nil
 	}
 
-	r.Services.Subix.NotifyChatMembers(
+	go r.Services.Subix.NotifyChatMembers(
 		[]int{chatID},
 		eventReadyMember,
 	)

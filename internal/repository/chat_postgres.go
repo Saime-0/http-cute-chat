@@ -437,16 +437,19 @@ func (r *ChatsRepo) Invites(chatId int) (*model.Invites, error) {
 
 	return invites, nil
 }
+
 func (r *ChatsRepo) InviteExistsByCode(code string) (exists bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
+	err := r.db.QueryRow(`
+			SELECT EXISTS(
 			SELECT 1
 			FROM invites
 			WHERE code = $1
 			)`,
 		code,
 	).Scan(&exists)
-
+	if err != nil {
+		println("InviteExistsByCode:", err.Error()) // debug
+	}
 	return
 }
 func (r *ChatsRepo) FindInviteLinkByCode(code string) (link models.Invite, err error) {
@@ -494,7 +497,7 @@ func (r *ChatsRepo) CreateInvite(linkModel *model.CreateInviteInput) (*model.Cre
 		&invite.ExpiresAt,
 	)
 	if err != nil {
-		println("CreateInvite:", err.Error()) // debug
+		println("CreateScheduledInvite:", err.Error()) // debug
 	}
 	return invite, err
 }

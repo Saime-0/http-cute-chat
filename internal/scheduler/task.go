@@ -22,7 +22,7 @@ func emptyTask() **Task {
 func (s *Scheduler) RunTask(task **Task) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if task != nil && *task != nil {
+	if task == nil || *task == nil {
 		return errors.New("task not found")
 	}
 	go (*task).taskFunc()
@@ -66,7 +66,7 @@ func (s *Scheduler) AddTask(taskFn execTaskFn, executeAt int64) (newTask *Task, 
 	s.mu.Unlock()
 
 	if task == s.root {
-		s.Start()
+		s.Resume()
 	}
 
 	return
@@ -75,7 +75,7 @@ func (s *Scheduler) AddTask(taskFn execTaskFn, executeAt int64) (newTask *Task, 
 func (s *Scheduler) DropTask(task **Task) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if task != nil && *task != nil {
+	if task == nil || *task == nil {
 		return errors.New("task not found")
 	}
 	*task = *(*task).next
