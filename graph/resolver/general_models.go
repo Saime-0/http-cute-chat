@@ -22,8 +22,7 @@ func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserRe
 		chatID   = obj.Unit.ID
 	)
 
-	if node.IsMember(clientID, chatID) ||
-		node.CanObserveOwner(clientID, chatID) {
+	if node.IsMember(clientID, chatID) {
 		return node.Err, nil
 	}
 
@@ -44,8 +43,7 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 		clientID = ctx.Value(rules.UserIDFromToken).(int)
 	)
 
-	if node.IsMember(clientID, chatID) ||
-		node.CanObserveRooms(clientID, chatID) {
+	if node.IsMember(clientID, chatID) {
 		return node.Err, nil
 	}
 
@@ -57,28 +55,6 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 	return rooms, nil
 }
 
-func (r *chatResolver) CountMembers(ctx context.Context, obj *model.Chat) (model.CountMembersResult, error) {
-	node := r.Piper.CreateNode("chatResolver > CountMembers [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
-
-	var (
-		chatID   = obj.Unit.ID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
-	)
-
-	if node.IsMember(clientID, chatID) ||
-		node.CanObserveCountMembers(clientID, chatID) {
-		return node.Err, nil
-	}
-
-	count, err := r.Services.Repos.Chats.CountMembers(chatID)
-	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "ошибка при попытке получить данные"), nil
-	}
-
-	return model.IntValue{Value: &count}, nil
-}
-
 func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.MembersResult, error) {
 	node := r.Piper.CreateNode("chatResolver > Members [cid:", obj.Unit.ID, "]")
 	defer node.Kill()
@@ -88,8 +64,7 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 		clientID = ctx.Value(rules.UserIDFromToken).(int)
 	)
 
-	if node.IsMember(clientID, chatID) ||
-		node.CanObserveMembers(clientID, chatID) {
+	if node.IsMember(clientID, chatID) {
 		return node.Err, nil
 	}
 
@@ -110,8 +85,7 @@ func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesR
 		clientID = ctx.Value(rules.UserIDFromToken).(int)
 	)
 
-	if node.IsMember(clientID, chatID) ||
-		node.CanObserveRoles(clientID, chatID) {
+	if node.IsMember(clientID, chatID) {
 		return node.Err, nil
 	}
 	roles, err := r.Services.Repos.Chats.Roles(chatID)
@@ -185,19 +159,6 @@ func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberRes
 	}
 
 	return member, nil
-}
-
-func (r *inviteInfoResolver) CountMembers(ctx context.Context, obj *model.InviteInfo) (model.CountMembersResult, error) {
-	node := r.Piper.CreateNode("inviteInfoResolver > CountMembers [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
-
-	chatID := obj.Unit.ID
-
-	count, err := r.Services.Repos.Chats.CountMembers(chatID)
-	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "ошибка при попытке получить данные"), nil
-	}
-	return model.IntValue{Value: &count}, nil
 }
 
 func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, error) {
@@ -370,9 +331,6 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 // Chat returns generated.ChatResolver implementation.
 func (r *Resolver) Chat() generated.ChatResolver { return &chatResolver{r} }
 
-// InviteInfo returns generated.InviteInfoResolver implementation.
-func (r *Resolver) InviteInfo() generated.InviteInfoResolver { return &inviteInfoResolver{r} }
-
 // Me returns generated.MeResolver implementation.
 func (r *Resolver) Me() generated.MeResolver { return &meResolver{r} }
 
@@ -386,7 +344,6 @@ func (r *Resolver) Message() generated.MessageResolver { return &messageResolver
 func (r *Resolver) Room() generated.RoomResolver { return &roomResolver{r} }
 
 type chatResolver struct{ *Resolver }
-type inviteInfoResolver struct{ *Resolver }
 type meResolver struct{ *Resolver }
 type memberResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }

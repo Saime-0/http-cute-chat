@@ -19,7 +19,7 @@ func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.Jo
 
 	if node.ChatExists(chatID) ||
 		node.IsNotMember(clientID, chatID) ||
-		// todo UserIsNotBanned
+		node.IsNotBanned(clientID, chatID) ||
 		node.ChatIsNotPrivate(chatID) ||
 		node.MembersLimit(chatID) ||
 		node.ChatsLimit(clientID) {

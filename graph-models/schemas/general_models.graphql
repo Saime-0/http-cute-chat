@@ -91,7 +91,7 @@ type Chat {
     owner: UserResult! @goField(forceResolver: true)
     rooms: RoomsResult @goField(forceResolver: true)
     private: Boolean!
-    countMembers: CountMembersResult! @goField(forceResolver: true)
+    countMembers: Int!
     members: MembersResult @goField(forceResolver: true)
     roles: RolesResult @goField(forceResolver: true)
     invites: InvitesResult @goField(forceResolver: true)
@@ -187,7 +187,7 @@ type Invites {
 type InviteInfo {
     unit: Unit!
     private: Boolean!
-    countMembers: CountMembersResult! @goField(forceResolver: true)
+    countMembers: Int!
 }
 type User {
     unit: Unit!

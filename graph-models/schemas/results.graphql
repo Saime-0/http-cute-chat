@@ -6,10 +6,6 @@ union RoomsResult =
     | AdvancedError
     | Rooms
 
-union CountMembersResult =
-    | AdvancedError
-    | IntValue
-
 union MembersResult =
     | AdvancedError
     | Members

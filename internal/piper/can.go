@@ -7,11 +7,6 @@ import (
 
 const all = false
 
-// как вариант сделать 3 уровня доступа
-// 0 - только owner
-// 1 - owner + admin
-// 2 - owner + admin + moder
-
 // Can
 // very influential and monolithic(to Pipeline)!!
 type Can struct {
@@ -85,15 +80,10 @@ func (n *Node) CanLeaveFromChat(uid, cid int) (fail bool) {
 }
 
 func (n *Node) CanObserveInvites(uid, cid int) (fail bool) {
-	return all
-}
-
-func (n *Node) CanObserveCountMembers(uid, cid int) (fail bool) {
-	return all
-}
-
-func (n *Node) CanObserveRoles(uid, cid int) (fail bool) {
-	return all
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
+	)
 }
 
 func (n *Node) CanObserveBanlist(uid, cid int) (fail bool) {
@@ -101,18 +91,6 @@ func (n *Node) CanObserveBanlist(uid, cid int) (fail bool) {
 		admin,
 		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
-}
-
-func (n *Node) CanObserveMembers(uid, cid int) (fail bool) {
-	return all
-}
-
-func (n *Node) CanObserveOwner(uid, cid int) (fail bool) {
-	return all
-}
-
-func (n *Node) CanObserveRooms(uid, cid int) (fail bool) {
-	return all
 }
 
 func (n *Node) CanUpdateRoom(uid, cid int) (fail bool) {

@@ -17,37 +17,6 @@ create type findallow as
     val varchar
 );
 
-create or replace function generate_invite_code() returns text
-    language sql
-as $$
-SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
-FROM generate_series(1, 16)
-$$;
-
-create or replace function unix_utc_now(bigint DEFAULT 0) returns bigint
-    language sql
-as $$
-SELECT (date_part('epoch'::text, now()))::bigint + $1
-$$;
-
-create or replace function delete_allow() returns trigger
-    language plpgsql
-as $$
-BEGIN
-    IF tg_table_name = 'chat_members' THEN
-        DELETE FROM allows
-        WHERE group_type = 'MEMBER' AND value = old.id::VARCHAR;
-    ELSE
-        DELETE FROM allows
-        WHERE group_type = 'ROLE' AND value = OLD.ID::VARCHAR;
-    end if;
-    raise notice '%', old.id;
-    RETURN NULL;
-end;
-$$;
-
-
-
 create table if not exists schema_migrations
 (
     version bigint not null
@@ -97,15 +66,16 @@ create table if not exists chat_banlist
 
 create table if not exists invites
 (
-    code varchar(16) default generate_invite_code() not null
-        constraint invite_links_pkey
-            primary key,
+    code varchar(16) default generate_invite_code() not null,
     chat_id bigint not null
         constraint invite_links_chat_id_fkey
             references chats
             on delete cascade,
     aliens smallint,
-    expires_at bigint
+    expires_at bigint,
+    id bigserial
+        constraint invites_pk
+            primary key
 );
 
 create table if not exists rooms
@@ -134,12 +104,6 @@ create table if not exists roles
     color varchar(7) not null
 );
 
-create trigger on_delete_role
-    after delete
-    on roles
-    for each row
-execute procedure delete_allow();
-
 create table if not exists chat_members
 (
     id bigserial
@@ -156,12 +120,6 @@ create table if not exists chat_members
     joined_at bigint default unix_utc_now() not null,
     muted boolean default false not null
 );
-
-create trigger on_delete_member
-    after delete
-    on chat_members
-    for each row
-execute procedure delete_allow();
 
 create table if not exists messages
 (
@@ -237,6 +195,56 @@ create table if not exists allows
         primary key
 );
 
+create table if not exists count_members
+(
+    id bigserial
+        primary key,
+    chat_id bigint not null
+        references chats,
+    count_value integer default 0 not null
+);
+
+create or replace function generate_invite_code() returns text
+    language sql
+as $$
+SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
+FROM generate_series(1, 16)
+$$;
+
+create or replace function unix_utc_now(bigint DEFAULT 0) returns bigint
+    language sql
+as $$
+SELECT (date_part('epoch'::text, now()))::bigint + $1
+$$;
+
+create or replace function delete_allow() returns trigger
+    language plpgsql
+as $$
+BEGIN
+    IF tg_table_name = 'chat_members' THEN
+        DELETE FROM allows
+        WHERE group_type = 'MEMBER' AND value = old.id::VARCHAR;
+    ELSE
+        DELETE FROM allows
+        WHERE group_type = 'ROLE' AND value = OLD.ID::VARCHAR;
+    end if;
+    raise notice '%', old.id;
+    RETURN NULL;
+end;
+$$;
+
+create trigger on_delete_role
+    after delete
+    on roles
+    for each row
+execute procedure delete_allow();
+
+create trigger on_delete_member
+    after delete
+    on chat_members
+    for each row
+execute procedure delete_allow();
+
 create or replace function validate_allows(chatid bigint, arr findallow[]) returns boolean
     language plpgsql
 as $$
@@ -308,3 +316,52 @@ BEGIN
 
 END;
 $$;
+
+create or replace function change_count_members() returns trigger
+    language plpgsql
+as $$
+BEGIN
+    if tg_op = 'INSERT' then
+        update count_members
+        set count_value = count_value + 1
+        where count_members.chat_id = new.chat_id;
+        return new;
+    else if tg_op = 'DELETE' then
+        update count_members
+        set count_value = count_value - 1
+        where count_members.chat_id = new.chat_id;
+        return new;
+    end if;
+    end if;
+    raise exception 'operation could not be detected';
+end;
+$$;
+
+create trigger on_change_members_table
+    after insert or delete
+    on chat_members
+    for each row
+execute procedure change_count_members();
+
+create or replace function create_or_delete_count_members_row() returns trigger
+    language plpgsql
+as $$
+begin
+    if tg_op = 'INSERT' then
+        insert into count_members (chat_id) values (new.id);
+        return new;
+    else if tg_op = 'DELETE' then
+        delete from count_members WHERE chat_id = old.id;
+        return old;
+    end if;
+    end if;
+    raise exception 'operation could not be detected';
+end;
+$$;
+
+create trigger on_create_chat
+    after insert or delete
+    on chats
+    for each row
+execute procedure create_or_delete_count_members_row();
+

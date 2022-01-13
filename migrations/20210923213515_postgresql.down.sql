@@ -16,6 +16,7 @@ drop table if exists allows cascade;
 drop type if exists action_type cascade;
 drop type if exists group_type cascade;
 drop table if exists rooms cascade;
+drop table if exists count_members cascade;
 drop table if exists chats cascade;
 drop table if exists users cascade;
 drop table if exists units cascade;
@@ -25,4 +26,6 @@ drop function if exists unix_utc_now(bigint) cascade;
 drop function if exists delete_allow() cascade;
 drop function if exists validate_allows(bigint, findallow[]) cascade;
 drop function if exists allows_exists(boolean, bigint, findallow[]) cascade;
+drop function if exists change_count_members() cascade;
+drop function if exists create_or_delete_count_members_row() cascade;
 

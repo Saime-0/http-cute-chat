@@ -69,9 +69,10 @@ func (r *ChatsRepo) Chat(chatId int) (*model.Chat, error) {
 		Unit: &model.Unit{},
 	}
 	err := r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, units.type, chats.private
-		FROM units INNER JOIN chats 
-		ON units.id = chats.id 
+		`SELECT units.id, units.domain, units.name, units.type, cm.count_value, chats.private
+		FROM units 
+		JOIN chats ON units.id = chats.id
+		JOIN count_members cm on chats.id = cm.chat_id
 		WHERE units.id = $1`,
 		chatId,
 	).Scan(
@@ -79,6 +80,7 @@ func (r *ChatsRepo) Chat(chatId int) (*model.Chat, error) {
 		&chat.Unit.Domain,
 		&chat.Unit.Name,
 		&chat.Unit.Type,
+		&chat.CountMembers,
 		&chat.Private,
 	)
 
@@ -382,8 +384,8 @@ func (r *ChatsRepo) ChatExistsByDomain(chatDomain string) (exists bool) {
 
 func (r *ChatsRepo) RemoveUserFromChat(userId int, chatId int) (*model.DeleteMember, error) {
 	member := &model.DeleteMember{}
-	err := r.db.QueryRow(
-		`DELETE FROM chat_members
+	err := r.db.QueryRow(`
+		DELETE FROM chat_members
 		WHERE user_id = $1 AND chat_id = $2`,
 		userId,
 		chatId,
@@ -581,8 +583,12 @@ func (r *ChatsRepo) ChatIsPrivate(chatId int) (private bool) {
 }
 
 func (r *ChatsRepo) AddToBanlist(userId int, chatId int) (err error) {
-	err = r.db.QueryRow(
-		`INSERT INTO chat_banlist (chat_id, user_id)
+	err = r.db.QueryRow(`
+		with u as (
+		    DELETE FROM chat_members
+			WHERE user_id = $1 AND chat_id = $2
+		)
+		INSERT INTO chat_banlist (chat_id, user_id)
 		VALUES ($1, $2)`,
 		chatId,
 		userId,
@@ -865,10 +871,11 @@ func (r *ChatsRepo) InviteInfo(code string) (info *model.InviteInfo, err error) 
 		Unit: &model.Unit{},
 	}
 	err = r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, units.type, chats.private
+		`SELECT units.id, units.domain, units.name, units.type, cm.count_value, chats.private
 		FROM units 
 		INNER JOIN chats
 			ON units.id = chats.id
+		JOIN count_members cm ON chats.id = cm.chat_id
 		INNER JOIN invites
 			ON units.id = invites.chat_id
 		WHERE invites.code = $1`,
@@ -878,6 +885,7 @@ func (r *ChatsRepo) InviteInfo(code string) (info *model.InviteInfo, err error) 
 		&info.Unit.Domain,
 		&info.Unit.Name,
 		&info.Unit.Type,
+		&info.CountMembers,
 		&info.Private,
 	)
 	if err != nil {
@@ -1381,9 +1389,10 @@ func (r *ChatsRepo) FindChats(inp *model.FindChats, params *model.Params) (*mode
 		*inp.NameFragment = "%" + *inp.NameFragment + "%"
 	}
 	rows, err := r.db.Query(`
-		SELECT units.id, units.domain, units.name, units.type, chats.private
-		FROM units JOIN chats 
-		ON units.id = chats.id 
+		SELECT units.id, units.domain, units.name, units.type, cm.count_value, chats.private
+		FROM units 
+		JOIN chats ON units.id = chats.id 
+		JOIN count_members cm on chats.id = cm.chat_id
 		WHERE (
 		    $1::BIGINT IS NULL 
 			OR units.id = $1
@@ -1414,7 +1423,7 @@ func (r *ChatsRepo) FindChats(inp *model.FindChats, params *model.Params) (*mode
 		m := &model.Chat{
 			Unit: &model.Unit{},
 		}
-		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
+		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.CountMembers, &m.Private); err != nil {
 			println("rows:Scan:", err.Error()) // debug
 			return chats, err
 		}
