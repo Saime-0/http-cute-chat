@@ -32,10 +32,6 @@ enum GroupType {
     CHAR
     MEMBER
 }
-enum ModifyType {
-    ADD
-    REDUCE
-}
 enum EventSubjectAction {
     CREATE
     UPDATE
@@ -53,17 +49,6 @@ enum AllowGroup {
 type Chars {
     chars: [CharType!]
 }
-
-
-type IntValue {
-    value: Int
-}
-type StringValue {
-    value: String
-}
-union UnionScalar =
-    | StringValue
-    | IntValue
 
 input Params {
     limit: Int
@@ -92,10 +77,10 @@ type Chat {
     rooms: RoomsResult @goField(forceResolver: true)
     private: Boolean!
     countMembers: Int!
-    members: MembersResult @goField(forceResolver: true)
-    roles: RolesResult @goField(forceResolver: true)
-    invites: InvitesResult @goField(forceResolver: true)
-    banlist: UsersResult @goField(forceResolver: true)
+    members: MembersResult! @goField(forceResolver: true)
+    roles: RolesResult! @goField(forceResolver: true)
+    invites: InvitesResult! @goField(forceResolver: true)
+    banlist: UsersResult! @goField(forceResolver: true)
     me: MemberResult! @goField(forceResolver: true)
 }
 type Chats {
@@ -110,7 +95,7 @@ type Room {
     note: String
     form: RoomFormResult @goField(forceResolver: true) # не проверено
     allows: AllowsResult! @goField(forceResolver: true)
-    messages(find: FindMessagesInRoom!): MessagesResult @goField(forceResolver: true)
+    messages(find: FindMessagesInRoom!): MessagesResult! @goField(forceResolver: true)
     #todo next: prev: or symbolindex:
 }
 
@@ -133,8 +118,8 @@ type FormField {
 
 type Member {
     id: ID!
-    chat: Chat! @goField(forceResolver: true) # зач тут чат? нужен
-    user: User! # @goField(forceResolver: true)
+    chat: Chat! @goField(forceResolver: true)
+    user: User!
     role: RoleResult @goField(forceResolver: true)
     char: CharType
     joinedAt: Int64!
@@ -154,11 +139,6 @@ type Role {
 type Roles {
     roles: [Role!]
 }
-
-# deprecated
-union MsgBody =
-    | StringValue
-    | UserChoice
 
 type Message {
     id: ID!
@@ -204,7 +184,7 @@ type Allows {
 
 type PermissionHoldersSub {
     roles: [ID!]
-    chars: Chars
+    chars: Chars!
     members: [ID!]
 }
 type UserData {
@@ -214,8 +194,8 @@ type UserData {
 type Me {
     user: User!
     data: UserData!
-    chats: Chats @goField(forceResolver: true)
-    ownedChats: Chats @goField(forceResolver: true)
+    chats: Chats! @goField(forceResolver: true)
+    ownedChats: Chats! @goField(forceResolver: true)
 }
 
 # using internal code

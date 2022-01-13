@@ -5,13 +5,13 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
-func (r *queryResolver) UserRole(ctx context.Context, memberID int) (model.UserRoleResult, error) {
-	node := r.Piper.CreateNode("queryResolver > UserRole [mid:", memberID, "]")
+func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.UserRoleResult, error) {
+	node := r.Piper.CreateNode("queryResolver > MemberRole [mid:", memberID, "]")
 	defer node.Kill()
 
 	var (

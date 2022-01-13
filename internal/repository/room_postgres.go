@@ -262,14 +262,13 @@ func (r *RoomsRepo) GetChatIDByAllowID(allowID int) (chatId int, err error) {
 }
 
 func (r *RoomsRepo) RoomForm(roomId int) *model.Form {
-	var err error
 	tl := tlog.Start("RoomsRepo > RoomForm [rid:" + strconv.Itoa(roomId) + "]")
 	defer tl.Fine()
 	var (
 		format *string
 		form   *model.Form
 	)
-	err = r.db.QueryRow(
+	err := r.db.QueryRow(
 		`SELECT msg_format
 		FROM rooms
 		WHERE id = $1`,
