@@ -18,7 +18,6 @@ utc.ToLocal < UTC
 		- read log
 		- control invites
 	Moderator
-		- freeze members
 		- hide/show messages
 		- (un)mute members
 

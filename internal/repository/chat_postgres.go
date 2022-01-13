@@ -152,7 +152,7 @@ func (r *ChatsRepo) Members(chatId int) (*model.Members, error) {
 	defer tl.Fine()
 	members := &model.Members{}
 	rows, err := r.db.Query(
-		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
+		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units INNER JOIN chat_members AS member
 		ON units.id = member.user_id
 		WHERE member.chat_id = $1`,
@@ -180,8 +180,7 @@ func (r *ChatsRepo) Members(chatId int) (*model.Members, error) {
 			&m.Chat.Unit.ID,
 			&m.Char,
 			&m.JoinedAt,
-			&m.Muted,
-			&m.Frozen); err != nil {
+			&m.Muted); err != nil {
 			return nil, err
 		}
 		members.Members = append(members.Members, m)
@@ -194,7 +193,7 @@ func (r *ChatsRepo) Members(chatId int) (*model.Members, error) {
 func (r *RoomsRepo) MembersByArray(chatId int, memberIds *[]int) (*model.Members, error) {
 	members := &model.Members{}
 	// language= PostgreSQL
-	query := `SELECT units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
+	query := `SELECT units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units INNER JOIN chat_members AS member
 		ON units.id = member.user_id
 		WHERE member.user_id IN (` + kit.CommaSeparate(memberIds) + `) AND member.chat_id =` + strconv.Itoa(chatId)
@@ -220,8 +219,7 @@ func (r *RoomsRepo) MembersByArray(chatId int, memberIds *[]int) (*model.Members
 			&m.Chat.Unit.ID,
 			&m.Char,
 			&m.JoinedAt,
-			&m.Muted,
-			&m.Frozen); err != nil {
+			&m.Muted); err != nil {
 			return nil, err
 		}
 		members.Members = append(members.Members, m)
@@ -763,7 +761,7 @@ func (r *ChatsRepo) GiveRole(memberId, roleId int) (*model.UpdateMember, error) 
 		`UPDATE chat_members
 		SET role_id = $2
 		WHERE id = $1
-		RETURNING id, role_id, char, muted, frozen`,
+		RETURNING id, role_id, char, muted`,
 		memberId,
 		roleId,
 	).Scan(
@@ -771,7 +769,6 @@ func (r *ChatsRepo) GiveRole(memberId, roleId int) (*model.UpdateMember, error) 
 		&member.RoleID,
 		&member.Char,
 		&member.Muted,
-		&member.Frozen,
 	)
 	if err != nil {
 		println("GiveRole:", err.Error()) // debug
@@ -791,14 +788,13 @@ func (r *ChatsRepo) TakeRole(memberId int) (*model.UpdateMember, error) {
 		SET role_id = NULL
 		FROM x
 		WHERE chat_members.id = x.id
-		RETURNING x.id, role_id, char, muted, frozen`,
+		RETURNING x.id, role_id, char, muted`,
 		memberId,
 	).Scan(
 		&member.ID,
 		&member.RoleID,
 		&member.Char,
 		&member.Muted,
-		&member.Frozen,
 	)
 	if err != nil {
 		println("TakeRole:", err.Error()) // debug
@@ -818,14 +814,13 @@ func (r *ChatsRepo) TakeChar(memberId int) (*model.UpdateMember, error) {
 		SET char = NULL
 		FROM x
 		WHERE chat_members.id = x.id
-		RETURNING x.id, role_id, char, muted, frozen`,
+		RETURNING x.id, role_id, char, muted`,
 		memberId,
 	).Scan(
 		&member.ID,
 		&member.RoleID,
 		&member.Char,
 		&member.Muted,
-		&member.Frozen,
 	)
 	if err != nil {
 		println("TakeChar:", err.Error()) // debug
@@ -936,7 +931,7 @@ func (r *ChatsRepo) MemberBy(userId, chatId int) (*model.Member, error) {
 		},
 	}
 	err := r.db.QueryRow(`
-		SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
+		SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units 
 		JOIN chat_members AS member
 		ON units.id = member.user_id
@@ -953,7 +948,6 @@ func (r *ChatsRepo) MemberBy(userId, chatId int) (*model.Member, error) {
 		&member.Char,
 		&member.JoinedAt,
 		&member.Muted,
-		&member.Frozen,
 	)
 	if err != nil {
 		println("MemberBy:", err.Error()) // debug
@@ -970,7 +964,7 @@ func (r *ChatsRepo) Member(memberId int) (*model.Member, error) {
 		},
 	}
 	err := r.db.QueryRow(
-		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted, member.frozen
+		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
 		FROM units INNER JOIN chat_members AS member
 		ON units.id = member.user_id
 		WHERE member.id = $1`,
@@ -985,7 +979,6 @@ func (r *ChatsRepo) Member(memberId int) (*model.Member, error) {
 		&member.Char,
 		&member.JoinedAt,
 		&member.Muted,
-		&member.Frozen,
 	)
 	if err != nil {
 		println("Member:", err.Error()) // debug
@@ -1179,7 +1172,7 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 		Members: []*model.Member{},
 	}
 	rows, err := r.db.Query(`
-			SELECT members.id, chat_id, units.id, units.domain, units.name, units.type, role_id, char, joined_at, frozen, muted
+			SELECT members.id, chat_id, units.id, units.domain, units.name, units.type, role_id, char, joined_at, muted
 			FROM chat_members as members
 			JOIN units ON members.user_id = units.id
 			WHERE (
@@ -1206,10 +1199,6 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 			    $6::BOOLEAN IS NULL 
 			    OR muted = $6 
 			)
-			AND (
-			    $7::BOOLEAN IS NULL 
-			    OR frozen = $7 
-			)
 			`,
 		inp.UserID,
 		inp.ChatID,
@@ -1217,7 +1206,6 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 		inp.Char,
 		inp.RoleID,
 		inp.Muted,
-		inp.Frozen,
 	)
 	if err != nil {
 		println("FindMembers:", err.Error()) // debug
@@ -1236,7 +1224,18 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 		var (
 			_roleid *int
 		)
-		if err = rows.Scan(&m.ID, &m.Chat.Unit.ID, &m.User.Unit.ID, &m.User.Unit.Domain, &m.User.Unit.Name, &m.User.Unit.Type, &_roleid, &m.Char, &m.JoinedAt, &m.Muted, &m.Frozen); err != nil {
+		if err = rows.Scan(
+			&m.ID,
+			&m.Chat.Unit.ID,
+			&m.User.Unit.ID,
+			&m.User.Unit.Domain,
+			&m.User.Unit.Name,
+			&m.User.Unit.Type,
+			&_roleid,
+			&m.Char,
+			&m.JoinedAt,
+			&m.Muted,
+		); err != nil {
 			println("rows.scan:", err.Error()) // debug
 			return members
 		}
@@ -1431,21 +1430,18 @@ func (r *ChatsRepo) UpdateMember(memberID int, inp *model.UpdateMemberInput) (*m
 		SET 
 		    role_id = COALESCE($2::BIGINT, role_id), 
 		    char = COALESCE($3::char_type, char), 
-		    muted = COALESCE($4::BOOLEAN, muted), 
-		    frozen = COALESCE($5::BOOLEAN, frozen)
+		    muted = COALESCE($4::BOOLEAN, muted)
 		WHERE id = $1
-		RETURNING id, role_id, char, muted, frozen`,
+		RETURNING id, role_id, char, muted`,
 		memberID,
 		inp.RoleID,
 		inp.Char,
 		inp.Muted,
-		inp.Frozen,
 	).Scan(
 		&member.ID,
 		&member.RoleID,
 		&member.Char,
 		&member.Muted,
-		&member.Frozen,
 	)
 	if err != nil {
 		println("UpdateMember:", err.Error()) // debug

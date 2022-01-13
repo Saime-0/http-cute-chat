@@ -75,12 +75,6 @@ func (n *Node) CanMuteMember(uid, cid int) (fail bool) {
 		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
 	)
 }
-func (n *Node) CanFreezeMember(uid, cid int) (fail bool) {
-	return n.levelCheck(
-		admin,
-		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
-	)
-}
 
 func (n *Node) CanLeaveFromChat(uid, cid int) (fail bool) {
 	if n.repos.Chats.UserIsChatOwner(uid, cid) {

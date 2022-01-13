@@ -139,7 +139,6 @@ type Member {
     char: CharType
     joinedAt: Int64!
     muted: Boolean!
-    frozen: Boolean!
 }
 
 type Members {

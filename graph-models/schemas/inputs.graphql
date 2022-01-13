@@ -75,7 +75,6 @@ input FindMembers {
     char: CharType
     roleId: ID
     muted: Boolean
-    frozen: Boolean
 }
 
 # возвращает в обратном хронологическом порядке
@@ -152,7 +151,6 @@ input UpdateMemberInput {
     roleId: ID
     char: CharType
     muted: Boolean
-    frozen: Boolean
 }
 
 

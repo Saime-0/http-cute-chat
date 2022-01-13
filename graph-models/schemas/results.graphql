@@ -149,7 +149,7 @@ union EventResult =
     | UpdateForm # всем писателям (с учетом того что клиент сможет без формы(не зная типов полей) правильно распарсить сообщение)
 
     | CreateAllows #  всем участникам +
-    | DeleteAllows # +
+    | DeleteAllow # +
 
     | UpdateChat # всем участникам +
 
@@ -158,7 +158,7 @@ union EventResult =
     | DeleteRoom # +
 
     | CreateInvite # только определенным чарам +-
-    | DeleteInvite # +-
+    | DeleteInvite # +
 
 
 

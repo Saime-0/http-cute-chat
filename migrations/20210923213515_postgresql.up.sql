@@ -154,8 +154,7 @@ create table if not exists chat_members
                        on delete set null,
     char char_type,
     joined_at bigint default unix_utc_now() not null,
-    muted boolean default false not null,
-    frozen boolean default false not null
+    muted boolean default false not null
 );
 
 create trigger on_delete_member

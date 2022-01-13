@@ -32,7 +32,6 @@ type UpdateMember {
 	roleId: ID
 	char: CharType
 	muted: Boolean!
-	frozen: Boolean!
 }
 
 type DeleteMember {
@@ -85,7 +84,7 @@ type CreateAllows {
 	roomId: ID!
 	allows: [Allow!]!
 }
-type DeleteAllows {
+type DeleteAllow {
 	allowId: ID
 }
 
