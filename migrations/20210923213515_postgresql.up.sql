@@ -10,7 +10,12 @@ create type fetch_type as enum ('POSITIVE', 'NEUTRAL', 'NEGATIVE');
 
 create type char_type as enum ('ADMIN', 'MODER');
 
-
+create type findallow as
+(
+    act varchar,
+    gr varchar,
+    val varchar
+);
 
 create or replace function generate_invite_code() returns text
     language sql
@@ -232,3 +237,75 @@ create table if not exists allows
     id bigserial
         primary key
 );
+
+create or replace function validate_allows(chatid bigint, arr findallow[]) returns boolean
+    language plpgsql
+as $$
+DECLARE
+    act varchar;
+    gr varchar;
+    val varchar;
+    exist bool = false;
+BEGIN
+    Foreach act, gr, val IN ARRAY arr
+        loop
+        if gr = 'MEMBER' then
+            select exists(
+                           select 1
+                           from chats c
+                                    join chat_members m
+                                         on  c.id = m.chat_id
+                           where c.id = chatID
+                             AND m.id = val::BIGINT
+                       ) into exist;
+        else if gr = 'ROLE' then
+            select exists(
+                           select 1
+                           from chats c
+                                    join roles r
+                                         on c.id = r.chat_id
+                           where c.id = chatID
+                             AND r.id = val::BIGINT
+                       ) into exist;
+        else if gr = 'CHAR' then
+            exist = true;
+        end if;
+        end if;
+        end if;
+        if exist is false THEN
+            return false;
+        end if;
+        end loop;
+    return true;
+END;
+$$;
+
+create or replace function allows_exists(expect boolean, roomid bigint, arr findallow[]) returns boolean
+    language plpgsql
+as $$
+DECLARE
+    act varchar;
+    gr varchar;
+    val varchar;
+BEGIN
+    Foreach act, gr, val IN ARRAY arr
+        loop
+        SELECT exists(
+                       select 1
+                       from allows a
+                       where a.room_id = roomID
+                         AND a.value = val
+                         AND a.group_type = gr::group_type
+                         AND a.action_type = act::action_type
+                   ) into FOUND;
+
+        if FOUND <> expect THEN
+            return false;
+        end if;
+
+        end loop;
+
+    return true;
+
+END;
+$$;

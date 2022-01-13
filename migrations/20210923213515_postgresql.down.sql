@@ -1,4 +1,5 @@
 drop type if exists fetch_type cascade;
+drop type if exists findallow cascade;
 drop table if exists schema_migrations cascade;
 drop table if exists chat_banlist cascade;
 drop table if exists invites cascade;
@@ -22,4 +23,6 @@ drop type if exists unit_type cascade;
 drop function if exists generate_invite_code() cascade;
 drop function if exists unix_utc_now(bigint) cascade;
 drop function if exists delete_allow() cascade;
+drop function if exists validate_allows(bigint, findallow[]) cascade;
+drop function if exists allows_exists(boolean, bigint, findallow[]) cascade;
 
