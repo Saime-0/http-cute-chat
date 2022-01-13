@@ -5,7 +5,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
 
-func (s *Subscription) ForceDropScheduledInvite(code string) {
+func (s *Subix) ForceDropScheduledInvite(code string) {
 	inv, ok := s.Store.ScheduleInvites[code]
 	if ok {
 		err := s.sched.DropTask(&inv.Task)
@@ -16,7 +16,7 @@ func (s *Subscription) ForceDropScheduledInvite(code string) {
 	}
 }
 
-func (s *Subscription) CreateScheduledInvite(chatID int, code string, exp *int64) {
+func (s *Subix) CreateScheduledInvite(chatID int, code string, exp *int64) {
 	if exp == nil {
 		return
 	}
@@ -27,7 +27,7 @@ func (s *Subscription) CreateScheduledInvite(chatID int, code string, exp *int64
 				panic(err)
 			}
 			s.NotifyChatMembers(
-				[]int{chatID},
+				chatID,
 				&model.DeleteInvite{
 					Reason: model.DeleteInviteReasonExpired,
 					Code:   code,

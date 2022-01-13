@@ -12,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateInviteInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > CreateScheduledInvite [cid:", input.ChatID, "]")
+	node := r.Piper.CreateNode("mutationResolver > CreateInvite [cid:", input.ChatID, "]")
 	defer node.Kill()
 
 	clientID := ctx.Value(rules.UserIDFromToken).(int)
@@ -30,7 +30,7 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать инвайт"), nil
 	}
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{input.ChatID},
+		input.ChatID,
 		eventReadyInvite,
 	)
 

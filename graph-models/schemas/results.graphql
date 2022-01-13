@@ -148,8 +148,8 @@ union EventResult =
 
     | UpdateForm # всем писателям (с учетом того что клиент сможет без формы(не зная типов полей) правильно распарсить сообщение)
 
-    | CreateAllow #  всем участникам +
-    | DeleteAllow # +
+    | CreateAllows #  всем участникам +
+    | DeleteAllows # +
 
     | UpdateChat # всем участникам +
 

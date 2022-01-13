@@ -57,7 +57,20 @@ func ValidateNameFragment(fragment string) (valid bool) {
 func ValidateID(id int) (valid bool) {
 	return id > 0
 }
-
+func ValidateAllowInput(allow *model.AllowInput) (valid bool) {
+	_, err := strconv.Atoi(allow.Value)
+	if allow.Group == model.AllowGroupRole || allow.Group == model.AllowGroupMember {
+		if err != nil {
+			return false
+		}
+	} else if allow.Group == model.AllowGroupChar {
+		if model.CharTypeModer.String() != allow.Value &&
+			model.CharTypeAdmin.String() != allow.Value {
+			return false
+		}
+	}
+	return true
+}
 func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 	if len(form.Fields) > rules.MaxFormFields {
 		return false, errors.New("превышен лимит полей")

@@ -34,7 +34,7 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 	}
 
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{member.ChatID},
+		member.ChatID,
 		eventReadyMember,
 	)
 

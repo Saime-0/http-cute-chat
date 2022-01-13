@@ -21,7 +21,7 @@ type Client struct {
 	prev *Client
 }
 
-func (s *Subscription) Register(userID int) *Client {
+func (s *Subix) Register(userID int) *Client {
 
 	user, ok := s.users[userID]
 	if !ok {
@@ -51,7 +51,7 @@ func (s *Subscription) Register(userID int) *Client {
 	return client
 }
 
-func (s *Subscription) Unsubscribe(client **Client) {
+func (s *Subix) Unsubscribe(client **Client) {
 	if client == nil || *client == nil {
 		return
 	}

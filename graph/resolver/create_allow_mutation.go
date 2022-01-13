@@ -11,8 +11,8 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
-func (r *mutationResolver) CreateAllow(ctx context.Context, roomID int, input model.AllowInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > CreateAllow [rid:", roomID, "]")
+func (r *mutationResolver) CreateAllows(ctx context.Context, roomID int, input model.AllowsInput) (model.MutationResult, error) {
+	node := r.Piper.CreateNode("mutationResolver > CreateAllows [rid:", roomID, "]")
 	defer node.Kill()
 
 	var (
@@ -24,17 +24,17 @@ func (r *mutationResolver) CreateAllow(ctx context.Context, roomID int, input mo
 		node.GetChatIDByRoom(roomID, &chatID) ||
 		node.IsMember(clientID, chatID) ||
 		node.CanCreateAllow(clientID, chatID) ||
-		node.ValidAllowInput(chatID, &input) ||
-		node.AllowNotExists(roomID, &input) {
+		node.AllowsNotExists(roomID, &input) ||
+		node.ValidRoomAllows(chatID, &input) {
 		return node.Err, nil
 	}
 
-	eventReadyAllow, err := r.Services.Repos.Rooms.CreateAllow(roomID, &input)
+	eventReadyAllow, err := r.Services.Repos.Rooms.CreateAllows(roomID, &input)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать разрешение"), nil
 	}
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyAllow,
 	)
 	return resp.Success("успешно создано"), nil

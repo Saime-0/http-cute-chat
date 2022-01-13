@@ -24,7 +24,7 @@ func (r *mutationResolver) UpdateRoom(ctx context.Context, roomID int, input mod
 		node.CanUpdateRoom(clientID, chatID) ||
 		input.Name != nil && node.ValidName(*input.Name) ||
 		input.Note != nil && node.ValidNote(*input.Note) ||
-		input.ParentID != nil && node.ValidID(*input.ParentID) {
+		input.ParentID != nil && node.ValidParentRoomID(roomID, *input.ParentID) {
 		return node.Err, nil
 	}
 
@@ -34,7 +34,7 @@ func (r *mutationResolver) UpdateRoom(ctx context.Context, roomID int, input mod
 	}
 
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyRoom,
 	)
 

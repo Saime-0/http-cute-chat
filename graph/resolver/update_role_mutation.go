@@ -32,7 +32,7 @@ func (r *mutationResolver) UpdateRole(ctx context.Context, roleID int, input mod
 	}
 
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyRole,
 	)
 

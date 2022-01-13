@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (s *Subscription) writeToUsers(ids []int, body model.EventResult) {
+func (s *Subix) writeToUsers(ids []int, body model.EventResult) {
 
 	eventType := getEventType(body)
 	for _, id := range ids {

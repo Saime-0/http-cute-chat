@@ -22,7 +22,8 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 		node.CanCreateRoom(clientID, input.ChatID) ||
 		node.RoomsLimit(input.ChatID) ||
 		input.Parent != nil && node.IsNotChild(*input.Parent) ||
-		input.Parent != nil && node.RoomExists(*input.Parent) {
+		input.Parent != nil && node.RoomExists(*input.Parent) ||
+		input.Allows != nil && node.ValidRoomAllows(input.ChatID, input.Allows) {
 		return node.Err, nil
 	}
 
@@ -31,7 +32,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать комнату"), nil
 	}
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{input.ChatID},
+		input.ChatID,
 		eventReadyRoom,
 	)
 	return resp.Success("комната создана"), nil

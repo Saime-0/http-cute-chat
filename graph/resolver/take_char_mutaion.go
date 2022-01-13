@@ -35,7 +35,7 @@ func (r *mutationResolver) TakeChar(ctx context.Context, memberID int) (model.Mu
 		return resp.Error(resp.ErrInternalServerError, "у пользователя нет чара"), nil
 	}
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyMember,
 	)
 	return resp.Success("успешно"), nil

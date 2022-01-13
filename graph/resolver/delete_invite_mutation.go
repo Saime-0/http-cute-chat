@@ -30,7 +30,7 @@ func (r *mutationResolver) DeleteInvite(ctx context.Context, chatID int, code st
 		return resp.Error(resp.ErrInternalServerError, "не удалось удалить инвайт"), nil
 	}
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyInvite,
 	)
 	return resp.Success("инвайт успешно удален"), nil

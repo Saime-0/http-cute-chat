@@ -6,6 +6,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/tlog"
+	"github.com/saime-0/http-cute-chat/internal/validator"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 	"time"
@@ -497,7 +498,7 @@ func (r *ChatsRepo) CreateInvite(linkModel *model.CreateInviteInput) (*model.Cre
 		&invite.ExpiresAt,
 	)
 	if err != nil {
-		println("CreateScheduledInvite:", err.Error()) // debug
+		println("CreateInvite:", err.Error()) // debug
 	}
 	return invite, err
 }
@@ -1450,4 +1451,29 @@ func (r *ChatsRepo) UpdateMember(memberID int, inp *model.UpdateMemberInput) (*m
 		println("UpdateMember:", err.Error()) // debug
 	}
 	return member, err
+}
+
+func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bool) {
+	sqlArr := ""
+	if len(allows.Allows) == 0 {
+		return
+	}
+	for _, v := range allows.Allows {
+		if !validator.ValidateAllowInput(v) {
+			return
+		}
+		sqlArr += fmt.Sprintf(",('%s', '%s', '%s')", v.Action, v.Group, v.Value)
+	}
+	sqlArr = kit.TrimFirstRune(sqlArr)
+	println(sqlArr) // debug
+	err := r.db.QueryRow(`
+		SELECT validate_allows($1::BIGINT, array [`+sqlArr+`]::findallow[])`,
+		chatID,
+	).Scan(&valid)
+
+	if err != nil {
+		println("ValidAllows:", err.Error()) // debug
+	}
+
+	return valid
 }

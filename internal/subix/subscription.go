@@ -5,15 +5,15 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/scheduler"
 )
 
-type Subscription struct {
+type Subix struct {
 	users map[int]*User
 	repo  *repository.Repositories
 	sched *scheduler.Scheduler
 	Store *Store
 }
 
-func NewSubscription(repo *repository.Repositories, sched *scheduler.Scheduler) *Subscription {
-	return &Subscription{
+func NewSubix(repo *repository.Repositories, sched *scheduler.Scheduler) *Subix {
+	return &Subix{
 		users: map[int]*User{},
 		repo:  repo,
 		sched: sched,

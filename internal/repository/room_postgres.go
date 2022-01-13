@@ -7,6 +7,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/tlog"
+	"github.com/saime-0/http-cute-chat/internal/validator"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 )
@@ -34,7 +35,6 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
 
 func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, error) {
 	var (
-		roomId int
 		err    error
 		room   = &model.CreateRoom{}
 		format *string
@@ -47,7 +47,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 			println("CreateRoom:", err.Error()) // debug
 			return room, err
 		}
-		*format = string(marshal)
+		format = kit.StringPtr(string(marshal))
 	}
 
 	err = r.db.QueryRow(`
@@ -58,7 +58,8 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 		inp.Parent,
 		inp.Name,
 		inp.Note,
-		inp.Form,
+		//inp.Form,
+		format,
 	).Scan(
 		&room.ID,
 		&room.ChatID,
@@ -74,7 +75,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 	if inp.Allows != nil {
 		var allows string
 		for _, allow := range inp.Allows.Allows {
-			allows += fmt.Sprintf(",(%d, '%s','%s','%s')", roomId, allow.Action, allow.Group, allow.Value)
+			allows += fmt.Sprintf(",(%d, '%s','%s','%s')", room.ID, allow.Action, allow.Group, allow.Value)
 		}
 		allows = kit.TrimFirstRune(allows)
 
@@ -170,53 +171,68 @@ func (r *RoomsRepo) DeleteAllow(allowID int) (*model.DeleteAllow, error) {
 
 	return allow, err
 }
-func (r *RoomsRepo) AllowExists(roomID int, inp *model.AllowInput) (exists bool) {
+
+func (r *RoomsRepo) AllowsExists(expect bool, roomID int, allows *model.AllowsInput) (desired bool) {
+	if len(allows.Allows) == 0 {
+		return
+	}
+	sqlArr := ""
+	for _, v := range allows.Allows {
+		if !validator.ValidateAllowInput(v) {
+			return
+		}
+		sqlArr += fmt.Sprintf(",('%s', '%s', '%s')", v.Action, v.Group, v.Value)
+	}
+	sqlArr = kit.TrimFirstRune(sqlArr)
+
 	err := r.db.QueryRow(`
-		SELECT EXISTS(
-			SELECT 1
-			FROM allows
-			WHERE room_id = $1 
-			  AND action_type = $2 
-			  AND group_type = $3 
-			  AND value = $4
-		)
-		`,
+		SELECT allows_exists(
+		    $1::BOOLEAN,
+		    $2::BIGINT,
+			array [`+sqlArr+`]::findallow[]
+		)`,
+		expect,
 		roomID,
-		inp.Action,
-		inp.Group,
-		inp.Value,
-	).Scan(&exists)
+	).Scan(&desired)
 	if err != nil {
-		println("AllowExists:", err.Error()) // debug
+		println("AllowsExists:", err.Error()) // debug
 	}
 
 	return
 }
 
-func (r *RoomsRepo) CreateAllow(roomID int, inp *model.AllowInput) (*model.CreateAllow, error) {
-	allow := &model.CreateAllow{
-		Allow: &model.Allow{},
-	}
-	err := r.db.QueryRow(`
-		INSERT INTO allows (room_id, action_type, group_type, value)
-		VALUES ($1, $2, $3, $4)
-		RETURNING id, room_id, action_type, group_type, value`,
-		roomID,
-		inp.Action,
-		inp.Group,
-		inp.Value,
-	).Scan(
-		&allow.RoomID,
-		&allow.Allow.ID,
-		&allow.Allow.Action,
-		&allow.Allow.Group,
-		&allow.Allow.Value,
-	)
-	if err != nil {
-		println("CreateAllow:", err.Error()) // debug
+func (r *RoomsRepo) CreateAllows(roomID int, inp *model.AllowsInput) (*model.CreateAllows, error) {
+	allows := &model.CreateAllows{
+		RoomID: roomID,
+		Allows: []*model.Allow{},
 	}
 
-	return allow, err
+	sqlArr := ""
+	for _, v := range inp.Allows {
+
+		sqlArr += fmt.Sprintf(",(%d, '%s', '%s', '%s')", roomID, v.Action, v.Group, v.Value)
+	}
+	sqlArr = kit.TrimFirstRune(sqlArr)
+	rows, err := r.db.Query(`
+		INSERT INTO allows (room_id, action_type, group_type, value)
+		VALUES ` + sqlArr + `
+		RETURNING id, action_type, group_type, value`,
+	)
+	if err != nil {
+		println("CreateAllows:", err.Error()) // debug
+		return allows, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		allow := &model.Allow{}
+		if err = rows.Scan(&allow.ID, &allow.Action, &allow.Group, &allow.Value); err != nil {
+			panic(err)
+		}
+		allows.Allows = append(allows.Allows, allow)
+	}
+
+	return allows, err
 }
 
 func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {

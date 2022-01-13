@@ -9,7 +9,7 @@ import (
 
 type Services struct {
 	Repos     *repository.Repositories
-	Subix     *subix.Subscription
+	Subix     *subix.Subix
 	Scheduler *scheduler.Scheduler
 }
 
@@ -18,7 +18,7 @@ func NewServices(db *sql.DB) *Services {
 		Repos:     repository.NewRepositories(db),
 		Scheduler: scheduler.NewScheduler(),
 	}
-	s.Subix = subix.NewSubscription(s.Repos, s.Scheduler)
+	s.Subix = subix.NewSubix(s.Repos, s.Scheduler)
 
 	err := s.prepareScheduleInvites()
 	if err != nil {

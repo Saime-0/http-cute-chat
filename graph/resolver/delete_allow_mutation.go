@@ -32,7 +32,7 @@ func (r *mutationResolver) DeleteAllow(ctx context.Context, allowID int) (model.
 		return resp.Error(resp.ErrInternalServerError, "не удалось удалить разрешение"), nil
 	}
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyAllow,
 	)
 	return resp.Success("успешно удалено"), nil

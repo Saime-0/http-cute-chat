@@ -88,6 +88,23 @@ func (n *Node) ValidID(id int) (fail bool) {
 	return
 }
 
+func (n *Node) ValidParentRoomID(id, parent int) (fail bool) {
+	if !validator.ValidateID(parent) || id == parent {
+		n.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение для id")
+		return true
+	}
+	return
+}
+
+func (n *Node) ValidRoomAllows(chatID int, allows *model.AllowsInput) (fail bool) {
+	valid := n.repos.Chats.ValidAllows(chatID, allows)
+	if !valid {
+		n.Err = resp.Error(resp.ErrBadRequest, "одно из разрешений содержит ошибку")
+		return true
+	}
+	return
+}
+
 func (n *Node) ValidFindMessagesInRoom(find *model.FindMessagesInRoom) (fail bool) {
 	if find.Count <= 0 ||
 		find.Count > rules.MaxMessagesCount ||
@@ -572,13 +589,14 @@ func (n *Node) GetDefMember(memberId int, defMember *models.DefMember) (fail boo
 	return
 }
 
-func (n *Node) AllowNotExists(roomID int, inp *model.AllowInput) (fail bool) {
-	if n.repos.Rooms.AllowExists(roomID, inp) {
+func (n *Node) AllowsNotExists(roomID int, inp *model.AllowsInput) (fail bool) {
+	if n.repos.Rooms.AllowsExists(true, roomID, inp) {
 		n.Err = resp.Error(resp.ErrBadRequest, "такое разрешение уже существует")
 		return true
 	}
 	return
 }
+
 func (n *Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 	val := inp.Value
 	intVal, err := strconv.Atoi(val)

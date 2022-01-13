@@ -49,7 +49,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 
 	//r.Services.Events.NewMessage(roomID, &model.Message{ID:      msgID, ReplyTo: _replyTo, UserID:  &model.Member{ID: memberID}, Type:    message.Type, Body:    input.Body})
 	go r.Services.Subix.NotifyRoomReaders(
-		[]int{roomID},
+		roomID,
 		eventReadyMessage,
 	)
 

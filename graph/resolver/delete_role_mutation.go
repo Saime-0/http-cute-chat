@@ -31,7 +31,7 @@ func (r *mutationResolver) DeleteRole(ctx context.Context, roleID int) (model.Mu
 	}
 
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyRole,
 	)
 

@@ -7,22 +7,29 @@ import (
 
 type ID = int
 
-func (s *Subscription) NotifyChatMembers(chats []ID, body model.EventResult) {
+func (s *Subix) NotifyChatMembers(chat ID, body model.EventResult) {
+	s.spam(
+		[]ID{chat},
+		s.repo.Subscribers.Members,
+		body,
+	)
+}
+func (s *Subix) NotifyChats(chats []ID, body model.EventResult) {
 	s.spam(
 		chats,
 		s.repo.Subscribers.Members,
 		body,
 	)
 }
-func (s *Subscription) NotifyRoomReaders(rooms []ID, body model.EventResult) {
+func (s *Subix) NotifyRoomReaders(room ID, body model.EventResult) {
 	s.spam(
-		rooms,
+		[]ID{room},
 		s.repo.Subscribers.RoomReaders,
 		body,
 	)
 }
 
-func (s *Subscription) spam(objects []ID, meth repository.QueryUserGroup, body interface{}) {
+func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interface{}) {
 	users, err := meth(objects)
 	if err != nil {
 		panic(err)

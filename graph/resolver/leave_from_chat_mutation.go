@@ -29,7 +29,7 @@ func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int) (model
 	}
 
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyMember,
 	)
 

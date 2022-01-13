@@ -35,7 +35,7 @@ func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model
 	}
 
 	go r.Services.Subix.NotifyChatMembers(
-		[]int{chatID},
+		chatID,
 		eventReadyMember,
 	)
 

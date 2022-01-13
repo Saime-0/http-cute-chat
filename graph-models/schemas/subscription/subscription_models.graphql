@@ -81,11 +81,11 @@ type UpdateForm {
 	form: Form
 }
 
-type CreateAllow {
+type CreateAllows {
 	roomId: ID!
-	allow: Allow!
+	allows: [Allow!]!
 }
-type DeleteAllow {
+type DeleteAllows {
 	allowId: ID
 }
 
