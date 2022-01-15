@@ -66,8 +66,8 @@ func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
 }
 
 func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, userId int, err error) {
-	err = r.db.QueryRow(
-		`SELECT id, user_id
+	err = r.db.QueryRow(`
+		SELECT id, user_id
 		FROM refresh_sessions
 		WHERE refresh_token = $1`,
 		token,

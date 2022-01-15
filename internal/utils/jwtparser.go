@@ -11,8 +11,6 @@ type TokenData struct {
 }
 
 func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
-	println("token:", tokenString) // debug
-
 	algorithm := jwt.HmacSha256(secretKey)
 	if err := algorithm.Validate(tokenString); err != nil {
 		println("ParseToken:", err.Error()) // debug

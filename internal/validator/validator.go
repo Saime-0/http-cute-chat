@@ -57,6 +57,14 @@ func ValidateNameFragment(fragment string) (valid bool) {
 func ValidateID(id int) (valid bool) {
 	return id > 0
 }
+func ValidateIDs(ids []int) (valid bool) {
+	for _, id := range ids {
+		if !ValidateID(id) {
+			return false
+		}
+	}
+	return true
+}
 func ValidateAllowInput(allow *model.AllowInput) (valid bool) {
 	_, err := strconv.Atoi(allow.Value)
 	if allow.Group == model.AllowGroupRole || allow.Group == model.AllowGroupMember {
@@ -71,6 +79,15 @@ func ValidateAllowInput(allow *model.AllowInput) (valid bool) {
 	}
 	return true
 }
+func ValidateAllowsInput(allows *model.AllowsInput) (valid bool) {
+	for _, v := range allows.Allows {
+		if !ValidateAllowInput(v) {
+			return
+		}
+	}
+	return true
+}
+
 func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 	if len(form.Fields) > rules.MaxFormFields {
 		return false, errors.New("превышен лимит полей")

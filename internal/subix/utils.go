@@ -6,32 +6,67 @@ import (
 	"strings"
 )
 
-func (s *Subix) writeToUsers(ids []int, body model.EventResult) {
+func (s *Subix) writeToChats(chats []int, body model.EventResult) {
 
 	eventType := getEventType(body)
-	for _, id := range ids {
-		user, ok := s.users[id]
+	for _, chatID := range chats {
+		chat, ok := s.chats[chatID]
 		if !ok {
 			continue
 		}
 
-		next := user.Root.next
-		for next != nil {
-			select {
-			case next.Ch <- &model.SubscriptionBody{
-				//Rev:   next.rev[eventType][objectID],
-				Event: eventType,
-				Body:  body,
-			}:
-				//next.rev[eventType] += 1 todo fix
-				fmt.Printf("Message write to client chan %p (id:%d)\n", next, id) // debug
-			default:
-				fmt.Printf("client chan %p (id:%d) is close.. skip\n", next, id) // debug
-				delete(s.users, id)
+		member := chat.rootMember.next
+		for member != nil {
+
+			client := (*member).User.rootClient.next
+			for client != nil {
+				s.writeToClient(
+					client,
+					&model.SubscriptionBody{
+						Event: eventType,
+						Body:  body,
+					},
+				)
+
+				client = (*client).next
 			}
-			next = next.next
+
+			member = (*member).next
 		}
 
+	}
+}
+
+func (s *Subix) writeToUsers(users []int, body model.EventResult) {
+
+	eventType := getEventType(body)
+	for _, userID := range users {
+		user, ok := s.users[userID]
+		if !ok {
+			continue
+		}
+		client := user.rootClient.next
+		for client != nil {
+			s.writeToClient(
+				client,
+				&model.SubscriptionBody{
+					Event: eventType,
+					Body:  body,
+				},
+			)
+			client = (*client).next
+		}
+
+	}
+}
+
+func (s *Subix) writeToClient(client **Client, subbody *model.SubscriptionBody) {
+	select {
+	case (*client).Ch <- subbody:
+		fmt.Printf("Message write to client chan %p (id:%d)\n", client, (*client).UserID) // debug
+	default:
+		fmt.Printf("client chan %p (id:%d) is close.. skip\n", client, (*client).UserID) // debug
+		s.deleteClient(client)
 	}
 }
 

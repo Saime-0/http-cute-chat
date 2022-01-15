@@ -12,7 +12,7 @@ import (
 )
 
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (model.RegisterResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > Register [_]")
+	node := r.Piper.CreateNode("mutationResolver > Sub [_]")
 	defer node.Kill()
 
 	switch {

@@ -97,8 +97,9 @@ func (n *Node) ValidParentRoomID(id, parent int) (fail bool) {
 }
 
 func (n *Node) ValidRoomAllows(chatID int, allows *model.AllowsInput) (fail bool) {
-	valid := n.repos.Chats.ValidAllows(chatID, allows)
-	if !valid {
+	if len(allows.Allows) == 0 ||
+		!validator.ValidateAllowsInput(allows) ||
+		!n.repos.Chats.ValidAllows(chatID, allows) {
 		n.Err = resp.Error(resp.ErrBadRequest, "одно из разрешений содержит ошибку")
 		return true
 	}
@@ -590,7 +591,7 @@ func (n *Node) GetDefMember(memberId int, defMember *models.DefMember) (fail boo
 }
 
 func (n *Node) AllowsNotExists(roomID int, inp *model.AllowsInput) (fail bool) {
-	if n.repos.Rooms.AllowsExists(true, roomID, inp) {
+	if n.repos.Rooms.AllowsExists(roomID, inp) {
 		n.Err = resp.Error(resp.ErrBadRequest, "такое разрешение уже существует")
 		return true
 	}
@@ -635,5 +636,19 @@ func (n *Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 	default:
 		println("Not implemented")
 	}
+	return
+}
+
+func (n *Node) UserHasAccessToChats(userID int, chats *[]int, submembers **[]*models.SubUser) (fail bool) {
+	if !validator.ValidateIDs(*chats) {
+		n.Err = resp.Error(resp.ErrBadRequest, "невалидный id")
+		return true
+	}
+	members, yes := n.repos.Chats.UserHasAccessToChats(userID, chats)
+	if !yes {
+		n.Err = resp.Error(resp.ErrBadRequest, "нет доступа к одному из чатов")
+		return true
+	}
+	*submembers = &members
 	return
 }

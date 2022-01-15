@@ -3,9 +3,7 @@ package middleware
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -57,9 +55,9 @@ func WebsocketExeption() func(http.Handler) http.Handler {
 }
 
 func (c *chain) checkAuth() *chain {
-	println("CheckAuth start!") // debug
+	//println("CheckAuth start!") // debug
 
-	println(c.r.Header.Get("Authorization")) // debug
+	//println(c.r.Header.Get("Authorization")) // debug
 	ctx, err := auth(c.r.Context(), c.cfg, c.r.Header.Get("Authorization"))
 	if err != nil {
 		println("CheckAuth:", err.Error())
@@ -69,7 +67,7 @@ func (c *chain) checkAuth() *chain {
 }
 
 func (c *chain) getUserAgent() *chain {
-	println("GetUserAgent start!") // debug
+	//println("GetUserAgent start!") // debug
 
 	c.r = c.r.WithContext(context.WithValue(c.r.Context(), rules.UserAgentFromHeaders, c.r.UserAgent()))
 	return c
@@ -79,10 +77,8 @@ func Logging(cfg *config.Config) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, _ := json.MarshalIndent(r.Header, "", " ")
-			fmt.Printf("header: %s\n", string(b)) // debug
 
-			println("Logging start!") // debug
+			println("\nLogging start!") // debug
 
 			start := time.Now()
 			wrapped := wrapResponseWriter(w)
@@ -137,7 +133,7 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func WebsocketInitFunc(cfg *config.Config) func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
 
 	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
-		println("INIT FUNC") // debug
+		//println("INIT FUNC") // debug
 		ctx, err := auth(ctx, cfg, initPayload.Authorization())
 		if err != nil {
 			println("WebsocketInitFunc:", err.Error())
@@ -162,7 +158,6 @@ func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.C
 		if err == nil && data.ExpiresAt >= time.Now().Unix() {
 			userId = data.UserID
 		}
-		fmt.Printf("%#v, %#v\n", data, err)
 	}
 	return context.WithValue(ctx, rules.UserIDFromToken, userId), err
 }

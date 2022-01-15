@@ -114,3 +114,8 @@ type ScheduleInvite struct {
 	Exp    *int64
 	Task   *scheduler.Task
 }
+
+type SubUser struct {
+	MemberID *int
+	ChatID   *int
+}
