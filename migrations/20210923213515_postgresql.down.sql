@@ -24,8 +24,6 @@ drop type if exists unit_type cascade;
 drop function if exists generate_invite_code() cascade;
 drop function if exists unix_utc_now(bigint) cascade;
 drop function if exists delete_allow() cascade;
-drop function if exists validate_allows(bigint, findallow[]) cascade;
-drop function if exists allows_exists(boolean, bigint, findallow[]) cascade;
 drop function if exists change_count_members() cascade;
 drop function if exists create_or_delete_count_members_row() cascade;
 

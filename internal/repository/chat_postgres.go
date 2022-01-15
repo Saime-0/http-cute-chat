@@ -3,10 +3,10 @@ package repository
 import (
 	"database/sql"
 	"fmt"
+	"github.com/lib/pq"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/tlog"
-	"github.com/saime-0/http-cute-chat/internal/validator"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 	"time"
@@ -1262,7 +1262,6 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 // DemoMembers selectType: 0 is filter by users, 1 - by members and chatid is not count
 func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.DemoMember { // todo selectType to rules.SelectType
 	var (
-		sqlArr      = kit.IntSQLArray(ids)
 		demoMembers [2]*models.DemoMember
 	)
 	if selectType != 0 && selectType != 1 {
@@ -1274,11 +1273,12 @@ func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.D
 		SELECT user_id, chat_members.id, owner_id = user_id as is_owner, char, muted
 		FROM chat_members 
 		JOIN chats ON chats.id = chat_members.chat_id
-		WHERE $2 = 0 AND chats.id = $1 AND user_id IN `+sqlArr+`
-		    OR $2 = 1 AND chat_members.id IN `+sqlArr+`
+		WHERE $2 = 0 AND chats.id = $1 AND user_id IN ($3)
+		    OR $2 = 1 AND chat_members.id IN ($3)
 		`,
 		chatId,
 		selectType,
+		pq.Array(ids),
 	)
 	if err != nil {
 		println("DemoMembers:", err.Error()) // debug
@@ -1459,21 +1459,22 @@ func (r *ChatsRepo) UpdateMember(memberID int, inp *model.UpdateMemberInput) (*m
 }
 
 func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bool) {
-	sqlArr := ""
-	if len(allows.Allows) == 0 {
-		return
-	}
-	for _, v := range allows.Allows {
-		if !validator.ValidateAllowInput(v) {
-			return
-		}
-		sqlArr += fmt.Sprintf(",('%s', '%s', '%s')", v.Action, v.Group, v.Value)
-	}
-	sqlArr = kit.TrimFirstRune(sqlArr)
-	println(sqlArr) // debug
 	err := r.db.QueryRow(`
-		SELECT validate_allows($1::BIGINT, array [`+sqlArr+`]::findallow[])`,
+		SELECT NOT exists(
+		    SELECT 1
+		    FROM unnest($2::findallow[]) elem (act,gr,val)
+		    LEFT JOIN chat_members cm ON
+		        elem.gr = 'MEMBER' AND
+		        elem.val::BIGINT = cm.id AND
+		        cm.chat_id = $1
+		    LEFT JOIN roles r ON
+		        elem.gr = 'ROLE' AND
+		        elem.val::BIGINT = r.id AND
+		        r.chat_id = $1
+		    WHERE cm.id IS NULL AND r.id IS NULL AND elem.gr::VARCHAR <> 'CHAR'
+		)`,
 		chatID,
+		pq.Array(allows.Allows),
 	).Scan(&valid)
 
 	if err != nil {
@@ -1481,4 +1482,33 @@ func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bo
 	}
 
 	return valid
+}
+
+func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*models.SubUser, yes bool) {
+	rows, err := r.db.Query(`
+	    SELECT cm.id, cm.chat_id
+	    FROM unnest($2::BIGINT[]) elem
+	    LEFT JOIN chats c ON c.id = elem
+	    LEFT JOIN chat_members cm ON cm.chat_id = c.id AND cm.user_id = $1`,
+		userID,
+		pq.Array(*chats),
+	)
+	if err != nil {
+		println("UserHasAccessToChats:", err.Error()) // debug
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		member := &models.SubUser{}
+		if err = rows.Scan(&member.MemberID, &member.ChatID); err != nil {
+			println("UserHasAccessToChats, scan:", err)
+			return
+		}
+		if member.MemberID == nil {
+			return
+		}
+		members = append(members, member)
+	}
+	return members, true
 }

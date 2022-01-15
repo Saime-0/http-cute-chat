@@ -4,10 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/lib/pq"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/tlog"
-	"github.com/saime-0/http-cute-chat/internal/validator"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 )
@@ -172,27 +172,17 @@ func (r *RoomsRepo) DeleteAllow(allowID int) (*model.DeleteAllow, error) {
 	return allow, err
 }
 
-func (r *RoomsRepo) AllowsExists(expect bool, roomID int, allows *model.AllowsInput) (desired bool) {
-	if len(allows.Allows) == 0 {
-		return
-	}
-	sqlArr := ""
-	for _, v := range allows.Allows {
-		if !validator.ValidateAllowInput(v) {
-			return
-		}
-		sqlArr += fmt.Sprintf(",('%s', '%s', '%s')", v.Action, v.Group, v.Value)
-	}
-	sqlArr = kit.TrimFirstRune(sqlArr)
-
+func (r *RoomsRepo) AllowsExists(roomID int, allows *model.AllowsInput) (desired bool) {
 	err := r.db.QueryRow(`
-		SELECT allows_exists(
-		    $1::BOOLEAN,
-		    $2::BIGINT,
-			array [`+sqlArr+`]::findallow[]
-		)`,
-		expect,
+		SELECT *
+		FROM unnest($2::findallow[]) elem (act,gr,val)
+		LEFT JOIN allows a ON a.room_id =  $1
+	        AND elem.act = a.action_type::VARCHAR
+	        AND elem.gr = a.group_type::VARCHAR
+	        AND elem.val = a.value
+		`,
 		roomID,
+		pq.Array(allows.Allows),
 	).Scan(&desired)
 	if err != nil {
 		println("AllowsExists:", err.Error()) // debug

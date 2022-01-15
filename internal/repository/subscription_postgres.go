@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/lib/pq"
 )
 
 type QueryUserGroup func(objectIDs []int) (users []int, err error)
@@ -37,9 +37,10 @@ func (r *SubscribersRepo) initFuncs() {
 	r.Members = func(chatIDs []int) (users []int, err error) {
 		//language=PostgreSQL
 		rows, err := r.db.Query(`
-		SELECT id 
-		FROM chat_members
-		WHERE chat_id IN ` + kit.IntSQLArray(chatIDs),
+			SELECT id 
+			FROM chat_members
+			WHERE chat_id IN ($1)`,
+			pq.Array(chatIDs),
 		)
 		defer rows.Close()
 		if err != nil {
@@ -66,7 +67,7 @@ func (r *SubscribersRepo) initFuncs() {
 			JOIN rooms r on m.chat_id = r.chat_id
 			LEFT JOIN allows a on r.id = a.room_id
 		
-			WHERE r.id IN ` + kit.IntSQLArray(roomIDs) + `
+			WHERE r.id IN ($1)
 		  		AND (
 				    action_type IS NULL 
 				    OR action_type = 'READ' 
@@ -78,6 +79,7 @@ func (r *SubscribersRepo) initFuncs() {
 				   	OR m.user_id = c.owner_id
 				)
 			GROUP BY user_id`,
+			pq.Array(roomIDs),
 		)
 		if err != nil {
 			println("Members:", err.Error()) // debug
