@@ -1267,14 +1267,18 @@ func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.D
 	if selectType != 0 && selectType != 1 {
 		selectType = 1
 	}
+	if len(ids) > 2 {
+		println("DemoMembers: todo") // debug
+		return demoMembers
+	}
 
 	//language=PostgreSQL
 	rows, err := r.db.Query(`
 		SELECT user_id, chat_members.id, owner_id = user_id as is_owner, char, muted
 		FROM chat_members 
 		JOIN chats ON chats.id = chat_members.chat_id
-		WHERE $2 = 0 AND chats.id = $1 AND user_id IN ($3)
-		    OR $2 = 1 AND chat_members.id IN ($3)
+		WHERE $2 = 0 AND chats.id = $1 AND user_id = ANY ($3)
+		    OR $2 = 1 AND chat_members.id = ANY ($3)
 		`,
 		chatId,
 		selectType,

@@ -39,7 +39,7 @@ func (r *SubscribersRepo) initFuncs() {
 		rows, err := r.db.Query(`
 			SELECT id 
 			FROM chat_members
-			WHERE chat_id IN ($1)`,
+			WHERE chat_id = ANY ($1)`,
 			pq.Array(chatIDs),
 		)
 		defer rows.Close()
@@ -67,7 +67,7 @@ func (r *SubscribersRepo) initFuncs() {
 			JOIN rooms r on m.chat_id = r.chat_id
 			LEFT JOIN allows a on r.id = a.room_id
 		
-			WHERE r.id IN ($1)
+			WHERE r.id = ANY ($1)
 		  		AND (
 				    action_type IS NULL 
 				    OR action_type = 'READ' 

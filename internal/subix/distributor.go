@@ -30,10 +30,10 @@ func (s *Subix) NotifyRoomReaders(room ID, body model.EventResult) {
 }
 
 func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interface{}) {
-	users, err := meth(objects)
-	if err != nil {
-		panic(err)
-	}
+	//users, err := meth(objects)
+	//if err != nil {
+	//	panic(err)
+	//}
 
 	switch body.(type) {
 	case *model.DeleteInvite: // "отбрасывает" задачу в планировщике и удаляет из стора сабикса
@@ -50,5 +50,5 @@ func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interfac
 		//s.w todo
 	}
 
-	s.writeToChats(users, body.(model.EventResult))
+	s.writeToChats(objects, body.(model.EventResult))
 }
