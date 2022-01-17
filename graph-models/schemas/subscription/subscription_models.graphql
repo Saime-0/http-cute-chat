@@ -109,3 +109,7 @@ type DeleteInvite {
 	reason: DeleteInviteReason!
 	code: String!
 }
+
+type TokenExpired {
+	message: String!
+}

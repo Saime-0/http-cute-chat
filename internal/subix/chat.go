@@ -34,13 +34,13 @@ func (s *Subix) CreateChatIfNotExists(chatID int) *Chat {
 func (s *Subix) CreateMemberIfNotExists(memberID int, user *User, chat *Chat) **Member {
 	member, ok := s.members[memberID]
 	if !ok {
-		_member := &Member{
+		ptr := &Member{
 			ID:     memberID,
 			ChatID: chat.ID,
 			User:   user,
 			next:   nil,
 		}
-		member = &_member
+		member = &ptr
 		s.members[memberID] = member
 		// если такого мембера еще небыло создано, те до этого созданной сессии пользователя, то мы создаем, а если есть то пофиг, тк пользователь бует уже привязан
 		chat.rootMember.next, (*member).next = member, chat.rootMember.next

@@ -1,9 +1,5 @@
 package rules
 
-import (
-	"time"
-)
-
 const Year int64 = 31536000
 
 type FetchType string
@@ -50,37 +46,41 @@ const (
 	UserIDFromToken ContextKeys = iota
 	ChatIDFromChat
 	UserAgentFromHeaders
+	ClientWebSocketKeyFromHeaders
+	ExpiresAtFromToken
 	SecretKeyFromConfig
 )
 
 const (
-	NameMaxLength                  = 32
-	NameMinLength                  = 1
-	DomainMaxLength                = 32
-	DomainMinLength                = 4
-	MaxCountOwnedChats             = 128
-	NoteMaxLength                  = 64
-	MaxMessagesCount               = 20
-	MessageBodyMaxLength           = 4096
-	RefreshTokenLength             = 16
-	RefreshTokenBytesLength        = 16
-	MaxCountRooms                  = 128
-	MaxUserChats                   = 128
-	MaxMembersOnChat               = 2_097_152
-	LimitOnShowUnitsInSearch       = 20
-	LimitOnShowMessages            = 20
-	LimitOnShowChats               = 20
-	LimitOnShowDialogs             = 20
-	LimitOnShowMembers             = 20
-	MaxLimit                       = 20
-	MinPasswordLength              = 6
-	MaxPasswordLength              = 32
-	MaxInviteLinks                 = 3
-	MaxRolesInChat                 = 128
-	MaxFormFields                  = 16
-	MaxFielditems                  = 16
-	RefreshTokenLiftime      int64 = int64(time.Hour * 24 * 10 / time.Second) // 10 days
-	MaxRefreshSession              = 5
+	NameMaxLength            = 32
+	NameMinLength            = 1
+	DomainMaxLength          = 32
+	DomainMinLength          = 4
+	MaxCountOwnedChats       = 128
+	NoteMaxLength            = 64
+	MaxMessagesCount         = 20
+	MessageBodyMaxLength     = 4096
+	RefreshTokenLength       = 16
+	RefreshTokenBytesLength  = 16
+	MaxCountRooms            = 128
+	MaxUserChats             = 128
+	MaxMembersOnChat         = 2_097_152
+	LimitOnShowUnitsInSearch = 20
+	LimitOnShowMessages      = 20
+	LimitOnShowChats         = 20
+	LimitOnShowDialogs       = 20
+	LimitOnShowMembers       = 20
+	MaxLimit                 = 20
+	MinPasswordLength        = 6
+	MaxPasswordLength        = 32
+	MaxInviteLinks           = 3
+	MaxRolesInChat           = 128
+	MaxFormFields            = 16
+	MaxFielditems            = 16
+	//RefreshTokenLiftime      = int64(time.Hour * 24 * 10 / time.Second) // 10 days
+	RefreshTokenLiftime    = int64(120) // s.
+	MaxRefreshSession      = 5
+	LifetimeOfMarkedClient = int64(60) // s.
 )
 
 // Errors ...

@@ -61,6 +61,10 @@ func (s *Subix) writeToUsers(users []int, body model.EventResult) {
 }
 
 func (s *Subix) writeToClient(client **Client, subbody *model.SubscriptionBody) {
+	if (*client).marked {
+		fmt.Printf("client %p (id:%d) marked.. skip\n", client, (*client).UserID) // debug
+		return
+	}
 	select {
 	case (*client).Ch <- subbody:
 		fmt.Printf("Message write to client chan %p (id:%d)\n", client, (*client).UserID) // debug

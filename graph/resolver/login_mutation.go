@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -35,7 +34,6 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),
 		Lifetime:     rules.RefreshTokenLiftime,
 	}
-	fmt.Printf("%#v", session) // debug
 	expiresAt, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "неудачная попытка создать сессию пользователя"), nil

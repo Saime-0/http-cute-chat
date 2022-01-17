@@ -19,8 +19,8 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 
 func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.RefreshSession, overflowDelete bool) (expiresAt int64, err error) {
 	err = r.db.QueryRow(`
-		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at, created_at)
-		VALUES ($1, $2, $3, (date_part('epoch'::text, now()))::bigint + $4, (date_part('epoch'::text, now()))::bigint)
+		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at)
+		VALUES ($1, $2, $3, unix_utc_now($4))
 		RETURNING expires_at`,
 		userId,
 		sessionModel.RefreshToken,

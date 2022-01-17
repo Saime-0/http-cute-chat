@@ -24,8 +24,13 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 	}
 
 	var (
-		session *models.RefreshSession
+		session    *models.RefreshSession
+		webKey, ok = ctx.Value(rules.ClientWebSocketKeyFromHeaders).(string)
 	)
+	if !ok {
+		//return resp.Error(resp.ErrInternalServerError, "not valid header \"Twenty-Digit-Session-Key\""), nil
+		webKey = ""
+	}
 	newRefreshToken := kit.CryptoSecret(rules.RefreshTokenBytesLength)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
@@ -49,6 +54,10 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}
 
+	err = r.Services.Subix.ExtendClientSession(webKey, expiresAt)
+	if err != nil {
+		println("RefreshTokens:", err) // debug
+	}
 	return model.TokenPair{
 		AccessToken:  token,
 		RefreshToken: newRefreshToken,

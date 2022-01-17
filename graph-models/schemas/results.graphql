@@ -156,6 +156,6 @@ union EventResult =
     | CreateInvite # только определенным чарам +-
     | DeleteInvite # +
 
-
+    | TokenExpired
 
 

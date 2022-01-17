@@ -9,10 +9,10 @@ type Subix struct {
 	chats   Chats
 	members Members
 	users   Users
-
-	repo  *repository.Repositories
-	sched *scheduler.Scheduler
-	Store *Store
+	clients Clients
+	repo    *repository.Repositories
+	sched   *scheduler.Scheduler
+	Store   *Store
 }
 
 func NewSubix(repo *repository.Repositories, sched *scheduler.Scheduler) *Subix {
@@ -20,6 +20,7 @@ func NewSubix(repo *repository.Repositories, sched *scheduler.Scheduler) *Subix 
 		users:   Users{},
 		chats:   Chats{},
 		members: Members{},
+		clients: Clients{},
 		repo:    repo,
 		sched:   sched,
 		Store:   newStore(),

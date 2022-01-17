@@ -6,9 +6,9 @@ package resolver
 import (
 	"context"
 	"errors"
-	"github.com/saime-0/http-cute-chat/internal/models"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
@@ -17,17 +17,27 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, listenChatCollectio
 	defer node.Kill()
 	var (
 		clientID    = ctx.Value(rules.UserIDFromToken).(int)
+		webKey      = ctx.Value(rules.ClientWebSocketKeyFromHeaders).(string)
+		expAt       = ctx.Value(rules.ExpiresAtFromToken).(int64)
 		userMembers *[]*models.SubUser
 	)
 	if clientID == 0 { // тк @isAuth  вебсокетинге не отрабатывает
+		println("не аутентифицирован") // debug
 		return nil, errors.New("не аутентифицирован")
-
 	}
 	if node.UserHasAccessToChats(clientID, &listenChatCollection, &userMembers) {
 		return nil, errors.New(node.Err.Error)
 	}
 
-	client := r.Services.Subix.Sub(clientID, *userMembers)
+	client, err := r.Services.Subix.Sub(
+		clientID,
+		webKey,
+		expAt,
+		*userMembers,
+	)
+	if err != nil {
+		return nil, err
+	}
 	println("New client chan", &client) // debug
 	go func() {
 		<-ctx.Done()

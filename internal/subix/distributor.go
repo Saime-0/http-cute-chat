@@ -5,7 +5,10 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/repository"
 )
 
-type ID = int
+type (
+	ID  = int
+	Key = string
+)
 
 func (s *Subix) NotifyChatMembers(chat ID, body model.EventResult) {
 	s.spam(
