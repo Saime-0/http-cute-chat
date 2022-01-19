@@ -2,7 +2,6 @@ package scheduler
 
 import (
 	"errors"
-	"fmt"
 	"time"
 )
 
@@ -35,43 +34,37 @@ func (s *Scheduler) RunTask(task **Task) error {
 func (s *Scheduler) runNextTask() {
 	s.mu.Lock()
 	task := s.root.next
+	println("runNextTask: запускаю задачу..") // debug
 	go (*task).taskFunc()
 	*task = *(*task).next
 	s.mu.Unlock()
-	println("runNextTask: задача запущена") // debug
 }
 
 func (s *Scheduler) AddTask(taskFn execTaskFn, executeAt int64) (newTask *Task, err error) {
 	if executeAt <= time.Now().Unix() {
 		return nil, errors.New("not valid executeAt")
 	}
-
 	newTask = &Task{
 		sch:       s,
 		executeAt: executeAt,
 		taskFunc:  taskFn,
 		next:      emptyTask(),
 	}
-
 	task := s.root
 	s.mu.Lock()
 
 	for *task.next != nil {
-		fmt.Printf("Task at %d, next: %#v |", task.executeAt, task.next) // debug
 		if task.executeAt < newTask.executeAt && (*task.next).executeAt >= newTask.executeAt {
 			newTask.next = task.next
 			break
 		}
 		task = *task.next
 	}
-	println()
 	task.next = &newTask
 	s.mu.Unlock()
-
 	if task == s.root {
 		s.Resume()
 	}
-	println("AddTask: добавлена новая задача") // debug
 	return
 }
 

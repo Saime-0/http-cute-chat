@@ -60,7 +60,7 @@ const (
 	NoteMaxLength            = 64
 	MaxMessagesCount         = 20
 	MessageBodyMaxLength     = 4096
-	RefreshTokenLength       = 16
+	RefreshTokenLength       = 28
 	RefreshTokenBytesLength  = 16
 	MaxCountRooms            = 128
 	MaxUserChats             = 128
@@ -78,7 +78,7 @@ const (
 	MaxFormFields            = 16
 	MaxFielditems            = 16
 	//RefreshTokenLiftime      = int64(time.Hour * 24 * 10 / time.Second) // 10 days
-	RefreshTokenLiftime    = int64(120) // s.
+	RefreshTokenLiftime    = int64(60 * 60 * 24 * 10) // s.
 	MaxRefreshSession      = 5
 	LifetimeOfMarkedClient = int64(60) // s.
 )

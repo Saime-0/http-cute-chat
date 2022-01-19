@@ -2,7 +2,9 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"github.com/robbert229/jwt"
+	"time"
 )
 
 type TokenData struct {
@@ -48,8 +50,8 @@ func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 	}
 	userID := int(fuserID)
 	expiresAt := int64(fexpiresAt)
-	println(userID)
-	println(expiresAt)
+	println("userID", userID)                                    // debug
+	fmt.Println("expiresAt", expiresAt, time.Unix(expiresAt, 0)) // debug
 	data := &TokenData{
 		UserID:    userID,
 		ExpiresAt: expiresAt,

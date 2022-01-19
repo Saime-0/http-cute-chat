@@ -28,7 +28,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	var (
 		session *models.RefreshSession
 	)
-	newRefreshToken := kit.CryptoSecret(rules.RefreshTokenBytesLength)
+	newRefreshToken := kit.RandomSecret(rules.RefreshTokenLength)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
 		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -32,6 +31,11 @@ func ChainShip(cfg *config.Config) func(http.Handler) http.Handler {
 
 			if r.Header.Get("Sec-Websocket-Protocol") != "graphql-ws" {
 				c.checkAuth().getUserAgent()
+				c.r = r.WithContext(context.WithValue(
+					c.r.Context(),
+					rules.ClientWebSocketKeyFromHeaders,
+					c.r.Header.Get("Twenty-Digit-Session-Key"),
+				))
 			} else {
 				println("WebsocketExeption working!") // debug
 			}
@@ -125,7 +129,7 @@ func WebsocketInitFunc(cfg *config.Config) func(ctx context.Context, initPayload
 
 	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
 		//println("INIT FUNC") // debug
-		fmt.Printf("initpayload: %#v\n", initPayload) // debug
+		//fmt.Printf("initpayload: %#v\n", initPayload) // debug
 
 		ctx, err := auth(ctx, cfg, initPayload.Authorization())
 		if err != nil {
@@ -156,10 +160,12 @@ func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.C
 			token[1],
 			cfg.SecretKey,
 		)
-		if err == nil && data.ExpiresAt >= time.Now().Unix() {
+		if err == nil {
 			userId = data.UserID
 			expAt = data.ExpiresAt
 		}
+		//if err == nil && data.ExpiresAt >= time.Now().Unix() {
+		//}
 	}
 	ctx = context.WithValue(ctx, rules.ExpiresAtFromToken, expAt)
 	return context.WithValue(ctx, rules.UserIDFromToken, userId), err

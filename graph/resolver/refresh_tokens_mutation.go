@@ -20,6 +20,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 
 	_, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
 	if err != nil {
+		println("RefreshTokens:", err.Error()) // debug
 		return resp.Error(resp.ErrInternalServerError, "не удалось обрабработать токен"), nil
 	}
 
@@ -31,7 +32,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 		//return resp.Error(resp.ErrInternalServerError, "not valid header \"Twenty-Digit-Session-Key\""), nil
 		webKey = ""
 	}
-	newRefreshToken := kit.CryptoSecret(rules.RefreshTokenBytesLength)
+	newRefreshToken := kit.RandomSecret(rules.RefreshTokenLength)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
 		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),

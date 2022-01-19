@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/models"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -15,14 +16,17 @@ func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, chatID
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
-		memberID int
+		clientID    = ctx.Value(rules.UserIDFromToken).(int)
+		memberID    int
+		userMembers *[]*models.SubUser
 	)
 
 	if node.ChatExists(chatID) ||
-		node.GetMemberBy(clientID, chatID, &memberID) {
+		node.GetMemberBy(clientID, chatID, &memberID) ||
+		node.UserHasAccessToChats(clientID, &[]int{chatID}, &userMembers) {
 		return node.Err, nil
 	}
 
-	panic("Not implemented")
+	//r.Services.Subix.CreateMemberIfNotExists(memberID)
+	panic("not implemented")
 }

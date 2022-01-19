@@ -42,8 +42,8 @@ func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.Refresh
 	return
 }
 func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
-	err = r.db.QueryRow(
-		`DELETE FROM refresh_sessions 
+	err = r.db.QueryRow(`
+		DELETE FROM refresh_sessions 
 		WHERE id IN(                 
 		    WITH session_count AS (
 		        SELECT count(1) AS val
@@ -54,7 +54,9 @@ func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
 		    SELECT id
 		    FROM refresh_sessions 
 		    WHERE coalesce((select val from session_count) > $2, false) = true AND user_id = $1
+		    ORDER BY id ASC 
 		    LIMIT abs((select val from session_count) - $2)
+		    
 		    )`,
 		userId,
 		limit,

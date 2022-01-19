@@ -47,9 +47,19 @@ func (s *Subix) deleteUser(userID int) {
 	s.deleteMemberByUserID(userID)
 }
 
+func (s *Subix) deleteClientFromMap(client **Client) {
+	delete(s.clients, (*client).webKey)
+	c, ok := s.clients[(*client).webKey]
+	if ok {
+		fmt.Printf("deleteClientFromMap: клиент не удалился!!! %#v\n", c) // debug
+		return
+	}
+	fmt.Printf("удален клиент %p из мапы\n", *client) // debug
+}
+
 func (s *Subix) deleteClient(client **Client) {
 	fmt.Printf("deleteClient: %#v\n", *client) // debug
-	delete(s.clients, (*client).webKey)
+	s.deleteClientFromMap(client)
 	err := s.sched.DropTask(&(*client).task)
 	if err != nil {
 		println("deleteClient:", err.Error())
@@ -65,7 +75,7 @@ func (s *Subix) deleteClient(client **Client) {
 }
 
 func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
-	(*client).task, err = s.sched.AddTask(
+	client.task, err = s.sched.AddTask(
 		func() {
 			eventBody := &model.TokenExpired{
 				Message: "используйте mutation.RefreshTokens для того чтобы возобновить получение данных, иначе соединение закроется",

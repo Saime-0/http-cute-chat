@@ -38,10 +38,10 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, listenChatCollectio
 	if err != nil {
 		return nil, err
 	}
-	println("New client chan", &client) // debug
+	println("New client chan", client) // debug
 	go func() {
 		<-ctx.Done()
-		println("client chan", &client, "is down.") // debug
+		println("client chan", client, "is down.") // debug
 		r.Services.Subix.Unsub(&client)
 	}()
 

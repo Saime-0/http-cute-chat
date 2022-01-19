@@ -65,7 +65,7 @@ func RandomSecret(length int) string {
 	return string(bytes)
 }
 
-func CryptoSecret(blength int) string {
+func CringeSecret(blength int) string {
 	var result string
 	secret := make([]byte, blength)
 	gen, err := rand.Read(secret)

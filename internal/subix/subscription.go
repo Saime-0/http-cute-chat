@@ -11,7 +11,6 @@ func (s *Subix) Sub(userID int, webSocketKey Key, expAt int64, submembers []*mod
 	if len(webSocketKey) == 0 {
 		return nil, errors.New("not valid \"WebSocket-Session-Key\"")
 	}
-	fmt.Printf("%#v", s.clients) // debug
 	_, ok := s.clients[webSocketKey]
 	if ok { // если ключ сущесивует то по хорошему клиент должен повторить соединение с другим ключем
 		return nil, errors.New("webSocketKey already in use, it is not possible to create a new connection")
@@ -25,19 +24,17 @@ func (s *Subix) Sub(userID int, webSocketKey Key, expAt int64, submembers []*mod
 		sessionExpiresAt: expAt,
 	}
 	s.clients[webSocketKey] = client
-	fmt.Printf("%#v", client) // debug
 
 	// планируем пометку и дальнейшее удаление клиента, если его токен истечет
 	err := s.scheduleMarkClient(client, expAt)
 	if err != nil {
 		return nil, errors.New("не удалось создать сессию")
 	}
-	println("Создан client ", &client) // debug
+	println("Создан client ", client) // debug
 
 	// user
 	user := s.CreateUserIfNotExists(userID)
 	user.rootClient.next, client.next = &client, user.rootClient.next // добавили новую "сессию" пользователя
-
 	for _, submember := range submembers {
 		// chat
 		chat := s.CreateChatIfNotExists(*submember.ChatID)

@@ -37,6 +37,7 @@ func (s *Scheduler) Resume() {
 	s.Status = RUNNING
 	select {
 	case s.Ch <- RUNNING:
+	default: // "deadlock" fix
 	}
 
 }
@@ -44,6 +45,7 @@ func (s *Scheduler) Pause() {
 	s.Status = IDLE
 	select {
 	case s.Ch <- IDLE:
+	default: // "deadlock" fix
 	}
 }
 
