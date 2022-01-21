@@ -7,7 +7,6 @@ import (
 )
 
 func (s *Subix) writeToChats(chats []int, body model.EventResult) {
-
 	eventType := getEventType(body)
 	for _, chatID := range chats {
 		chat, ok := s.chats[chatID]
@@ -15,11 +14,9 @@ func (s *Subix) writeToChats(chats []int, body model.EventResult) {
 			continue
 		}
 
-		member := chat.rootMember.next
-		for member != nil {
+		for _, member := range chat.members {
 
-			client := (*member).User.rootClient.next
-			for client != nil {
+			for _, client := range member.clients {
 				s.writeToClient(
 					client,
 					&model.SubscriptionBody{
@@ -27,26 +24,21 @@ func (s *Subix) writeToChats(chats []int, body model.EventResult) {
 						Body:  body,
 					},
 				)
-
-				client = (*client).next
 			}
 
-			member = (*member).next
 		}
 
 	}
 }
 
 func (s *Subix) writeToUsers(users []int, body model.EventResult) {
-
 	eventType := getEventType(body)
 	for _, userID := range users {
 		user, ok := s.users[userID]
 		if !ok {
 			continue
 		}
-		client := user.rootClient.next
-		for client != nil {
+		for _, client := range user.clients {
 			s.writeToClient(
 				client,
 				&model.SubscriptionBody{
@@ -54,23 +46,25 @@ func (s *Subix) writeToUsers(users []int, body model.EventResult) {
 					Body:  body,
 				},
 			)
-			client = (*client).next
 		}
 
 	}
 }
 
-func (s *Subix) writeToClient(client **Client, subbody *model.SubscriptionBody) {
+func (s *Subix) writeToClient(client *Client, subbody *model.SubscriptionBody) {
 	if (*client).marked {
 		fmt.Printf("client %p (id:%d) marked.. skip\n", client, (*client).UserID) // debug
 		return
 	}
 	select {
 	case (*client).Ch <- subbody:
-		fmt.Printf("Message write to client chan %p (id:%d)\n", client, (*client).UserID) // debug
+		fmt.Printf("Message write to client %s (id:%d)\n", client.sessionKey, (*client).UserID) // debug
+
 	default:
 		fmt.Printf("client chan %p (id:%d) is close.. skip\n", client, (*client).UserID) // debug
-		s.deleteClient(client)
+		if client != nil {
+			s.deleteClient(client.sessionKey)
+		}
 	}
 }
 

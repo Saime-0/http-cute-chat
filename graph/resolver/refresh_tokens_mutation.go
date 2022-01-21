@@ -14,7 +14,7 @@ import (
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
-func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken string) (model.RefreshTokensResult, error) {
+func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string, refreshToken string) (model.RefreshTokensResult, error) {
 	node := r.Piper.CreateNode("mutationResolver > RefreshTokens [<token>]")
 	defer node.Kill()
 
@@ -25,13 +25,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 	}
 
 	var (
-		session    *models.RefreshSession
-		webKey, ok = ctx.Value(rules.ClientWebSocketKeyFromHeaders).(string)
+		session *models.RefreshSession
 	)
-	if !ok {
-		//return resp.Error(resp.ErrInternalServerError, "not valid header \"Twenty-Digit-Session-Key\""), nil
-		webKey = ""
-	}
 	newRefreshToken := kit.RandomSecret(rules.RefreshTokenLength)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
@@ -54,10 +49,11 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken strin
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}
-
-	err = r.Services.Subix.ExtendClientSession(webKey, expiresAt)
-	if err != nil {
-		println("RefreshTokens:", err) // debug
+	if sessionKey != nil {
+		err = r.Services.Subix.ExtendClientSession(*sessionKey, expiresAt)
+		if err != nil {
+			println("RefreshTokens:", err) // debug
+		}
 	}
 	return model.TokenPair{
 		AccessToken:  token,

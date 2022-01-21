@@ -1,80 +1,84 @@
 package subix
 
-import "fmt"
-
 type Chats map[ID]*Chat
 
 type Chat struct {
-	ID         int
-	rootMember *Member
+	ID      int
+	members Members
 }
 
-type Members map[ID]**Member
+type Members map[ID]*Member
 
 type Member struct {
-	ID     int
-	ChatID int
-	User   *User
-	next   **Member
+	ID      int
+	ChatID  int
+	UserID  int
+	clients Clients
 }
 
 func (s *Subix) CreateChatIfNotExists(chatID int) *Chat {
 	chat, ok := s.chats[chatID]
 	if !ok {
 		chat = &Chat{
-			ID:         chatID,
-			rootMember: &Member{},
+			ID:      chatID,
+			members: Members{},
 		}
 		s.chats[chatID] = chat
-		println("Создан chat id", chat.ID) // debug
+		println("Создан chat", chat.ID) // debug
 	}
 	return chat
 }
 
-func (s *Subix) CreateMemberIfNotExists(memberID int, user *User, chat *Chat) **Member {
+func (s *Subix) CreateMemberIfNotExists(memberID, chatID, userID int) *Member {
 	member, ok := s.members[memberID]
 	if !ok {
-		ptr := &Member{
-			ID:     memberID,
-			ChatID: chat.ID,
-			User:   user,
-			next:   nil,
+		chat := s.CreateChatIfNotExists(chatID)
+		chat.members[memberID] = member
+		member = &Member{
+			ID:      memberID,
+			ChatID:  chatID,
+			UserID:  userID,
+			clients: Clients{},
 		}
-		member = &ptr
 		s.members[memberID] = member
-		// если такого мембера еще небыло создано, те до этого созданной сессии пользователя, то мы создаем, а если есть то пофиг, тк пользователь бует уже привязан
-		chat.rootMember.next, (*member).next = member, chat.rootMember.next
-		println("Создан member id", (*member).ID) // debug
+		println("Создан мембер", member.ID) // debug
 	}
 	return member
 }
 
 func (s *Subix) deleteChat(chatID int) {
-	delete(s.chats, chatID)
-	println("удален чат с id =", chatID) // debug
-}
+	chat, ok := s.chats[chatID]
+	if ok {
 
-func (s *Subix) deleteMemberByUserID(userID int) {
-	for _, member := range s.members {
-		if (*member).User.ID == userID {
-			delete(s.members, (*member).ID)
-			fmt.Printf("удален участник чата с id = %d (uid:%d)\n", (*member).ID, userID) // debug
-			if (*member).next == nil {
-				s.deleteChat((*member).ChatID)
-				continue
-			}
-			*member = *(*member).next
+		for _, member := range chat.members {
+			s.deleteMember(member.ID)
 		}
+		delete(s.chats, chatID)
+		println("удален чат", chatID) // debug
 	}
 }
 
 func (s *Subix) deleteMember(memberID int) {
 	member, ok := s.members[memberID]
-	if !ok {
-		println("не удалось удалить участника, участник с id =", memberID, "не найден")
-		return
+	if ok { // если вдруг не удается найти то просто скипаем
+		delete(s.members, memberID) // удлаение из глобальной мапы
+		member.clients = nil        // на всякий случай заnullяем мапу
+
+		user, ok := s.users[member.UserID]
+		if ok {
+			delete(user.membering, member.ID)
+			//if len(user.membering) == 0 { это не должно здесь быть
+			//	s.deleteUser(user.ID)
+			//}
+		}
+
+		chat, ok := s.chats[member.ChatID]
+		if ok {
+			delete(chat.members, member.ID)
+			if len(chat.members) == 0 {
+				s.deleteChat(chat.ID)
+			}
+		}
+		println("удален мембер", memberID) // debug
 	}
-	*member = *(*member).next
-	delete(s.members, memberID)
-	println("удален участник чата с id =", memberID) // debug
 }

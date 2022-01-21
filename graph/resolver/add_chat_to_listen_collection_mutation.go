@@ -5,28 +5,37 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/models"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
-func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, chatID int) (model.MutationResult, error) {
+func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error) {
 	node := r.Piper.CreateNode("mutationResolver > AddChatToListenCollection [cid:", chatID, "]")
 	defer node.Kill()
 
 	var (
-		clientID    = ctx.Value(rules.UserIDFromToken).(int)
-		memberID    int
-		userMembers *[]*models.SubUser
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		subuser  = &models.SubUser{
+			MemberID: kit.IntPtr(0),
+			ChatID:   &chatID,
+		}
 	)
 
-	if node.ChatExists(chatID) ||
-		node.GetMemberBy(clientID, chatID, &memberID) ||
-		node.UserHasAccessToChats(clientID, &[]int{chatID}, &userMembers) {
+	if node.ValidSessionKey(sessionKey) ||
+		node.ChatExists(chatID) ||
+		node.GetMemberBy(clientID, chatID, subuser.MemberID) {
 		return node.Err, nil
 	}
 
-	//r.Services.Subix.CreateMemberIfNotExists(memberID)
-	panic("not implemented")
+	err := r.Services.Subix.AddListenChat(sessionKey, subuser)
+	if err != nil {
+		println("AddChatToListenCollection:", err) // debug
+		return resp.Error(resp.ErrBadRequest, "не удалось начать прослушивать чат"), nil
+	}
+
+	return resp.Success("успешно"), nil
 }

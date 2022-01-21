@@ -76,3 +76,15 @@ func CringeSecret(blength int) string {
 	result = encoder.EncodeToString(secret)
 	return result
 }
+
+func GetUniqueInts(arr []int) []int {
+	keys := make(map[int]bool)
+	var list []int
+	for _, entry := range arr {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			list = append(list, entry)
+		}
+	}
+	return list
+}

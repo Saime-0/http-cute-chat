@@ -1,3 +1,3 @@
 extend type Subscription {
-	newEvent(listenChatCollection: [Int!]!): SubscriptionBody @goField(forceResolver: true) # @isAuth здесь не работает, проверка происходит в резольвире
+	newEvent(sessionKey: String!, listenChatCollection: [Int!]!): SubscriptionBody @goField(forceResolver: true) # @isAuth здесь не работает, проверка происходит в резольвире
 }

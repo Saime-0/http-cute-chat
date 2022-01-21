@@ -157,3 +157,7 @@ func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 	}
 	return true, nil
 }
+
+func ValidateSessionKey(sessionKey string) (valid bool) {
+	return len(sessionKey) == 20
+}

@@ -31,11 +31,6 @@ func ChainShip(cfg *config.Config) func(http.Handler) http.Handler {
 
 			if r.Header.Get("Sec-Websocket-Protocol") != "graphql-ws" {
 				c.checkAuth().getUserAgent()
-				c.r = r.WithContext(context.WithValue(
-					c.r.Context(),
-					rules.ClientWebSocketKeyFromHeaders,
-					c.r.Header.Get("Twenty-Digit-Session-Key"),
-				))
 			} else {
 				println("WebsocketExeption working!") // debug
 			}
@@ -72,8 +67,7 @@ func Logging(cfg *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-			println("\nLogging start!")                                             // debug
-			println("loging: Sec-WebSocket-Key", r.Header.Get("Sec-WebSocket-Key")) // debug
+			println("\nLogging start!") // debug
 
 			start := time.Now()
 			wrapped := wrapResponseWriter(w)
@@ -128,21 +122,12 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func WebsocketInitFunc(cfg *config.Config) func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
 
 	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
-		//println("INIT FUNC") // debug
-		//fmt.Printf("initpayload: %#v\n", initPayload) // debug
 
 		ctx, err := auth(ctx, cfg, initPayload.Authorization())
 		if err != nil {
 			println("WebsocketInitFunc:", err.Error()) // debug
 			return nil, err
 		}
-		webKey, ok := initPayload["Twenty-Digit-Session-Key"].(string)
-		if !ok || len(webKey) != 20 {
-			return nil, errors.New("not valid header \"Twenty-Digit-Session-Key\"")
-		}
-		ctx = context.WithValue(ctx, rules.ClientWebSocketKeyFromHeaders, webKey)
-
-		println("ok") // debug
 		return ctx, nil
 	}
 }

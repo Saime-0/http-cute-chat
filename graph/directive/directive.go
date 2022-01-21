@@ -13,7 +13,7 @@ func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res in
 	println("IsAuth directive start!") // debug
 
 	if ctx.Value(rules.UserIDFromToken).(int) == 0 {
-		err = errors.New("клиент не аутентифицирован")
+		err = errors.New("не аутентифицирован")
 		println("IsAuth:", err.Error()) // debug
 		return obj, err
 	}

@@ -5,11 +5,33 @@ package resolver
 
 import (
 	"context"
-	"fmt"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
-func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, chatID int) (model.MutationResult, error) {
-	panic(fmt.Errorf("not implemented"))
+func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error) {
+	node := r.Piper.CreateNode("mutationResolver > DeleteChatFromListenCollection [cid:", chatID, "]")
+	defer node.Kill()
+
+	var (
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		memberID int
+	)
+
+	if node.ValidSessionKey(sessionKey) ||
+		node.ValidID(chatID) ||
+		node.ChatExists(chatID) ||
+		node.GetMemberBy(clientID, chatID, &memberID) {
+		return node.Err, nil
+	}
+
+	err := r.Services.Subix.DeleteChatFromListenCollection(sessionKey, memberID)
+	if err != nil {
+		println("DeleteChatFromListenCollection:", err) // debug
+		return resp.Error(resp.ErrBadRequest, "не удалось прекратить прослушивать чат"), nil
+	}
+
+	return resp.Success("успешно"), nil
 }

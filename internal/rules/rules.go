@@ -46,7 +46,6 @@ const (
 	UserIDFromToken ContextKeys = iota
 	ChatIDFromChat
 	UserAgentFromHeaders
-	ClientWebSocketKeyFromHeaders
 	ExpiresAtFromToken
 	SecretKeyFromConfig
 )

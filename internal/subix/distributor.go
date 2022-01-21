@@ -7,7 +7,7 @@ import (
 
 type (
 	ID  = int
-	Key = string
+	Key = string // (sessionKey | sessionKey) len = 20, any symbols "Twenty-Digit-Session-Key": "[.]20"
 )
 
 func (s *Subix) NotifyChatMembers(chat ID, body model.EventResult) {

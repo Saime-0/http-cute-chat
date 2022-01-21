@@ -465,7 +465,7 @@ func (n *Node) GetChatIDByMember(memberId int, chatId *int) (fail bool) {
 func (n *Node) GetMemberBy(userId, chatId int, memberId *int) (fail bool) {
 	by := n.repos.Chats.FindMemberBy(userId, chatId)
 	if by == nil || *by == 0 {
-		n.Err = resp.Error(resp.ErrBadRequest, "не удалось определить участника чата")
+		n.Err = resp.Error(resp.ErrBadRequest, "мембер не найден")
 		return true
 	}
 	*memberId = *by
@@ -474,7 +474,7 @@ func (n *Node) GetMemberBy(userId, chatId int, memberId *int) (fail bool) {
 
 func (n *Node) IsNotMuted(memberId int) (fail bool) {
 	if n.repos.Chats.MemberIsMuted(memberId) {
-		n.Err = resp.Error(resp.ErrBadRequest, "участник чата заглушен")
+		n.Err = resp.Error(resp.ErrBadRequest, "участник заглушен")
 		return true
 	}
 	return
@@ -650,5 +650,13 @@ func (n *Node) UserHasAccessToChats(userID int, chats *[]int, submembers **[]*mo
 		return true
 	}
 	*submembers = &members
+	return
+}
+
+func (n *Node) ValidSessionKey(sessionKey string) (fail bool) {
+	if !validator.ValidateSessionKey(sessionKey) {
+		n.Err = resp.Error(resp.ErrBadRequest, "не валидный ключ сессии")
+		return true
+	}
 	return
 }

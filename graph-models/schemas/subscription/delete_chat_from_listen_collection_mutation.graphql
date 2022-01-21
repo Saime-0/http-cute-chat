@@ -1,4 +1,4 @@
 # ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
 extend type Mutation {
-	deleteChatFromListenCollection(chatID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
+	deleteChatFromListenCollection(sessionKey: String!, chatID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
 }

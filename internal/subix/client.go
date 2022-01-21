@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/scheduler"
 	"time"
@@ -12,19 +13,19 @@ import (
 type Users map[ID]*User
 
 type User struct {
-	ID         int
-	rootClient *Client
+	ID        int
+	membering Members
+	clients   Clients
 }
 
 type Clients map[Key]*Client
 
 type Client struct {
-	Ch               chan *model.SubscriptionBody
 	UserID           int
-	next             **Client
+	Ch               chan *model.SubscriptionBody
 	task             *scheduler.Task
 	sessionExpiresAt int64
-	webKey           Key
+	sessionKey       Key
 	marked           bool
 }
 
@@ -32,46 +33,62 @@ func (s *Subix) CreateUserIfNotExists(userID int) *User {
 	user, ok := s.users[userID]
 	if !ok {
 		user = &User{
-			ID:         userID,
-			rootClient: &Client{},
+			ID:        userID,
+			membering: Members{},
+			clients:   Clients{},
 		}
 		s.users[userID] = user
-		println("Создан user id", userID) // debug
+		println("Создан user", userID) // debug
 	}
 	return user
 }
 
 func (s *Subix) deleteUser(userID int) {
-	delete(s.users, userID)
-	println("удален пользователь с  id =", userID) // debug
-	s.deleteMemberByUserID(userID)
+	user, ok := s.users[userID]
+	if ok { // если вдруг не удается найти то просто скипаем
+		delete(s.users, userID)               // удаление из глобальной мапы
+		for _, client := range user.clients { // определяем тех клиентов которых надо удалить отовсюду
+			delete(s.clients, client.sessionKey) // удлаение из глобальной мапы
+		}
+		user.clients = nil // на всякий случай заnullяем мапу
+
+		for _, member := range user.membering { // а здесь определяем мемберов, к которые относятся к пользователю
+			s.deleteMember(member.ID) // удаляем по отдельности через функцию
+		}
+		user.membering = nil                    // на всякий случай заnullяем мапу
+		println("удален пользователь ", userID) // debug
+		// теперь на этого пользователя не должно остаться ссылок как и на его клиентов
+	}
+
 }
 
-func (s *Subix) deleteClientFromMap(client **Client) {
-	delete(s.clients, (*client).webKey)
-	c, ok := s.clients[(*client).webKey]
+func (s *Subix) deleteClient(sessionKey Key) {
+	client, ok := s.clients[sessionKey]
 	if ok {
-		fmt.Printf("deleteClientFromMap: клиент не удалился!!! %#v\n", c) // debug
-		return
-	}
-	fmt.Printf("удален клиент %p из мапы\n", *client) // debug
-}
+		delete(s.clients, client.sessionKey)
+		err := s.sched.DropTask(&client.task)
+		if err != nil {
+			println("deleteClient:", err.Error()) // debug
+			return
+		}
 
-func (s *Subix) deleteClient(client **Client) {
-	fmt.Printf("deleteClient: %#v\n", *client) // debug
-	s.deleteClientFromMap(client)
-	err := s.sched.DropTask(&(*client).task)
-	if err != nil {
-		println("deleteClient:", err.Error())
-		return
+		user, ok := s.users[client.UserID]
+		if ok {
+			delete(user.clients, client.sessionKey)
+			if len(user.clients) == 0 {
+				s.deleteUser(user.ID)
+			}
+		}
+
+		for _, member := range user.membering {
+			delete(member.clients, client.sessionKey)
+			if len(member.clients) == 0 {
+				s.deleteMember(member.ID)
+			}
+		}
 	}
-	close((*client).Ch)               // закрываем канал, потому как функция может вызываться а не триггериться закрытием соединения
-	println("удален клиент", *client) // debug
-	if (*client).next == nil {
-		s.deleteUser((*client).UserID)
-		return
-	}
-	*client = *(*client).next
+
+	println("удален клиент", client.sessionKey) // debug
 }
 
 func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
@@ -81,7 +98,7 @@ func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
 				Message: "используйте mutation.RefreshTokens для того чтобы возобновить получение данных, иначе соединение закроется",
 			}
 			s.writeToClient(
-				&client,
+				client,
 				&model.SubscriptionBody{
 					Event: getEventType(eventBody),
 					Body:  eventBody,
@@ -106,8 +123,8 @@ func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
 func (s *Subix) scheduleExpiredClient(client *Client) (err error) {
 	client.task, err = s.sched.AddTask(
 		func() {
-			println("клиент не обновил токен, удаляю", client) // debug
-			s.deleteClient(&client)
+			fmt.Printf("клиент %s не обновил токен, удаляю", client.sessionKey) // debug
+			s.deleteClient(client.sessionKey)
 		},
 		time.Now().Unix()+rules.LifetimeOfMarkedClient,
 	)
@@ -117,8 +134,8 @@ func (s *Subix) scheduleExpiredClient(client *Client) (err error) {
 	return err
 }
 
-func (s *Subix) ExtendClientSession(webKey Key, expAt int64) (err error) {
-	client, ok := s.clients[webKey]
+func (s *Subix) ExtendClientSession(sessionKey Key, expAt int64) (err error) {
+	client, ok := s.clients[sessionKey]
 	if !ok {
 		return errors.New("не удалось продлить сессию, клиент не найден")
 	}
@@ -134,5 +151,40 @@ func (s *Subix) ExtendClientSession(webKey Key, expAt int64) (err error) {
 	}
 	client.marked = false
 	println("сессия продлена клиента", client) // debug
+	return nil
+}
+
+func (s *Subix) AddListenChat(sessionKey Key, sm *models.SubUser) (err error) {
+	client, ok := s.clients[sessionKey]
+	if !ok {
+		return errors.New("не удалось найти клиента, чат не добавлен")
+	}
+
+	user, ok := s.users[client.UserID]
+	if !ok {
+		panic("AddListenChat: user not found")
+	}
+
+	member := s.CreateMemberIfNotExists(
+		*sm.MemberID,
+		*sm.ChatID,
+		user.ID,
+	)
+	member.clients[sessionKey] = client
+	fmt.Printf("клиент %s подписался на прослушивание чата %d\n", sessionKey, member.ChatID) // debug
+	return nil
+}
+
+func (s *Subix) DeleteChatFromListenCollection(sessionKey Key, memberID int) (err error) {
+
+	member, ok := s.members[memberID]
+	if ok {
+		delete(member.clients, sessionKey)
+		if len(member.clients) == 0 {
+			s.deleteMember(memberID)
+		}
+		fmt.Printf("клиент %s перестал прослушивать чат %d\n", sessionKey, member.ChatID) // debug
+	}
+
 	return nil
 }
