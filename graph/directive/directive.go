@@ -5,14 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 	"reflect"
 )
 
 func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
 	println("IsAuth directive start!") // debug
 
-	if ctx.Value(rules.UserIDFromToken).(int) == 0 {
+	if utils.GetAuthDataFromCtx(ctx) == nil {
 		err = errors.New("не аутентифицирован")
 		println("IsAuth:", err.Error()) // debug
 		return obj, err

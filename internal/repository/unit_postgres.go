@@ -31,21 +31,7 @@ func (r *UnitsRepo) UnitExistsByID(unitId int, unitType rules.UnitType) (exists 
 	}
 	return
 }
-func (r *UnitsRepo) UnitExistsByDomain(unitDomain string, unitType rules.UnitType) (exists bool) {
-	err := r.db.QueryRow(
-		`SELECT EXISTS(
-			SELECT 1 
-			FROM units
-			WHERE domain = $1 AND type = $2
-			)`,
-		unitDomain,
-		unitType,
-	).Scan(&exists)
-	if err != nil {
-		println("UnitExistsByDomain:", err.Error()) // debug
-	}
-	return
-}
+
 func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
 	err := r.db.QueryRow(
 		`SELECT EXISTS(

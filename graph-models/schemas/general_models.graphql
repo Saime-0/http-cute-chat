@@ -188,7 +188,6 @@ type PermissionHoldersSub {
     members: [ID!]
 }
 type UserData {
-    password: String!
     email: String!
 }
 type Me {

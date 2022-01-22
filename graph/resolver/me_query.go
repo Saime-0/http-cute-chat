@@ -5,17 +5,17 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
 	node := r.Piper.CreateNode("queryResolver > Me [_]")
 	defer node.Kill()
 
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 	me, err := r.Services.Repos.Users.Me(clientID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось получить данные"), nil

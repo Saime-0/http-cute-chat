@@ -5,17 +5,17 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.MutationResult, error) {
 	node := r.Piper.CreateNode("mutationResolver > CreateRoom [cid:", input.ChatID, "]")
 	defer node.Kill()
 
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
 	if node.ChatExists(input.ChatID) ||
 		node.IsMember(clientID, input.ChatID) ||

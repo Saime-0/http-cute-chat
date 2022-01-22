@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.UserRoleResult, error) {
@@ -15,7 +15,7 @@ func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.Use
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		chatID   int
 	)
 

@@ -6,11 +6,11 @@ package resolver
 import (
 	"context"
 	"errors"
-	"github.com/saime-0/http-cute-chat/pkg/kit"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
 func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, listenChatCollection []int) (<-chan *model.SubscriptionBody, error) {
@@ -18,25 +18,24 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, 
 	defer node.Kill()
 
 	var (
-		clientID    = ctx.Value(rules.UserIDFromToken).(int)
-		expAt       = ctx.Value(rules.ExpiresAtFromToken).(int64)
+		authData    = utils.GetAuthDataFromCtx(ctx)
 		userMembers *[]*models.SubUser
 	)
 
-	if clientID == 0 { // тк @isAuth  вебсокетинге не отрабатывает
+	if authData == nil { // тк @isAuth  вебсокетинге не отрабатывает
 		return nil, errors.New("не аутентифицирован")
 	}
 
 	listenChatCollection = kit.GetUniqueInts(listenChatCollection) // избавляемся от повторяющихся значений
 	if node.ValidSessionKey(sessionKey) ||
-		node.UserHasAccessToChats(clientID, &listenChatCollection, &userMembers) {
+		node.UserHasAccessToChats(authData.UserID, &listenChatCollection, &userMembers) {
 		return nil, errors.New(node.Err.Error)
 	}
 
 	client, err := r.Services.Subix.Sub(
-		clientID,
+		authData.UserID,
 		sessionKey,
-		expAt,
+		authData.ExpiresAt,
 		*userMembers,
 	)
 	if err != nil {

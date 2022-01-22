@@ -174,7 +174,7 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 		Data: &model.UserData{},
 	}
 	err := r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, units.type, users.email, users.hashed_password 
+		`SELECT units.id, units.domain, units.name, units.type, users.email
 		FROM units INNER JOIN users
 		ON units.id = users.id
 		WHERE units.id = $1`,
@@ -185,7 +185,6 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 		&me.User.Unit.Name,
 		&me.User.Unit.Type,
 		&me.Data.Email,
-		&me.Data.Password,
 	)
 	if err != nil {
 		println("Me:", err.Error()) // debug

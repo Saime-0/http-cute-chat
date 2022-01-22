@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error) {
@@ -17,7 +17,7 @@ func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model
 
 	var (
 		chatID   int
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.InviteIsRelevant(code) ||

@@ -19,13 +19,6 @@ func (n *Node) ChatExists(chatId int) (fail bool) {
 	}
 	return
 }
-func (n *Node) ChatExistsByDomain(chatDomain string) (fail bool) {
-	if !n.repos.Units.UnitExistsByDomain(chatDomain, rules.Chat) {
-		n.Err = resp.Error(resp.ErrBadRequest, "такого чата не существует")
-		return true
-	}
-	return
-}
 
 func (n *Node) UserExists(userId int) (fail bool) {
 	if !n.repos.Units.UnitExistsByID(userId, rules.User) {
@@ -185,16 +178,6 @@ func (n *Node) DomainIsFree(domain string) (fail bool) {
 		n.Err = resp.Error(resp.ErrBadRequest, "домен занят")
 		return true
 	}
-	return
-}
-
-func (n *Node) GetUserChar(userId int, chatId int, char *rules.CharType) (fail bool) {
-	_char, err := n.repos.Chats.GetUserChar(userId, chatId)
-	if err != nil {
-		n.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
-		return true
-	}
-	*char = _char
 	return
 }
 

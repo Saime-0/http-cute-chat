@@ -5,11 +5,11 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, input model.CreateMessageInput) (model.SendMessageToRoomResult, error) {
@@ -20,7 +20,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		memberID int
 		holder   models.AllowHolder
 		//handledUserChoice string
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.RoomExists(roomID) ||

@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error) {
@@ -16,7 +16,7 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		chatID   = find.ChatID
 		holder   models.AllowHolder
 		messages *model.Messages

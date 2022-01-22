@@ -5,21 +5,29 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateMeDataInput) (model.MutationResult, error) {
 	node := r.Piper.CreateNode("mutationResolver > UpdateMeData [_]")
 	defer node.Kill()
 
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
 	if input.Name != nil && node.ValidName(*input.Name) ||
 		input.Domain != nil && node.ValidDomain(*input.Domain) ||
-		input.Password != nil && node.ValidPassword(*input.Password) ||
+		input.Password != nil && (node.ValidPassword(*input.Password) || func() bool {
+			// the function in the condition is the best possible solution, as I believe. I'm sorry if this makes it difficult to read the code
+			var err error
+			*input.Password, err = utils.HashPassword(*input.Password, r.Config.PasswordSalt)
+			if err != nil {
+				panic(err)
+			}
+			return false
+		}()) ||
 		input.Email != nil && node.ValidDomain(*input.Email) {
 		return node.Err, nil
 	}

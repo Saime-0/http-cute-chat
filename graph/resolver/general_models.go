@@ -5,12 +5,12 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserResult, error) {
@@ -18,7 +18,7 @@ func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserRe
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		chatID   = obj.Unit.ID
 	)
 
@@ -40,7 +40,7 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -61,7 +61,7 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -82,7 +82,7 @@ func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesR
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -102,7 +102,7 @@ func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.Invi
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.IsMember(clientID, chatID) ||
@@ -124,7 +124,7 @@ func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.User
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.IsMember(clientID, chatID) ||
@@ -146,7 +146,7 @@ func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberRes
 
 	var (
 		chatID   = obj.Unit.ID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 	)
 
 	if node.IsMember(clientID, chatID) {
@@ -165,7 +165,7 @@ func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, er
 	node := r.Piper.CreateNode("meResolver > Chats [uid:", obj.User.Unit.ID, "]")
 	defer node.Kill()
 
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
 	chats, err := r.Services.Repos.Users.Chats(clientID)
 	if err != nil {
@@ -179,7 +179,7 @@ func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) (*model.Chat
 	node := r.Piper.CreateNode("meResolver > OwnedChats [uid:", obj.User.Unit.ID, "]")
 	defer node.Kill()
 
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
 	chats, err := r.Services.Repos.Users.OwnedChats(clientID)
 	if err != nil {
@@ -281,7 +281,7 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 
 	var (
 		roomID   = obj.RoomID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		chatID   = obj.Chat.Unit.ID
 		holder   models.AllowHolder
 	)
@@ -312,7 +312,7 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		roomID   = obj.RoomID
 		chatID   = obj.Chat.Unit.ID
 		holder   models.AllowHolder

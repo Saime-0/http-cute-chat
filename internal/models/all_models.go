@@ -60,21 +60,10 @@ type RefreshSession struct {
 	Lifetime     int64
 }
 
-type UserInput struct { // pass & email
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
 type UserInfo struct {
 	ID     int    `json:"id"`
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
-}
-
-type AllowsDB struct { // db table be like
-	Action rules.AllowActionType
-	Group  rules.AllowGroupType
-	Value  string
 }
 
 type AllowHolder struct {

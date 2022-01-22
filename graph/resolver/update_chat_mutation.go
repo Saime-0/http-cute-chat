@@ -5,17 +5,17 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) UpdateChat(ctx context.Context, chatID int, input model.UpdateChatInput) (model.MutationResult, error) {
 	node := r.Piper.CreateNode("mutationResolver > UpdateChat [cid:", chatID, "]")
 	defer node.Kill()
 
-	clientID := ctx.Value(rules.UserIDFromToken).(int)
+	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
 	if node.CanUpdateChat(clientID, chatID) ||
 		input.Name != nil && node.ValidName(*input.Name) ||

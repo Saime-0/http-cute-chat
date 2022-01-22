@@ -5,17 +5,17 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.JoinToChatResult, error) {
 	node := r.Piper.CreateNode("mutationResolver > JoinToChat [cid:", chatID, "]")
 	defer node.Kill()
 
-	var clientID = ctx.Value(rules.UserIDFromToken).(int)
+	var clientID = utils.GetAuthDataFromCtx(ctx).UserID
 
 	if node.ChatExists(chatID) ||
 		node.IsNotMember(clientID, chatID) ||

@@ -1,9 +1,11 @@
 package utils
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/robbert229/jwt"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 	"time"
 )
 
@@ -79,4 +81,12 @@ func GenerateToken(data *TokenData, secretKey string) (string, error) {
 	}
 
 	return token, nil
+}
+
+func GetAuthDataFromCtx(ctx context.Context) (authData *TokenData) {
+	data, ok := ctx.Value(rules.AuthDataFromToken).(*TokenData)
+	if !ok {
+		println("GetAuthDataFromCtx: не удалось найти AuthDataFromToken в контексте")
+	}
+	return data
 }

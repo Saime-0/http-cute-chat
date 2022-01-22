@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/tlog"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
@@ -227,33 +226,6 @@ func (r *RoomsRepo) MembersByArray(chatId int, memberIds *[]int) (*model.Members
 		members.Members = append(members.Members, m)
 	}
 	return members, nil
-}
-
-func (r *ChatsRepo) GetUserChar(userId int, chatId int) (char rules.CharType, err error) {
-	err = r.db.QueryRow(
-		`SELECT char
-		FROM chat_members
-		WHERE user_id = $1 AND chat_id = $2`,
-		userId,
-		chatId,
-	).Scan(&char)
-
-	return
-}
-
-func (r *ChatsRepo) UserIs(userId int, chatId int, char rules.CharType) (yes bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
-			SELECT 1
-			FROM chat_members
-			WHERE user_id = $1 AND chat_id = $2 AND char = $3
-    	)`,
-		userId,
-		chatId,
-		char,
-	).Scan(&yes)
-
-	return
 }
 
 func (r *ChatsRepo) UserIsChatOwner(userId int, chatId int) bool {

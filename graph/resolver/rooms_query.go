@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 )
 
 func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error) {
@@ -16,7 +16,7 @@ func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params 
 
 	var (
 		chatID   = find.ChatID
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		rooms    *model.Rooms
 	)
 

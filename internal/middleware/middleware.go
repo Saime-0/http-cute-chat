@@ -134,10 +134,8 @@ func WebsocketInitFunc(cfg *config.Config) func(ctx context.Context, initPayload
 
 func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.Context, error) {
 	var (
-		userId int
-		expAt  int64
-		err    error
-		data   *utils.TokenData
+		err  error
+		data *utils.TokenData
 	)
 	token := strings.Split(authHeader, "Bearer ")
 	if len(token) == 2 {
@@ -145,13 +143,6 @@ func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.C
 			token[1],
 			cfg.SecretKey,
 		)
-		if err == nil {
-			userId = data.UserID
-			expAt = data.ExpiresAt
-		}
-		//if err == nil && data.ExpiresAt >= time.Now().Unix() {
-		//}
 	}
-	ctx = context.WithValue(ctx, rules.ExpiresAtFromToken, expAt)
-	return context.WithValue(ctx, rules.UserIDFromToken, userId), err
+	return context.WithValue(ctx, rules.AuthDataFromToken, data), err
 }

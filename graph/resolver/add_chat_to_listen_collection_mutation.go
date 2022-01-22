@@ -5,11 +5,11 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
@@ -18,7 +18,7 @@ func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, sessio
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		subuser  = &models.SubUser{
 			MemberID: kit.IntPtr(0),
 			ChatID:   &chatID,

@@ -48,7 +48,6 @@ func NewConfig(path string) *Config {
 	if cfg.PasswordSalt == "" {
 		cfg.PasswordSalt = os.Getenv("GLOBAL_PASSWORD_SALT")
 	}
-	println(cfg.SecretKey, cfg.PasswordSalt)
 	println("Configure file found and loaded")
 	return cfg
 }

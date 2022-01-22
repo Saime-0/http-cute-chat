@@ -10,29 +10,6 @@ const (
 	Negative FetchType = "NEGATIVE"
 )
 
-type AllowActionType string
-
-const (
-	AllowRead  AllowActionType = "READ"
-	AllowWrite AllowActionType = "WRITE"
-)
-
-type AllowGroupType string
-
-const (
-	AllowUsers AllowGroupType = "USERS"
-	AllowChars AllowGroupType = "CHARS"
-	AllowRoles AllowGroupType = "ROLES"
-)
-
-type CharType string
-
-const (
-	Admin CharType = "ADMIN"
-	Moder CharType = "MODER"
-	NONE  CharType = "NONE"
-)
-
 type UnitType string
 
 const (
@@ -43,11 +20,9 @@ const (
 type ContextKeys int
 
 const (
-	UserIDFromToken ContextKeys = iota
-	ChatIDFromChat
+	_ ContextKeys = iota
+	AuthDataFromToken
 	UserAgentFromHeaders
-	ExpiresAtFromToken
-	SecretKeyFromConfig
 )
 
 const (
@@ -76,11 +51,10 @@ const (
 	MaxRolesInChat           = 128
 	MaxFormFields            = 16
 	MaxFielditems            = 16
-	//RefreshTokenLiftime      = int64(time.Hour * 24 * 10 / time.Second) // 10 days
-	RefreshTokenLiftime    = int64(60 * 60 * 24 * 60) // 60 days
-	AccessTokenLiftime     = int64(60 * 60 * 24 * 10) // 10 days
-	MaxRefreshSession      = 5
-	LifetimeOfMarkedClient = int64(60) // s.
+	RefreshTokenLiftime      = int64(60 * 60 * 24 * 60) // 60 days
+	AccessTokenLiftime       = int64(60 * 60 * 24 * 10) // 10 days
+	MaxRefreshSession        = 5
+	LifetimeOfMarkedClient   = int64(60) // s.
 )
 
 // Errors ...

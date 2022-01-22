@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 )
 
 func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error) {
@@ -16,7 +16,7 @@ func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, s
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		memberID int
 	)
 

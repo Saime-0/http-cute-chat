@@ -6,10 +6,10 @@ package resolver
 import (
 	"context"
 	"encoding/json"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 )
 
@@ -18,7 +18,7 @@ func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form 
 	defer node.Kill()
 
 	var (
-		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		chatID   int
 	)
 
