@@ -23,7 +23,7 @@ func (r *UsersRepo) CreateUser(userModel *model.RegisterInput) (err error) {
 			VALUES ($1, $2, 'USER') 
 			RETURNING id
 			) 
-		INSERT INTO users (id, password, email) 
+		INSERT INTO users (id, hashed_password, email) 
 		SELECT u.id, $3, $4 
 		FROM u 
 		RETURNING id`,
@@ -59,32 +59,35 @@ func (r *UsersRepo) User(userID int) (*model.User, error) {
 	return user, err
 }
 
-func (r *UsersRepo) UserExistsByInput(inputModel *models.UserInput) (exists bool) {
-	r.db.QueryRow(
-		`SELECT EXISTS(
+func (r *UsersRepo) UserExistsByRequisites(inp *models.LoginRequisites) (exists bool) {
+	err := r.db.QueryRow(`
+		SELECT EXISTS(
 			SELECT 1
 			FROM users
-			WHERE email = $1 AND password = $2
-			)`,
-		inputModel.Email,
-		inputModel.Password,
+			WHERE email = $1 AND hashed_password = $2
+		)`,
+		inp.Email,
+		inp.HashedPasswd,
 	).Scan(&exists)
+	if err != nil {
+		println("UserExistsByRequisites:", err.Error()) // debug
+	}
 
 	return
 
 }
 
-func (r *UsersRepo) GetUserIdByInput(inputModel *models.UserInput) (id int, err error) {
-	err = r.db.QueryRow(
-		`SELECT units.id
+func (r *UsersRepo) GetUserIdByRequisites(inp *models.LoginRequisites) (id int, err error) {
+	err = r.db.QueryRow(`
+		SELECT units.id
 		FROM units INNER JOIN users 
 		ON units.id = users.id 
-		WHERE users.email = $1 AND users.password = $2`,
-		inputModel.Email,
-		inputModel.Password,
+		WHERE users.email = $1 AND users.hashed_password = $2`,
+		inp.Email,
+		inp.HashedPasswd,
 	).Scan(&id)
 	if err != nil {
-		return
+		println("GetUserIdByInput:", err.Error()) // debug
 	}
 	return
 }
@@ -171,7 +174,7 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 		Data: &model.UserData{},
 	}
 	err := r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, units.type, users.email, users.password 
+		`SELECT units.id, units.domain, units.name, units.type, users.email, users.hashed_password 
 		FROM units INNER JOIN users
 		ON units.id = users.id
 		WHERE units.id = $1`,
@@ -323,7 +326,7 @@ func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (*model.Up
 		)
 		UPDATE users
 		SET 
-		    password = COALESCE($4::VARCHAR, password),
+		    hashed_password = COALESCE($4::VARCHAR, hashed_password),
 		    email = COALESCE($5::VARCHAR, email)
 		FROM u
 		WHERE id = $1

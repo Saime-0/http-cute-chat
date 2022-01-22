@@ -53,7 +53,7 @@ func (s *Subix) deleteUser(userID int) {
 		user.clients = nil // на всякий случай заnullяем мапу
 
 		for _, member := range user.membering { // а здесь определяем мемберов, к которые относятся к пользователю
-			s.deleteMember(member.ID) // удаляем по отдельности через функцию
+			s.DeleteMember(member.ID) // удаляем по отдельности через функцию
 		}
 		user.membering = nil                    // на всякий случай заnullяем мапу
 		println("удален пользователь ", userID) // debug
@@ -71,6 +71,7 @@ func (s *Subix) deleteClient(sessionKey Key) {
 			println("deleteClient:", err.Error()) // debug
 			return
 		}
+		close(client.Ch)
 
 		user, ok := s.users[client.UserID]
 		if ok {
@@ -83,7 +84,7 @@ func (s *Subix) deleteClient(sessionKey Key) {
 		for _, member := range user.membering {
 			delete(member.clients, client.sessionKey)
 			if len(member.clients) == 0 {
-				s.deleteMember(member.ID)
+				s.DeleteMember(member.ID)
 			}
 		}
 	}
@@ -181,7 +182,7 @@ func (s *Subix) DeleteChatFromListenCollection(sessionKey Key, memberID int) (er
 	if ok {
 		delete(member.clients, sessionKey)
 		if len(member.clients) == 0 {
-			s.deleteMember(memberID)
+			s.DeleteMember(memberID)
 		}
 		fmt.Printf("клиент %s перестал прослушивать чат %d\n", sessionKey, member.ChatID) // debug
 	}

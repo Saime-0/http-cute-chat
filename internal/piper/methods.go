@@ -354,22 +354,16 @@ func (n *Node) ChatIsNotPrivate(chatId int) (fail bool) {
 	return
 }
 
-func (n *Node) UserExistsByInput(input model.LoginInput) (fail bool) {
-	if !n.repos.Users.UserExistsByInput(&models.UserInput{
-		Email:    input.Email,
-		Password: input.Password,
-	}) {
-		n.Err = resp.Error(resp.ErrBadRequest, "пользователь с такими данными не найден")
+func (n *Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) {
+	if !n.repos.Users.UserExistsByRequisites(input) {
+		n.Err = resp.Error(resp.ErrBadRequest, "нееверный логин или пароль ")
 		return true
 	}
 	return
 }
 
-func (n *Node) GetUserIDByInput(input model.LoginInput, userId *int) (fail bool) {
-	_uid, err := n.repos.Users.GetUserIdByInput(&models.UserInput{
-		Email:    input.Email,
-		Password: input.Password,
-	})
+func (n *Node) GetUserIDByRequisites(input *models.LoginRequisites, userId *int) (fail bool) {
+	_uid, err := n.repos.Users.GetUserIdByRequisites(input)
 	if err != nil {
 		n.Err = resp.Error(resp.ErrInternalServerError, "ошибка базы данных")
 		return true

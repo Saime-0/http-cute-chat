@@ -6,9 +6,10 @@ import (
 )
 
 type Config struct {
-	Database  Database `toml:"database"`
-	SecretKey string   `toml:"secret_key"`
-	AppPort   string   `toml:"app_port"`
+	Database     Database `toml:"database"`
+	SecretKey    string   `toml:"secret_key"`
+	AppPort      string   `toml:"app_port"`
+	PasswordSalt string   `toml:"password_salt"`
 }
 
 type Database struct {
@@ -27,14 +28,14 @@ var defaultConfig = &Config{
 		Password: "7050",
 		DbName:   "chat_db",
 	},
-	SecretKey: os.Getenv("SECRET_SIGNING_KEY"),
-	AppPort:   "8080",
+	SecretKey:    os.Getenv("SECRET_SIGNING_KEY"),
+	PasswordSalt: os.Getenv("GLOBAL_PASSWORD_SALT"),
+	AppPort:      "8080",
 }
 
 func NewConfig(path string) *Config {
 	cfg := &Config{
-		Database:  Database{},
-		SecretKey: "",
+		Database: Database{},
 	}
 	_, err := toml.DecodeFile(path, cfg)
 	if err != nil {
@@ -44,6 +45,10 @@ func NewConfig(path string) *Config {
 	if cfg.SecretKey == "" {
 		cfg.SecretKey = os.Getenv("SECRET_SIGNING_KEY")
 	}
+	if cfg.PasswordSalt == "" {
+		cfg.PasswordSalt = os.Getenv("GLOBAL_PASSWORD_SALT")
+	}
+	println(cfg.SecretKey, cfg.PasswordSalt)
 	println("Configure file found and loaded")
 	return cfg
 }

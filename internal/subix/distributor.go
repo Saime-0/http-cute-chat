@@ -47,7 +47,7 @@ func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interfac
 		s.CreateScheduledInvite(objects[0], inv.Code, inv.ExpiresAt)
 
 	case *model.DeleteMember: // чтобы участник(пользователь) перестал получать события
-		s.deleteMember(body.(*model.DeleteMember).ID)
+		s.DeleteMember(body.(*model.DeleteMember).ID)
 
 	case *model.NewMessage: // ожидается что в objects будут ID комнат
 		//s.w todo

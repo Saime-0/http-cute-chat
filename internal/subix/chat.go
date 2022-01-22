@@ -51,14 +51,14 @@ func (s *Subix) deleteChat(chatID int) {
 	if ok {
 
 		for _, member := range chat.members {
-			s.deleteMember(member.ID)
+			s.DeleteMember(member.ID)
 		}
 		delete(s.chats, chatID)
 		println("удален чат", chatID) // debug
 	}
 }
 
-func (s *Subix) deleteMember(memberID int) {
+func (s *Subix) DeleteMember(memberID int) {
 	member, ok := s.members[memberID]
 	if ok { // если вдруг не удается найти то просто скипаем
 		delete(s.members, memberID) // удлаение из глобальной мапы

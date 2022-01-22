@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -18,10 +19,22 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	node := r.Piper.CreateNode("mutationResolver > Login [_]")
 	defer node.Kill()
 
-	var clientID int
+	var (
+		clientID   int
+		requisites = &models.LoginRequisites{
+			Email: input.Email,
+			HashedPasswd: func() string {
+				hpasswd, err := utils.HashPassword(input.Password, r.Config.PasswordSalt)
+				if err != nil {
+					panic(err)
+				}
+				return hpasswd
+			}(),
+		}
+	)
 
-	if node.UserExistsByInput(input) ||
-		node.GetUserIDByInput(input, &clientID) {
+	if node.UserExistsByRequisites(requisites) ||
+		node.GetUserIDByRequisites(requisites, &clientID) {
 		return node.Err, nil
 	}
 
@@ -34,7 +47,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),
 		Lifetime:     rules.RefreshTokenLiftime,
 	}
-	expiresAt, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
+	err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "неудачная попытка создать сессию пользователя"), nil
 	}
@@ -42,7 +55,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	token, err := utils.GenerateToken(
 		&utils.TokenData{
 			UserID:    clientID,
-			ExpiresAt: expiresAt,
+			ExpiresAt: time.Now().Unix() + rules.AccessTokenLiftime,
 		},
 		r.Config.SecretKey,
 	)

@@ -119,3 +119,8 @@ type SubUser struct {
 	MemberID *int
 	ChatID   *int
 }
+
+type LoginRequisites struct {
+	Email        string
+	HashedPasswd string
+}

@@ -15,10 +15,13 @@ func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int) (model
 	node := r.Piper.CreateNode("mutationResolver > LeaveFromChat [cid:", chatID, "]")
 	defer node.Kill()
 
-	var clientID = ctx.Value(rules.UserIDFromToken).(int)
+	var (
+		clientID = ctx.Value(rules.UserIDFromToken).(int)
+		memberID int
+	)
 
 	if node.ChatExists(chatID) ||
-		node.IsMember(clientID, chatID) ||
+		node.GetMemberBy(clientID, chatID, &memberID) ||
 		node.CanLeaveFromChat(clientID, chatID) {
 		return node.Err, nil
 	}
@@ -28,6 +31,7 @@ func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int) (model
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
 
+	r.Services.Subix.DeleteMember(memberID)
 	go r.Services.Subix.NotifyChatMembers(
 		chatID,
 		eventReadyMember,
