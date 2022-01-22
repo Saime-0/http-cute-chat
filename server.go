@@ -18,6 +18,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/middleware"
 	"github.com/saime-0/http-cute-chat/internal/piper"
 	"github.com/saime-0/http-cute-chat/internal/service"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 	"log"
 	"net/http"
 	"time"
@@ -58,6 +59,7 @@ func main() {
 			InputUnion:    directive.InputUnion,
 			InputLeastOne: directive.InputLeastOne,
 		},
+		Complexity: *utils.MatchComplexity(),
 	}))
 
 	router := mux.NewRouter()
@@ -80,7 +82,9 @@ func main() {
 		},
 		InitFunc: middleware.WebsocketInitFunc(cfg),
 	})
+
 	srv.Use(extension.Introspection{})
+	srv.Use(extension.FixedComplexityLimit(cfg.QueryComplexityLimit))
 
 	//c := cors.Default().Handler(router)
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))

@@ -1,5 +1,5 @@
-secret_key = ""
 app_port = "8080"
+query_complexity_limit = 60
 
 [database]
 host = "localhost"

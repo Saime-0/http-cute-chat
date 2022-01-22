@@ -6,10 +6,11 @@ import (
 )
 
 type Config struct {
-	Database     Database `toml:"database"`
-	SecretKey    string   `toml:"secret_key"`
-	AppPort      string   `toml:"app_port"`
-	PasswordSalt string   `toml:"password_salt"`
+	Database             Database `toml:"database"`
+	SecretKey            string   `toml:"secret_key"`
+	AppPort              string   `toml:"app_port"`
+	PasswordSalt         string   `toml:"password_salt"`
+	QueryComplexityLimit int      `toml:"query_complexity_limit"`
 }
 
 type Database struct {
@@ -28,9 +29,10 @@ var defaultConfig = &Config{
 		Password: "7050",
 		DbName:   "chat_db",
 	},
-	SecretKey:    os.Getenv("SECRET_SIGNING_KEY"),
-	PasswordSalt: os.Getenv("GLOBAL_PASSWORD_SALT"),
-	AppPort:      "8080",
+	SecretKey:            os.Getenv("SECRET_SIGNING_KEY"),
+	PasswordSalt:         os.Getenv("GLOBAL_PASSWORD_SALT"),
+	AppPort:              "8080",
+	QueryComplexityLimit: 15,
 }
 
 func NewConfig(path string) *Config {
