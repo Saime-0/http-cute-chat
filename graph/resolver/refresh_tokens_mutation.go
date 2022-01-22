@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -34,11 +35,11 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		Lifetime:     rules.RefreshTokenLiftime,
 	}
 
-	expiresAt, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
+	err = r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить сессию"), nil
 	}
-
+	expiresAt := time.Now().Unix() + rules.AccessTokenLiftime
 	token, err := utils.GenerateToken(
 		&utils.TokenData{
 			UserID:    clientID,

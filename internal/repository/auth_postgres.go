@@ -17,16 +17,15 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 	}
 }
 
-func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.RefreshSession, overflowDelete bool) (expiresAt int64, err error) {
+func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.RefreshSession, overflowDelete bool) (err error) {
 	err = r.db.QueryRow(`
 		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at)
-		VALUES ($1, $2, $3, unix_utc_now($4))
-		RETURNING expires_at`,
+		VALUES ($1, $2, $3, unix_utc_now($4))`,
 		userId,
 		sessionModel.RefreshToken,
 		sessionModel.UserAgent,
 		sessionModel.Lifetime,
-	).Scan(&expiresAt)
+	).Err()
 	if err != nil {
 		println(err.Error()) // debug
 		return
