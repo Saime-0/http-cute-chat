@@ -47,7 +47,7 @@ func main() {
 		}
 	}(db)
 
-	services := service.NewServices(db)
+	services := service.NewServices(db, cfg)
 	srv := handler.New(generated.NewExecutableSchema(generated.Config{
 		Resolvers: &resolver.Resolver{
 			Services: services,
@@ -68,6 +68,7 @@ func main() {
 		middleware.ChainShip(cfg),
 	)
 	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.GET{})
 	srv.AddTransport(&transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
 		Upgrader: websocket.Upgrader{

@@ -5,34 +5,65 @@ package resolver
 
 import (
 	"context"
+	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
-	"github.com/saime-0/http-cute-chat/internal/validator"
+	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 )
 
 func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInput) (model.RegisterResult, error) {
 	node := r.Piper.CreateNode("mutationResolver > Sub [_]")
 	defer node.Kill()
 
-	switch {
-	case !validator.ValidateDomain(input.Domain):
-		return resp.Error(resp.ErrBadRequest, "домен не соответствует требованиям"), nil
+	if node.ValidRegisterInput(&input) ||
+		node.DomainIsFree(input.Domain) ||
+		node.EmailIsFree(input.Email) {
+		return node.Err, nil
 
-	case !validator.ValidateName(input.Name):
-		return resp.Error(resp.ErrBadRequest, "имя не соответствует требованиям"), nil
-
-	case !validator.ValidateEmail(input.Email):
-		return resp.Error(resp.ErrBadRequest, "имеил не соответствует требованиям"), nil
-
-	case !validator.ValidatePassword(input.Password):
-		return resp.Error(resp.ErrBadRequest, "пароль не соответствует требованиям"), nil
 	}
-
-	err := r.Services.Repos.Users.CreateUser(&input)
+	expAt := time.Now().Unix() + rules.LiftimeOfRegistrationSession
+	code, err := r.Services.Repos.Users.CreateRegistrationSession(
+		&models.RegisterData{
+			Domain: input.Domain,
+			Name:   input.Name,
+			Email:  input.Email,
+			HashPassword: func() string {
+				hpasswd, err := utils.HashPassword(input.Password, r.Config.PasswordSalt)
+				if err != nil {
+					panic(err)
+				}
+				return hpasswd
+			}(),
+		},
+		expAt,
+	)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
 
-	return resp.Success("пользователь создан"), nil
+	err = r.Services.SMTP.Send(
+		"код для подтверждения регистрации",
+		"Для подтверждения ваших учетных данных используйте код: "+code,
+		input.Email,
+	)
+	if err != nil {
+		println("Register:", err.Error()) // debug
+		return resp.Error(resp.ErrInternalServerError, "не удалось отправить код подтверждения на указанную почту"), nil
+	}
+
+	_, err = r.Services.Scheduler.AddTask(
+		func() {
+			r.Services.Repos.Users.DeleteRegistrationSession(input.Email)
+		},
+		expAt,
+	)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return resp.Success("подтвердите регистрацию, код отправлен на указанную почту"), nil
 }

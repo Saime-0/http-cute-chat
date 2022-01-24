@@ -113,3 +113,10 @@ type LoginRequisites struct {
 	Email        string
 	HashedPasswd string
 }
+
+type RegisterData struct {
+	Domain       string
+	Name         string
+	Email        string
+	HashPassword string
+}

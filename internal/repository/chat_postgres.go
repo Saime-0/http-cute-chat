@@ -230,8 +230,8 @@ func (r *RoomsRepo) MembersByArray(chatId int, memberIds *[]int) (*model.Members
 
 func (r *ChatsRepo) UserIsChatOwner(userId int, chatId int) bool {
 	isOwner := false
-	err := r.db.QueryRow(
-		`SELECT EXISTS(SELECT 1 FROM chats WHERE id = $1 AND owner_id = $2)`,
+	err := r.db.QueryRow(`
+		SELECT EXISTS(SELECT 1 FROM chats WHERE id = $1 AND owner_id = $2)`,
 		chatId,
 		userId,
 	).Scan(&isOwner)

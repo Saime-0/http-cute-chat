@@ -1,0 +1,3 @@
+extend type Mutation {
+	confirmRegistration(email: String! code: String!): MutationResult! @goField(forceResolver: true)
+}

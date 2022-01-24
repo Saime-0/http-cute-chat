@@ -33,12 +33,19 @@ func (r *UnitsRepo) UnitExistsByID(unitId int, unitType rules.UnitType) (exists 
 }
 
 func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
-	err := r.db.QueryRow(
-		`SELECT EXISTS(
+	err := r.db.QueryRow(`
+		SELECT 
+		EXISTS (
 			SELECT 1 
 			FROM units
 			WHERE domain = $1
-			)`,
+		) 
+		OR
+		EXISTS (
+		    SELECT 1
+		    FROM registration_session
+		    WHERE domain = $1
+		)`,
 		domain,
 	).Scan(&free)
 	if err != nil {

@@ -181,6 +181,14 @@ func (n *Node) DomainIsFree(domain string) (fail bool) {
 	return
 }
 
+func (n *Node) EmailIsFree(email string) (fail bool) {
+	if !n.repos.Users.EmailIsFree(email) {
+		n.Err = resp.Error(resp.ErrBadRequest, "такая почта уже занята кем-то")
+		return true
+	}
+	return
+}
+
 func (n *Node) InvitesLimit(chatId int) (fail bool) {
 	count, err := n.repos.Chats.GetCountLinks(chatId)
 	if err != nil {
@@ -635,5 +643,46 @@ func (n *Node) ValidSessionKey(sessionKey string) (fail bool) {
 		n.Err = resp.Error(resp.ErrBadRequest, "не валидный ключ сессии")
 		return true
 	}
+	return
+}
+
+func (n *Node) ValidEmail(email string) (fail bool) {
+	if !validator.ValidateEmail(email) {
+		n.Err = resp.Error(resp.ErrBadRequest, "не валидный email")
+		return true
+	}
+	return
+}
+
+func (n *Node) GetRegistrationSession(email, code string, regi **models.RegisterData) (fail bool) {
+	var err error
+	*regi, err = n.repos.Users.GetRegistrationSession(email, code)
+	if err != nil {
+		n.Err = resp.Error(resp.ErrBadRequest, "сессии не существует")
+		return true
+	}
+	return
+}
+
+func (n *Node) ValidRegisterInput(input *model.RegisterInput) (fail bool) {
+	switch {
+	case !validator.ValidateDomain(input.Domain):
+		n.Err = resp.Error(resp.ErrBadRequest, "домен не соответствует требованиям")
+		return true
+
+	case !validator.ValidateName(input.Name):
+		n.Err = resp.Error(resp.ErrBadRequest, "имя не соответствует требованиям")
+		return true
+
+	case !validator.ValidateEmail(input.Email):
+		n.Err = resp.Error(resp.ErrBadRequest, "имеил не соответствует требованиям")
+		return true
+
+	case !validator.ValidatePassword(input.Password):
+		n.Err = resp.Error(resp.ErrBadRequest, "пароль не соответствует требованиям")
+		return true
+
+	}
+
 	return
 }

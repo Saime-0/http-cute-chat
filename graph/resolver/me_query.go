@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 )
 
 func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {

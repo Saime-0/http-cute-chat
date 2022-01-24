@@ -16,7 +16,7 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 	}
 }
 
-func (r *UsersRepo) CreateUser(userModel *model.RegisterInput) (err error) {
+func (r *UsersRepo) CreateUser(userModel *models.RegisterData) (err error) {
 	err = r.db.QueryRow(
 		`WITH u AS (
 			INSERT INTO units (domain, name, type) 
@@ -29,7 +29,7 @@ func (r *UsersRepo) CreateUser(userModel *model.RegisterInput) (err error) {
 		RETURNING id`,
 		userModel.Domain,
 		userModel.Name,
-		userModel.Password,
+		userModel.HashPassword,
 		userModel.Email,
 	).Err()
 	if err != nil {
@@ -346,4 +346,78 @@ func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (*model.Up
 	}
 
 	return unit, err
+}
+
+func (r UsersRepo) GetRegistrationSession(email, code string) (*models.RegisterData, error) {
+	regi := &models.RegisterData{}
+	err := r.db.QueryRow(`
+	    SELECT domain, name, email, hashed_password
+		FROM registration_session
+	    WHERE email = $1 AND verify_code = $2
+		`,
+		email,
+		code,
+	).Scan(
+		&regi.Domain,
+		&regi.Name,
+		&regi.Email,
+		&regi.HashPassword,
+	)
+	if err != nil {
+		println("GetRegistrationSession:", err.Error()) // debug
+		return nil, err
+	}
+	return regi, nil
+}
+
+func (r UsersRepo) DeleteRegistrationSession(email string) {
+	err := r.db.QueryRow(`
+		DELETE FROM registration_session
+	    WHERE email = $1
+		`,
+		email,
+	).Err()
+	if err != nil {
+		println("DeleteRegistrationSession:", err.Error()) // debug
+	}
+	return
+}
+
+func (r *UsersRepo) CreateRegistrationSession(userModel *models.RegisterData, expAt int64) (verifyCode string, err error) {
+	err = r.db.QueryRow(`
+		INSERT INTO registration_session (domain, name, email, hashed_password, expires_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING verify_code`,
+		userModel.Domain,
+		userModel.Name,
+		userModel.Email,
+		userModel.HashPassword,
+		expAt,
+	).Scan(&verifyCode)
+	if err != nil {
+		println("CreateRegistrationSession:", err.Error()) // debug
+	}
+	return
+}
+
+func (r *UsersRepo) EmailIsFree(email string) (free bool) {
+	err := r.db.QueryRow(`
+		SELECT 
+		EXISTS (
+			SELECT 1 
+			FROM users
+			WHERE email = $1
+		) 
+		OR
+		EXISTS (
+		    SELECT 1
+		    FROM registration_session
+		    WHERE email = $1
+		)`,
+		email,
+	).Scan(&free)
+	if err != nil {
+		println("EmailIsFree:", err.Error()) // debug
+	}
+	return !free
 }

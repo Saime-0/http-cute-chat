@@ -26,35 +26,36 @@ const (
 )
 
 const (
-	NameMaxLength            = 32
-	NameMinLength            = 1
-	DomainMaxLength          = 32
-	DomainMinLength          = 4
-	MaxCountOwnedChats       = 128
-	NoteMaxLength            = 64
-	MaxMessagesCount         = 20
-	MessageBodyMaxLength     = 4096
-	RefreshTokenLength       = 28
-	RefreshTokenBytesLength  = 16
-	MaxCountRooms            = 128
-	MaxUserChats             = 128
-	MaxMembersOnChat         = 2_097_152
-	LimitOnShowUnitsInSearch = 20
-	LimitOnShowMessages      = 20
-	LimitOnShowChats         = 20
-	LimitOnShowDialogs       = 20
-	LimitOnShowMembers       = 20
-	MaxLimit                 = 20
-	MinPasswordLength        = 6
-	MaxPasswordLength        = 32
-	MaxInviteLinks           = 3
-	MaxRolesInChat           = 128
-	MaxFormFields            = 16
-	MaxFielditems            = 16
-	RefreshTokenLiftime      = int64(60 * 60 * 24 * 60) // 60 days
-	AccessTokenLiftime       = int64(60 * 60 * 24 * 10) // 10 days
-	MaxRefreshSession        = 5
-	LifetimeOfMarkedClient   = int64(60) // s.
+	NameMaxLength                = 32
+	NameMinLength                = 1
+	DomainMaxLength              = 32
+	DomainMinLength              = 4
+	MaxCountOwnedChats           = 128
+	NoteMaxLength                = 64
+	MaxMessagesCount             = 20
+	MessageBodyMaxLength         = 4096
+	RefreshTokenLength           = 28
+	RefreshTokenBytesLength      = 16
+	MaxCountRooms                = 128
+	MaxUserChats                 = 128
+	MaxMembersOnChat             = 2_097_152
+	LimitOnShowUnitsInSearch     = 20
+	LimitOnShowMessages          = 20
+	LimitOnShowChats             = 20
+	LimitOnShowDialogs           = 20
+	LimitOnShowMembers           = 20
+	MaxLimit                     = 20
+	MinPasswordLength            = 6
+	MaxPasswordLength            = 32
+	MaxInviteLinks               = 3
+	MaxRolesInChat               = 128
+	MaxFormFields                = 16
+	MaxFielditems                = 16
+	RefreshTokenLiftime          = int64(60 * 60 * 24 * 60) // 60 days
+	AccessTokenLiftime           = int64(60 * 60 * 24 * 10) // 10 days
+	MaxRefreshSession            = 5
+	LifetimeOfMarkedClient       = int64(60)      // s.
+	LiftimeOfRegistrationSession = int64(60 * 60) // 1 hour
 )
 
 // Errors ...

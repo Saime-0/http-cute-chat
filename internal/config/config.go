@@ -7,6 +7,7 @@ import (
 
 type Config struct {
 	Database             Database `toml:"database"`
+	SMTP                 SMTP     `toml:"smtp"`
 	SecretKey            string   `toml:"secret_key"`
 	AppPort              string   `toml:"app_port"`
 	PasswordSalt         string   `toml:"password_salt"`
@@ -21,6 +22,14 @@ type Database struct {
 	DbName   string `toml:"db_name"`
 }
 
+type SMTP struct {
+	Author string `toml:"author"`
+	From   string `toml:"from"`
+	Passwd string `toml:"passwd"`
+	Host   string `toml:"host"`
+	Port   int    `toml:"port"`
+}
+
 var defaultConfig = &Config{
 	Database: Database{
 		Host:     "localhost",
@@ -28,6 +37,13 @@ var defaultConfig = &Config{
 		User:     "postgres",
 		Password: "7050",
 		DbName:   "chat_db",
+	},
+	SMTP: SMTP{
+		Author: "http-cute-chat",
+		//From:   " ",
+		//Passwd: " ",
+		Host: "smtp.yandex.ru",
+		Port: 0,
 	},
 	SecretKey:            os.Getenv("SECRET_SIGNING_KEY"),
 	PasswordSalt:         os.Getenv("GLOBAL_PASSWORD_SALT"),
@@ -49,6 +65,12 @@ func NewConfig(path string) *Config {
 	}
 	if cfg.PasswordSalt == "" {
 		cfg.PasswordSalt = os.Getenv("GLOBAL_PASSWORD_SALT")
+	}
+	if cfg.SMTP.From == "" {
+		cfg.SMTP.From = os.Getenv("SMTP_EMAIL_LOGIN")
+	}
+	if cfg.SMTP.Passwd == "" {
+		cfg.SMTP.Passwd = os.Getenv("SMTP_EMAIL_PASSWD")
 	}
 	println("Configure file found and loaded")
 	return cfg

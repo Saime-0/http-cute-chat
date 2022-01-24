@@ -38,8 +38,9 @@ create table if not exists users
 (
     id bigint not null
         primary key
-        references units,
-    password varchar(32) not null,
+        references units
+            on delete cascade,
+    hashed_password varchar(128) not null,
     email varchar(256) not null
         unique
 );
@@ -51,7 +52,8 @@ create table if not exists chats
         references units
             on delete cascade,
     owner_id bigint not null
-        references users,
+        references users
+            on delete cascade,
     private boolean not null
 );
 
@@ -66,7 +68,7 @@ create table if not exists chat_banlist
 
 create table if not exists invites
 (
-    code varchar(16) default generate_invite_code() not null,
+    code varchar(16) default generate_secret((16)::bigint) not null,
     chat_id bigint not null
         constraint invite_links_chat_id_fkey
             references chats
@@ -77,6 +79,9 @@ create table if not exists invites
         constraint invites_pk
             primary key
 );
+
+create unique index if not exists invites_code_uindex
+    on invites (code);
 
 create table if not exists rooms
 (
@@ -204,6 +209,19 @@ create table if not exists count_members
     count_value integer default 0 not null
 );
 
+create table if not exists registration_session
+(
+    id bigserial,
+    domain varchar(32) not null
+        unique,
+    name varchar(32) not null,
+    email varchar(256) not null
+        unique,
+    hashed_password varchar(128) not null,
+    verify_code varchar(6) default generate_num_secret((6)::bigint) not null,
+    expires_at bigint
+);
+
 create or replace function generate_invite_code() returns text
     language sql
 as $$
@@ -292,4 +310,18 @@ create trigger on_create_chat
     on chats
     for each row
 execute procedure create_or_delete_count_members_row();
+
+create or replace function generate_secret(len bigint) returns text
+    language sql
+as $$
+SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
+FROM generate_series(1, len)
+$$;
+
+create or replace function generate_num_secret(len bigint) returns text
+    language sql
+as $$
+SELECT string_agg (substr('0123456789', ceil (random() * 10)::integer, 1), '')
+FROM generate_series(1, len)
+$$;
 
