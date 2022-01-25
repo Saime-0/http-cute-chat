@@ -56,7 +56,7 @@ func (c *chain) getUserAgent() *chain {
 	//println("(chain)getUserAgent start!") // debug
 	c.r = c.r.WithContext(context.WithValue(
 		c.r.Context(),
-		rules.UserAgentFromHeaders,
+		rules.CtxUserAgent,
 		c.r.UserAgent(),
 	))
 	return c
@@ -144,5 +144,5 @@ func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.C
 			cfg.SecretKey,
 		)
 	}
-	return context.WithValue(ctx, rules.AuthDataFromToken, data), err
+	return context.WithValue(ctx, rules.CtxAuthData, data), err
 }

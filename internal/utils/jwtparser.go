@@ -84,9 +84,9 @@ func GenerateToken(data *TokenData, secretKey string) (string, error) {
 }
 
 func GetAuthDataFromCtx(ctx context.Context) (authData *TokenData) {
-	data, ok := ctx.Value(rules.AuthDataFromToken).(*TokenData)
+	data, ok := ctx.Value(rules.CtxAuthData).(*TokenData)
 	if !ok {
-		println("GetAuthDataFromCtx: не удалось найти AuthDataFromToken в контексте")
+		println("GetAuthDataFromCtx: не удалось найти CtxAuthData в контексте")
 	}
 	return data
 }

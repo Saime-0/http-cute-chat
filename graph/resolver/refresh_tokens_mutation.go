@@ -5,8 +5,6 @@ package resolver
 
 import (
 	"context"
-	"time"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -19,7 +17,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	node := r.Piper.CreateNode("mutationResolver > RefreshTokens [<token>]")
 	defer node.Kill()
 
-	_, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
+	sessionID, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
 	if err != nil {
 		println("RefreshTokens:", err.Error()) // debug
 		return resp.Error(resp.ErrInternalServerError, "не удалось обрабработать токен"), nil
@@ -29,33 +27,49 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		session *models.RefreshSession
 	)
 	newRefreshToken := kit.RandomSecret(rules.RefreshTokenLength)
+	sessionExpAt := kit.After(rules.RefreshTokenLiftime)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
-		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),
-		Lifetime:     rules.RefreshTokenLiftime,
+		UserAgent:    ctx.Value(rules.CtxUserAgent).(string),
+		ExpAt:        sessionExpAt,
 	}
 
-	err = r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
+	err = r.Services.Repos.Auth.UpdateRefreshSession(sessionID, session)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить сессию"), nil
 	}
-	expiresAt := time.Now().Unix() + rules.AccessTokenLiftime
+
+	tokenExpiresAt := kit.After(rules.AccessTokenLiftime)
 	token, err := utils.GenerateToken(
 		&utils.TokenData{
 			UserID:    clientID,
-			ExpiresAt: expiresAt,
+			ExpiresAt: tokenExpiresAt,
 		},
 		r.Config.SecretKey,
 	)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}
+
 	if sessionKey != nil {
-		err = r.Services.Subix.ExtendClientSession(*sessionKey, expiresAt)
+		err = r.Services.Subix.ExtendClientSession(*sessionKey, tokenExpiresAt)
 		if err != nil {
 			println("RefreshTokens:", err) // debug
 		}
 	}
+
+	if runAt, ok := r.Services.Cache.Get(rules.CacheNextRunRegularScheduleAt); ok && sessionExpAt < runAt.(int64) {
+		_, err = r.Services.Scheduler.AddTask(
+			func() {
+				r.Services.Repos.Users.DeleteRefreshSession(sessionID)
+			},
+			sessionExpAt,
+		)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	return model.TokenPair{
 		AccessToken:  token,
 		RefreshToken: newRefreshToken,

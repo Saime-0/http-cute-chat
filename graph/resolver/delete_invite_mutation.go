@@ -29,9 +29,12 @@ func (r *mutationResolver) DeleteInvite(ctx context.Context, chatID int, code st
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось удалить инвайт"), nil
 	}
+
 	go r.Services.Subix.NotifyChatMembers(
 		chatID,
 		eventReadyInvite,
 	)
+	r.Services.Subix.ForceDropScheduledInvite(eventReadyInvite.Code) // с какой стати это в сабиксе? а?
+
 	return resp.Success("инвайт успешно удален"), nil
 }

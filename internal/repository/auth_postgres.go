@@ -17,29 +17,50 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 	}
 }
 
-func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.RefreshSession, overflowDelete bool) (err error) {
+func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.RefreshSession, overflowDelete bool) (id int, err error) {
 	err = r.db.QueryRow(`
 		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at)
-		VALUES ($1, $2, $3, unix_utc_now($4))`,
+		VALUES ($1, $2, $3, $4)
+		RETURNING id`,
 		userId,
 		sessionModel.RefreshToken,
 		sessionModel.UserAgent,
-		sessionModel.Lifetime,
-	).Err()
+		sessionModel.ExpAt,
+	).Scan(
+		&id,
+	)
 	if err != nil {
-		println(err.Error()) // debug
+		println("CreateRefreshSession:", err.Error()) // debug
 		return
 	}
 	if overflowDelete {
 		err = r.OverflowDelete(userId, rules.MaxRefreshSession)
 		if err != nil {
-			println(err.Error()) // debug
+			println("CreateRefreshSession:", err.Error()) // debug
 			return
 		}
 	}
 
 	return
 }
+
+func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.RefreshSession) (err error) {
+	err = r.db.QueryRow(`
+		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id`,
+		sessionID,
+		sessionModel.RefreshToken,
+		sessionModel.UserAgent,
+		sessionModel.ExpAt,
+	).Err()
+	if err != nil {
+		println("UpdateRefreshSession:", err.Error()) // debug
+	}
+
+	return
+}
+
 func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
 	err = r.db.QueryRow(`
 		DELETE FROM refresh_sessions 

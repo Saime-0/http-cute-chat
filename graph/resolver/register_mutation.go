@@ -54,15 +54,16 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return resp.Error(resp.ErrInternalServerError, "не удалось отправить код подтверждения на указанную почту"), nil
 	}
 
-	_, err = r.Services.Scheduler.AddTask(
-		func() {
-			r.Services.Repos.Users.DeleteRegistrationSession(input.Email)
-		},
-		expAt,
-	)
-
-	if err != nil {
-		panic(err)
+	if runAt, ok := r.Services.Cache.Get(rules.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
+		_, err = r.Services.Scheduler.AddTask(
+			func() {
+				r.Services.Repos.Users.DeleteRegistrationSession(input.Email)
+			},
+			expAt,
+		)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return resp.Success("подтвердите регистрацию, код отправлен на указанную почту"), nil

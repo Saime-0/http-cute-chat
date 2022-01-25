@@ -42,12 +42,13 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		session *models.RefreshSession
 	)
 	newRefreshToken := kit.RandomSecret(rules.RefreshTokenLength)
+	expAt := kit.After(rules.RefreshTokenLiftime)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
-		UserAgent:    ctx.Value(rules.UserAgentFromHeaders).(string),
-		Lifetime:     rules.RefreshTokenLiftime,
+		UserAgent:    ctx.Value(rules.CtxUserAgent).(string),
+		ExpAt:        expAt,
 	}
-	err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
+	sessionID, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "неудачная попытка создать сессию пользователя"), nil
 	}
@@ -61,6 +62,18 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
+	}
+
+	if runAt, ok := r.Services.Cache.Get(rules.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
+		_, err = r.Services.Scheduler.AddTask(
+			func() {
+				r.Services.Repos.Users.DeleteRefreshSession(sessionID)
+			},
+			expAt,
+		)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	return model.TokenPair{

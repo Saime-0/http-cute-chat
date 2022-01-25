@@ -57,7 +57,7 @@ type RoleReference struct {
 type RefreshSession struct {
 	RefreshToken string `json:"refresh_token"`
 	UserAgent    string `json:"user_agent"`
-	Lifetime     int64
+	ExpAt        int64
 }
 
 type UserInfo struct {
@@ -102,6 +102,18 @@ type ScheduleInvite struct {
 	Code   string
 	Exp    *int64
 	Task   *scheduler.Task
+}
+
+type ScheduleRegisterSession struct {
+	Email string
+	Exp   int64
+	Task  *scheduler.Task
+}
+
+type ScheduleRefreshSession struct {
+	ID   int
+	Exp  int64
+	Task *scheduler.Task
 }
 
 type SubUser struct {

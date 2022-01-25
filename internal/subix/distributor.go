@@ -39,12 +39,13 @@ func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interfac
 	//}
 
 	switch body.(type) {
-	case *model.DeleteInvite: // "отбрасывает" задачу в планировщике и удаляет из стора сабикса
-		s.ForceDropScheduledInvite(body.(*model.DeleteInvite).Code)
+	// это что за криндж?
+	//case *model.DeleteInvite: // "отбрасывает" задачу в планировщике и удаляет из стора сабикса
+	//	s.ForceDropScheduledInvite(body.(*model.DeleteInvite).Code)
 
-	case *model.CreateInvite: // добавляет в планировщик и стор сабикса
-		inv := body.(*model.CreateInvite)
-		s.CreateScheduledInvite(objects[0], inv.Code, inv.ExpiresAt)
+	//case *model.CreateInvite: // добавляет в планировщик и стор сабикса
+	//	inv := body.(*model.CreateInvite)
+	//	s.CreateScheduledInvite(objects[0], inv.Code, inv.ExpiresAt)
 
 	case *model.DeleteMember: // чтобы участник(пользователь) перестал получать события
 		s.DeleteMember(body.(*model.DeleteMember).ID)

@@ -22,9 +22,12 @@ func (s *Subix) CreateScheduledInvite(chatID int, code string, exp *int64) {
 	}
 	task, err := s.sched.AddTask(
 		func() {
+
 			_, err := s.repo.Chats.DeleteInvite(code)
 			if err != nil {
-				panic(err)
+				//panic(err)
+				println("prepareScheduleInvites:", err) // debug
+				return
 			}
 			s.NotifyChatMembers(
 				chatID,
@@ -34,6 +37,7 @@ func (s *Subix) CreateScheduledInvite(chatID int, code string, exp *int64) {
 				},
 			)
 			delete(s.Store.ScheduleInvites, code)
+			println("prepareScheduleInvites: удаляю инвайт, тк он уже истек", code) // debug
 		},
 		*exp,
 	)

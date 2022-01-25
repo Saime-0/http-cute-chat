@@ -11,6 +11,7 @@ import (
 )
 
 func IntPtr(i int) *int              { return &i }
+func Int64Ptr(i int64) *int64        { return &i }
 func StringPtr(s string) *string     { return &s }
 func Ptr(i interface{}) *interface{} { return &i }
 
@@ -87,4 +88,8 @@ func GetUniqueInts(arr []int) []int {
 		}
 	}
 	return list
+}
+
+func After(offset int64) int64 {
+	return time.Now().Unix() + offset
 }

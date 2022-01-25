@@ -383,6 +383,19 @@ func (r UsersRepo) DeleteRegistrationSession(email string) {
 	return
 }
 
+func (r UsersRepo) DeleteRefreshSession(id int) {
+	err := r.db.QueryRow(`
+		DELETE FROM refresh_sessions
+	    WHERE id = $1
+		`,
+		id,
+	).Err()
+	if err != nil {
+		println("DeleteRefreshSession:", err.Error()) // debug
+	}
+	return
+}
+
 func (r *UsersRepo) CreateRegistrationSession(userModel *models.RegisterData, expAt int64) (verifyCode string, err error) {
 	err = r.db.QueryRow(`
 		INSERT INTO registration_session (domain, name, email, hashed_password, expires_at)
