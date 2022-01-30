@@ -5,9 +5,8 @@ package resolver
 
 import (
 	"context"
-	"github.com/saime-0/http-cute-chat/internal/rules"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 )
@@ -35,7 +34,7 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 		eventReadyInvite,
 	)
 
-	if runAt, ok := r.Services.Cache.Get(rules.CacheNextRunRegularScheduleAt); eventReadyInvite.ExpiresAt != nil && ok && *eventReadyInvite.ExpiresAt < runAt.(int64) {
+	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); eventReadyInvite.ExpiresAt != nil && ok && *eventReadyInvite.ExpiresAt < runAt.(int64) {
 		r.Services.Subix.CreateScheduledInvite(input.ChatID, eventReadyInvite.Code, eventReadyInvite.ExpiresAt)
 	}
 

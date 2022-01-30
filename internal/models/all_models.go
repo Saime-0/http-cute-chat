@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/scheduler"
 )
 
@@ -77,7 +77,7 @@ type Unit struct {
 	ID     int    `json:"id"`
 	Domain string `json:"domain"`
 	Name   string `json:"name"`
-	Type   rules.UnitType
+	Type   res.UnitType
 }
 
 type Chat struct {

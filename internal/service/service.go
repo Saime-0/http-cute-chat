@@ -3,6 +3,7 @@ package service
 import (
 	"database/sql"
 	"github.com/saime-0/http-cute-chat/internal/cache"
+	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/email"
 	"github.com/saime-0/http-cute-chat/internal/repository"
@@ -17,25 +18,33 @@ type Services struct {
 	Scheduler *scheduler.Scheduler
 	SMTP      *email.SMTPSender
 	Cache     *cache.Cache
+	Logger    *clog.Clog
 }
 
-func NewServices(db *sql.DB, cfg *config.Config) *Services {
-	s := &Services{
-		Repos: repository.NewRepositories(db),
-		//Subix:
-		Scheduler: scheduler.NewScheduler(),
-		SMTP: email.NewSMTPSender(
-			cfg.SMTP.Author,
-			cfg.SMTP.From,
-			cfg.SMTP.Passwd,
-			cfg.SMTP.Host,
-			cfg.SMTP.Port,
-		),
-		Cache: cache.NewCache(),
-	}
-	s.Subix = subix.NewSubix(s.Repos, s.Scheduler)
+func NewServices(db *sql.DB, cfg *config.Config, logger *clog.Clog) *Services {
+	var err error
+	newRepos := repository.NewRepositories(db)
+	newSched := scheduler.NewScheduler()
+	newSMTPSender := email.NewSMTPSender(
+		cfg.SMTP.Author,
+		cfg.SMTP.From,
+		cfg.SMTP.Passwd,
+		cfg.SMTP.Host,
+		cfg.SMTP.Port,
+	)
+	newCache := cache.NewCache()
 
-	err := s.regularSchedule(rules.DurationOfScheduleInterval)
+	newSubix := subix.NewSubix(newRepos, newSched)
+
+	s := &Services{
+		Repos:     newRepos,
+		Subix:     newSubix,
+		Scheduler: newSched,
+		SMTP:      newSMTPSender,
+		Cache:     newCache,
+		Logger:    logger,
+	}
+	err = s.regularSchedule(rules.DurationOfScheduleInterval)
 	if err != nil {
 		panic(err)
 	}

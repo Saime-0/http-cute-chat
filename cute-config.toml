@@ -1,5 +1,5 @@
 app_port = "8080"
-query_complexity_limit = 60
+query_complexity_limit = 81
 
 [database]
 host = "localhost"
@@ -11,4 +11,7 @@ db_name = "chat_db"
 author = "http-cute-chat"
 host = "smtp.yandex.ru"
 port = 587
-
+[logger]
+level = "Debug"
+mongo_db_cluster = "log-db.5qcx4.mongodb.net"
+db_name = "logs"

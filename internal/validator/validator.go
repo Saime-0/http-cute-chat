@@ -3,6 +3,7 @@ package validator
 import (
 	"errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"regexp"
 	"strconv"
@@ -35,7 +36,7 @@ func ValidateEmail(email string) (valid bool) { // todo
 	return
 }
 func ValidateLifetime(lt int64) (valid bool) {
-	return lt >= 60 && lt <= rules.Year
+	return lt >= 60 && lt <= res.Year
 }
 func ValidateAliens(aliens int) (valid bool) {
 

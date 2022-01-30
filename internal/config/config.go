@@ -8,6 +8,7 @@ import (
 type Config struct {
 	Database             Database `toml:"database"`
 	SMTP                 SMTP     `toml:"smtp"`
+	Logger               Logger   `toml:"logger"`
 	SecretKey            string   `toml:"secret_key"`
 	AppPort              string   `toml:"app_port"`
 	PasswordSalt         string   `toml:"password_salt"`
@@ -30,6 +31,14 @@ type SMTP struct {
 	Port   int    `toml:"port"`
 }
 
+type Logger struct {
+	Level           string `toml:"level"`
+	MongoDBPassword string `toml:"mongo_db_password"`
+	MongoDBUser     string `toml:"mongo_db_user"`
+	MongoDBCluster  string `toml:"mongo_db_cluster"`
+	DBName          string `toml:"db_name"`
+}
+
 var defaultConfig = &Config{
 	Database: Database{
 		Host:     "localhost",
@@ -44,6 +53,13 @@ var defaultConfig = &Config{
 		//Passwd: " ",
 		Host: "smtp.yandex.ru",
 		Port: 0,
+	},
+	Logger: Logger{
+		Level:           "Debug",
+		MongoDBPassword: os.Getenv("LOGDB_PASSWORD"),
+		MongoDBUser:     os.Getenv("LOGDB_USER"),
+		MongoDBCluster:  "log-db.5qcx4.mongodb.net",
+		DBName:          "logs",
 	},
 	SecretKey:            os.Getenv("SECRET_SIGNING_KEY"),
 	PasswordSalt:         os.Getenv("GLOBAL_PASSWORD_SALT"),
@@ -71,6 +87,12 @@ func NewConfig(path string) *Config {
 	}
 	if cfg.SMTP.Passwd == "" {
 		cfg.SMTP.Passwd = os.Getenv("SMTP_EMAIL_PASSWD")
+	}
+	if cfg.Logger.MongoDBPassword == "" {
+		cfg.Logger.MongoDBPassword = os.Getenv("LOGDB_PASSWORD")
+	}
+	if cfg.Logger.MongoDBUser == "" {
+		cfg.Logger.MongoDBUser = os.Getenv("LOGDB_USER")
 	}
 	println("Configure file found and loaded")
 	return cfg

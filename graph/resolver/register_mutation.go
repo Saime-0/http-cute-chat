@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -54,7 +55,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		return resp.Error(resp.ErrInternalServerError, "не удалось отправить код подтверждения на указанную почту"), nil
 	}
 
-	if runAt, ok := r.Services.Cache.Get(rules.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
+	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
 				r.Services.Repos.Users.DeleteRegistrationSession(input.Email)

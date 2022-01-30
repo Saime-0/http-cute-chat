@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"time"
 )
@@ -46,7 +46,7 @@ func (s *Services) regularSchedule(interval int64) (err error) {
 			if err != nil {
 				panic(err)
 			}
-			s.Cache.Set(rules.CacheNextRunRegularScheduleAt, runAt)
+			s.Cache.Set(res.CacheNextRunRegularScheduleAt, runAt)
 
 			println("regularSchedule: начато прослушивание канала") // debug
 			<-ready

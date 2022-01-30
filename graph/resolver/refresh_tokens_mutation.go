@@ -7,6 +7,7 @@ import (
 	"context"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -30,7 +31,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	sessionExpAt := kit.After(rules.RefreshTokenLiftime)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
-		UserAgent:    ctx.Value(rules.CtxUserAgent).(string),
+		UserAgent:    ctx.Value(res.CtxUserAgent).(string),
 		ExpAt:        sessionExpAt,
 	}
 
@@ -58,7 +59,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		}
 	}
 
-	if runAt, ok := r.Services.Cache.Get(rules.CacheNextRunRegularScheduleAt); ok && sessionExpAt < runAt.(int64) {
+	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); ok && sessionExpAt < runAt.(int64) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
 				r.Services.Repos.Users.DeleteRefreshSession(sessionID)

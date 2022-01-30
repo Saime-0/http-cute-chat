@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/validator"
@@ -13,7 +14,7 @@ import (
 )
 
 func (n *Node) ChatExists(chatId int) (fail bool) {
-	if !n.repos.Units.UnitExistsByID(chatId, rules.Chat) {
+	if !n.repos.Units.UnitExistsByID(chatId, res.Chat) {
 		n.Err = resp.Error(resp.ErrBadRequest, "такого чата не существует")
 		return true
 	}
@@ -21,7 +22,7 @@ func (n *Node) ChatExists(chatId int) (fail bool) {
 }
 
 func (n *Node) UserExists(userId int) (fail bool) {
-	if !n.repos.Units.UnitExistsByID(userId, rules.User) {
+	if !n.repos.Units.UnitExistsByID(userId, res.User) {
 		n.Err = resp.Error(resp.ErrBadRequest, "пользователь не найден")
 		return true
 	}

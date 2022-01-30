@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/robbert229/jwt"
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"time"
 )
 
@@ -84,7 +84,7 @@ func GenerateToken(data *TokenData, secretKey string) (string, error) {
 }
 
 func GetAuthDataFromCtx(ctx context.Context) (authData *TokenData) {
-	data, ok := ctx.Value(rules.CtxAuthData).(*TokenData)
+	data, ok := ctx.Value(res.CtxAuthData).(*TokenData)
 	if !ok {
 		println("GetAuthDataFromCtx: не удалось найти CtxAuthData в контексте")
 	}

@@ -3,7 +3,7 @@ package repository
 import (
 	"database/sql"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/res"
 )
 
 type UnitsRepo struct {
@@ -16,7 +16,7 @@ func NewUnitsRepo(db *sql.DB) *UnitsRepo {
 	}
 }
 
-func (r *UnitsRepo) UnitExistsByID(unitId int, unitType rules.UnitType) (exists bool) {
+func (r *UnitsRepo) UnitExistsByID(unitId int, unitType res.UnitType) (exists bool) {
 	err := r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -45,7 +46,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	expAt := kit.After(rules.RefreshTokenLiftime)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
-		UserAgent:    ctx.Value(rules.CtxUserAgent).(string),
+		UserAgent:    ctx.Value(res.CtxUserAgent).(string),
 		ExpAt:        expAt,
 	}
 	sessionID, err := r.Services.Repos.Auth.CreateRefreshSession(clientID, session, true)
@@ -64,7 +65,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
 	}
 
-	if runAt, ok := r.Services.Cache.Get(rules.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
+	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
 				r.Services.Repos.Users.DeleteRefreshSession(sessionID)

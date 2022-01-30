@@ -1,31 +1,5 @@
 package rules
 
-const Year int64 = 31536000
-
-type FetchType string
-
-const (
-	Positive FetchType = "POSITIVE"
-	Neutral  FetchType = "NEUTRAL"
-	Negative FetchType = "NEGATIVE"
-)
-
-type UnitType string
-
-const (
-	User UnitType = "USER"
-	Chat UnitType = "CHAT"
-)
-
-type LocalKeys int
-
-const (
-	_ LocalKeys = iota
-	CtxAuthData
-	CtxUserAgent
-	CacheNextRunRegularScheduleAt
-)
-
 const (
 	NameMaxLength                = 32
 	NameMinLength                = 1

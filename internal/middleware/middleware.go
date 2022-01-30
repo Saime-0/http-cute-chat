@@ -5,10 +5,11 @@ import (
 	"context"
 	"errors"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
-	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/utils"
-	"log"
+	"go.mongodb.org/mongo-driver/bson"
 	"net"
 	"net/http"
 	"strings"
@@ -56,28 +57,30 @@ func (c *chain) getUserAgent() *chain {
 	//println("(chain)getUserAgent start!") // debug
 	c.r = c.r.WithContext(context.WithValue(
 		c.r.Context(),
-		rules.CtxUserAgent,
+		res.CtxUserAgent,
 		c.r.UserAgent(),
 	))
 	return c
 }
 
-func Logging(cfg *config.Config) func(http.Handler) http.Handler {
+func Logging(cfg *config.Config, logger *clog.Clog) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-			println("\nLogging start!") // debug
-
 			start := time.Now()
 			wrapped := wrapResponseWriter(w)
 			next.ServeHTTP(wrapped, r)
-			log.Println(
-				"status", wrapped.status,
-				"method", r.Method,
-				"path", r.URL.EscapedPath(),
-				"duration", time.Since(start),
+			err := logger.Debug(
+				bson.M{
+					"status":   wrapped.status,
+					"method":   r.Method,
+					"path":     r.URL.EscapedPath(),
+					"duration": time.Since(start).String(),
+				},
 			)
+			if err != nil {
+				panic(err)
+			}
 		})
 	}
 }
@@ -144,5 +147,5 @@ func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.C
 			cfg.SecretKey,
 		)
 	}
-	return context.WithValue(ctx, rules.CtxAuthData, data), err
+	return context.WithValue(ctx, res.CtxAuthData, data), err
 }
