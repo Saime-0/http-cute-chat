@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/BurntSushi/toml"
 	"os"
+	"strings"
 )
 
 type Config struct {
@@ -55,7 +56,7 @@ var defaultConfig = &Config{
 		Port: 0,
 	},
 	Logger: Logger{
-		Level:           "Debug",
+		Level:           "debug",
 		MongoDBPassword: os.Getenv("LOGDB_PASSWORD"),
 		MongoDBUser:     os.Getenv("LOGDB_USER"),
 		MongoDBCluster:  "log-db.5qcx4.mongodb.net",
@@ -73,7 +74,6 @@ func NewConfig(path string) *Config {
 	}
 	_, err := toml.DecodeFile(path, cfg)
 	if err != nil {
-		println("Default config loaded")
 		return defaultConfig
 	}
 	if cfg.SecretKey == "" {
@@ -94,6 +94,7 @@ func NewConfig(path string) *Config {
 	if cfg.Logger.MongoDBUser == "" {
 		cfg.Logger.MongoDBUser = os.Getenv("LOGDB_USER")
 	}
-	println("Configure file found and loaded")
+	cfg.Logger.Level = strings.ToLower(cfg.Logger.Level)
+
 	return cfg
 }

@@ -15,9 +15,9 @@ type SMTPSender struct {
 	address   string
 }
 
-func NewSMTPSender(author, from, pass, host string, port int) *SMTPSender {
+func NewSMTPSender(author, from, pass, host string, port int) (*SMTPSender, error) {
 	if !validator.ValidateEmail(from) {
-		panic("NewSMTPSender: smtp sender email not valid")
+		return nil, errors.New("NewSMTPSender: smtp sender email not valid")
 	}
 	return &SMTPSender{
 		msgAuthor: author,
@@ -25,7 +25,7 @@ func NewSMTPSender(author, from, pass, host string, port int) *SMTPSender {
 		pass:      pass,
 		host:      host,
 		address:   host + ":" + strconv.Itoa(port),
-	}
+	}, nil
 }
 
 func (s *SMTPSender) Send(subject string, msgBody string, to ...string) error {
@@ -43,7 +43,7 @@ func (s *SMTPSender) Send(subject string, msgBody string, to ...string) error {
 		}
 	}
 
-	// Set up authentication information.
+	// SetState up authentication information.
 	auth := smtp.PlainAuth("", s.from, s.pass, s.host)
 	msg := []byte(
 		"From: " + s.msgAuthor + " <" + s.from + ">\r\n" +

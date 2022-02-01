@@ -15,14 +15,14 @@ const (
 )
 
 var lvlNames = []string{
-	"Emergency",
-	"Alert",
-	"Critical",
-	"Error",
-	"Warning",
-	"Notice",
-	"Info",
-	"Debug",
+	"emergency",
+	"alert",
+	"critical",
+	"error",
+	"warning",
+	"notice",
+	"info",
+	"debug",
 }
 
 func (lvl LogLevel) String() string {

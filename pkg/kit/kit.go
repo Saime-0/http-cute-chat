@@ -93,3 +93,7 @@ func GetUniqueInts(arr []int) []int {
 func After(offset int64) int64 {
 	return time.Now().Unix() + offset
 }
+
+func Err(v interface{}, err error) error {
+	return err
+}

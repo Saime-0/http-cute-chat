@@ -7,6 +7,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
+	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,23 +18,27 @@ import (
 )
 
 type chain struct {
-	r   *http.Request
-	cfg *config.Config
-	//ctx context.Context
+	r      *http.Request
+	cfg    *config.Config
+	logger *clog.Clog
+	hlr    *healer.Healer
 }
 
-func ChainShip(cfg *config.Config) func(http.Handler) http.Handler {
+func ChainShip(cfg *config.Config, logger *clog.Clog, hlr *healer.Healer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := &chain{
-				r:   r,
-				cfg: cfg,
+				r:      r,
+				cfg:    cfg,
+				logger: logger,
+				hlr:    hlr,
 			}
 
 			if r.Header.Get("Sec-Websocket-Protocol") != "graphql-ws" {
 				c.checkAuth().getUserAgent()
 			} else {
-				println("WebsocketExeption working!") // debug
+				err := c.logger.Debug("connection switched to websocket!")
+				c.hlr.MonitorLogger(err)
 			}
 
 			next.ServeHTTP(w, c.r)
@@ -42,12 +47,9 @@ func ChainShip(cfg *config.Config) func(http.Handler) http.Handler {
 }
 
 func (c *chain) checkAuth() *chain {
-	println("(chain)CheckAuth start!") // debug
-
-	//println(c.r.Header.Get("Authorization")) // debug
 	ctx, err := auth(c.r.Context(), c.cfg, c.r.Header.Get("Authorization"))
 	if err != nil {
-		println("CheckAuth:", err.Error())
+		c.logger.Alert(err)
 	}
 	c.r = c.r.WithContext(ctx)
 	return c
@@ -63,7 +65,7 @@ func (c *chain) getUserAgent() *chain {
 	return c
 }
 
-func Logging(cfg *config.Config, logger *clog.Clog) func(http.Handler) http.Handler {
+func Logging(cfg *config.Config, logger *clog.Clog, hlr *healer.Healer) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -78,9 +80,7 @@ func Logging(cfg *config.Config, logger *clog.Clog) func(http.Handler) http.Hand
 					"duration": time.Since(start).String(),
 				},
 			)
-			if err != nil {
-				panic(err)
-			}
+			hlr.MonitorLogger(err)
 		})
 	}
 }

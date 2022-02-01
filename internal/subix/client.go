@@ -6,7 +6,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/internal/scheduler"
+	"github.com/saime-0/http-cute-chat/pkg/scheduler"
 	"time"
 )
 

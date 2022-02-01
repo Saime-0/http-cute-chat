@@ -7,11 +7,13 @@ port = 5432
 user = "postgres"
 password = "7050"
 db_name = "chat_db"
+
 [smtp]
 author = "http-cute-chat"
 host = "smtp.yandex.ru"
 port = 587
+
 [logger]
-level = "Debug"
+level = "debug"
 mongo_db_cluster = "log-db.5qcx4.mongodb.net"
 db_name = "logs"

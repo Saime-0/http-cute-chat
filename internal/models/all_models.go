@@ -3,7 +3,7 @@ package models
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/res"
-	"github.com/saime-0/http-cute-chat/internal/scheduler"
+	"github.com/saime-0/http-cute-chat/pkg/scheduler"
 )
 
 type Invite struct {

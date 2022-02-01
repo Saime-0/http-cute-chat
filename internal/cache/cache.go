@@ -12,9 +12,8 @@ func NewCache() *Cache {
 	}
 }
 
-func (c *Cache) Set(key, val interface{}) interface{} {
+func (c *Cache) Set(key, val interface{}) {
 	c.store[key] = val
-	return c.store
 }
 
 func (c *Cache) Get(key interface{}) (val interface{}, ok bool) {
@@ -24,5 +23,4 @@ func (c *Cache) Get(key interface{}) (val interface{}, ok bool) {
 
 func (c *Cache) Delete(key interface{}) {
 	delete(c.store, key)
-	return
 }

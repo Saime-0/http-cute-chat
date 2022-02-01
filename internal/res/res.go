@@ -21,9 +21,21 @@ type LocalKeys int
 
 const (
 	_ LocalKeys = iota
+
+	// ctx keys
 	CtxAuthData
 	CtxUserAgent
+
+	// cache keys
 	CacheNextRunRegularScheduleAt
+	CacheCurrentReconnectionAttemptToLogDB
+
+	// indicators
+	IndicatorLogger
+	// states
+	OK
+	FailedDBConnection
+	RepairingConnection
 )
 
 type LogField string

@@ -8,8 +8,8 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/email"
 	"github.com/saime-0/http-cute-chat/internal/repository"
 	"github.com/saime-0/http-cute-chat/internal/rules"
-	"github.com/saime-0/http-cute-chat/internal/scheduler"
 	"github.com/saime-0/http-cute-chat/internal/subix"
+	"github.com/saime-0/http-cute-chat/pkg/scheduler"
 )
 
 type Services struct {
@@ -21,19 +21,22 @@ type Services struct {
 	Logger    *clog.Clog
 }
 
-func NewServices(db *sql.DB, cfg *config.Config, logger *clog.Clog) *Services {
+func NewServices(db *sql.DB, cfg *config.Config, logger *clog.Clog) (*Services, error) {
 	var err error
 	newRepos := repository.NewRepositories(db)
 	newSched := scheduler.NewScheduler()
-	newSMTPSender := email.NewSMTPSender(
+	newSMTPSender, err := email.NewSMTPSender(
 		cfg.SMTP.Author,
 		cfg.SMTP.From,
 		cfg.SMTP.Passwd,
 		cfg.SMTP.Host,
 		cfg.SMTP.Port,
 	)
-	newCache := cache.NewCache()
+	if err != nil {
+		return nil, err
+	}
 
+	newCache := cache.NewCache()
 	newSubix := subix.NewSubix(newRepos, newSched)
 
 	s := &Services{
@@ -46,8 +49,8 @@ func NewServices(db *sql.DB, cfg *config.Config, logger *clog.Clog) *Services {
 	}
 	err = s.regularSchedule(rules.DurationOfScheduleInterval)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	return s
+	return s, nil
 }
