@@ -1,6 +1,7 @@
 package clog
 
 import (
+	"context"
 	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
@@ -8,15 +9,17 @@ import (
 
 func (c Clog) log(lvl LogLevel, document interface{}) (err error) {
 	doc := bson.M{
-		"time":    time.Now().Unix(),
-		"type":    lvl.String(),
-		"payload": document,
+		"timestamp": time.Now(),
+		"type":      lvl.String(),
+		"payload":   document,
 	}
 	if c.Output <= Multiple {
 		fmt.Printf("%#v\n", doc)
 	}
 	if c.Output >= Multiple {
-		_, err = c.db.Collection("logs").InsertOne(nil, doc)
+		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+		defer cancel()
+		_, err = c.db.Collection("logs").InsertOne(ctx, doc)
 	}
 
 	return err

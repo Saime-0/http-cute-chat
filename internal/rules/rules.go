@@ -33,9 +33,7 @@ const (
 	LiftimeOfRegistrationSession = int64(30) // 1 hour
 	DurationOfScheduleInterval   = int64(60) // 1 hour
 
-	InitialIntervalBetweenAttemptsToReconnectToTheDatabase = 7
-	ConnectionIntervalComplexityMultiplier                 = 2
-	NumberOfAttemptsToConnectToTheLogDBBeforeTheAlert      = 5
+	AllowedConnectionShutdownDuration = 120
 )
 
 type AdvancedError struct {

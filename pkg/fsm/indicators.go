@@ -36,15 +36,21 @@ func (m *Machine) AddIndicator(name Any, defaultState T, states States) (*Indica
 }
 
 func (i *Indicator) SetState(key T) error {
+
+	if key == i.state {
+		return nil
+	}
+
 	state, ok := i.states[key]
 	if !ok {
 		return errors.New(StateNotFound)
 	}
 
-	err := state.Onset()
+	err := state.Onset(i)
 	if err != nil {
 		return err
 	}
+
 	select {
 	case i.ch <- state:
 	default:

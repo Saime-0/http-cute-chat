@@ -13,9 +13,10 @@ func (h *Healer) createLoggerIndicator() (err error) {
 		res.IndicatorLogger,
 		res.OK,
 		fsm.States{
-			res.OK:                  h.loggerStateOK(),
-			res.FailedDBConnection:  fsm.NewTransitionalState(),
-			res.RepairingConnection: h.loggerStateRepairingConnection(),
+			res.OK:                 h.loggerStateOK(),
+			res.FailedDBConnection: h.loggerStateFailedDBConnection(),
+			//res.FailedDBConnection:  h.loggerStateFailedDBConnection(),
+			//res.RepairingConnection: h.loggerStateRepairingConnection(),
 		},
 	)
 
@@ -23,48 +24,32 @@ func (h *Healer) createLoggerIndicator() (err error) {
 }
 
 func (h *Healer) loggerStateOK() *fsm.State {
-	return fsm.NewState(func() error { // когда возвращается в нормальное состояние
+	return fsm.NewState(func(_ *fsm.Indicator) error { // когда возвращается в нормальное состояние
 		h.services.Logger.Notice(res.ConnectionToTheLogDBHasBeenSuccessfullyRestored)
 		return nil
 	})
 }
 
-func (h *Healer) loggerStateRepairingConnection() *fsm.State {
-	return fsm.NewState(func() error { // пропало соединение с бд данных, а возможно и в чем то другом проблема надо проверить
-		//_, ok := h.services.Cache.GetState(res.CacheCurrentReconnectionAttemptToLogDB)
-		//if ok {
-		//	return nil
-		//}
-		//h.services.Cache.SetState(
-		//	res.CacheCurrentReconnectionAttemptToLogDB,
-		//	rules.NumberOfAttemptsToConnectToTheLogDBBeforeTheAlert,
-		//)
-		indicator := h.stateMachine.Indicators[res.IndicatorLogger]
-		state := indicator.GetState().(res.LocalKeys)
-		if state != res.OK {
-			println("state != res.ok; return nil") // debug
-			return nil
-		}
-		//err := indicator.SetState(res.FailedDBConnection)
-		//if err != nil {
-		//	return errors.Wrap(err, res.FailedToSetTheState)
-		//}
-		//println("indicator set state") // debug
-		h.services.Logger.Warning(res.StartingLogDBConnectionRecoveryService)
+func (h *Healer) loggerStateFailedDBConnection() *fsm.State {
+	return fsm.NewState(func(indicator *fsm.Indicator) error { // пропало соединение с бд данных, а возможно и в чем то другом проблема надо проверить
+
 		go func() {
-			sleep := time.Second * rules.InitialIntervalBetweenAttemptsToReconnectToTheDatabase
-			for i := rules.NumberOfAttemptsToConnectToTheLogDBBeforeTheAlert; i >= 0; i -= 1 {
-				time.Sleep(sleep)
-				println("logger not working, attemptin to repaire - num", i) // debug
-				if h.services.Logger.ReconnectToDB() == nil {
-					indicator.SetState(res.OK)
-					println("logger repaired") // debug
+			h.services.Logger.Info(res.StartingLogDBConnectionRecoveryService)
+
+			for i := 0; i < rules.AllowedConnectionShutdownDuration/2; i++ {
+				err := h.services.Logger.PingDB()
+				if err == nil {
+					err = indicator.SetState(res.OK)
+					if err != nil {
+						panic("not handling")
+						return
+					}
 					return
 				}
-				sleep *= rules.ConnectionIntervalComplexityMultiplier
+				time.Sleep(time.Second * 2)
 			}
+
 			h.services.Logger.Alert(res.ConnectionToDatabaseCouldNotBeRestored)
-			println("logger repairing failure") // debug
 		}()
 		return nil
 	})

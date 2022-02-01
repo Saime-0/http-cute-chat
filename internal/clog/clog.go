@@ -1,19 +1,20 @@
 package clog
 
 import (
+	"context"
 	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"time"
 )
 
 type Clog struct {
 	db     *mongo.Database
 	Level  LogLevel
 	Output Output
-	// for reconnecting
-	clientOptions *options.ClientOptions
-	dbName        string
+	client *mongo.Client
 }
 
 type Output uint8
@@ -37,37 +38,33 @@ func NewClog(cfg *config.Config, output Output) (*Clog, error) {
 		":" + cfg.Logger.MongoDBPassword +
 		"@" + cfg.Logger.MongoDBCluster,
 	)
-	db, err := connectToDB(
-		cfg.Logger.DBName,
-		clientOptions,
-	)
+
+	client, err := mongo.Connect(context.Background(), clientOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, CouldNotConnectToDb)
+	}
+
+	db := client.Database(cfg.Logger.DBName)
+
 	if err != nil {
 		return nil, err
 	}
 
 	c := &Clog{
-		db:            db,
-		Level:         lvl,
-		Output:        output,
-		clientOptions: clientOptions,
+		db:     db,
+		Level:  lvl,
+		Output: output,
+		client: client,
 	}
 
 	return c, nil
 }
 
-func (c Clog) ReconnectToDB() (err error) {
-	db, err := connectToDB(c.dbName, c.clientOptions)
-	if err != nil {
-		return errors.Wrap(err, "could not reconnect to db")
-	}
-	c.db = db
-	return nil
-}
+const ConnectionTimeout = time.Millisecond * 1500
+const CouldNotConnectToDb = "could not connect to db"
 
-func connectToDB(dbName string, clientOptions *options.ClientOptions) (*mongo.Database, error) {
-	client, err := mongo.Connect(nil, clientOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not connect to db")
-	}
-	return client.Database(dbName), nil
+func (c *Clog) PingDB() error {
+	ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+	defer cancel()
+	return c.client.Ping(ctx, readpref.Primary())
 }

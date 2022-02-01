@@ -49,7 +49,7 @@ func ChainShip(cfg *config.Config, logger *clog.Clog, hlr *healer.Healer) func(h
 func (c *chain) checkAuth() *chain {
 	ctx, err := auth(c.r.Context(), c.cfg, c.r.Header.Get("Authorization"))
 	if err != nil {
-		c.logger.Alert(err)
+		c.hlr.MonitorLogger(c.logger.Debug(err))
 	}
 	c.r = c.r.WithContext(ctx)
 	return c
@@ -72,15 +72,14 @@ func Logging(cfg *config.Config, logger *clog.Clog, hlr *healer.Healer) func(htt
 			start := time.Now()
 			wrapped := wrapResponseWriter(w)
 			next.ServeHTTP(wrapped, r)
-			err := logger.Debug(
+			hlr.MonitorLogger(logger.Debug(
 				bson.M{
 					"status":   wrapped.status,
 					"method":   r.Method,
 					"path":     r.URL.EscapedPath(),
 					"duration": time.Since(start).String(),
 				},
-			)
-			hlr.MonitorLogger(err)
+			))
 		})
 	}
 }

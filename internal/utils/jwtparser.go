@@ -3,10 +3,8 @@ package utils
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/robbert229/jwt"
 	"github.com/saime-0/http-cute-chat/internal/res"
-	"time"
 )
 
 type TokenData struct {
@@ -52,8 +50,8 @@ func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 	}
 	userID := int(fuserID)
 	expiresAt := int64(fexpiresAt)
-	println("userID", userID)                                    // debug
-	fmt.Println("expiresAt", expiresAt, time.Unix(expiresAt, 0)) // debug
+	//println("userID", userID)                                    // debug
+	//fmt.Println("expiresAt", expiresAt, time.Unix(expiresAt, 0)) // debug
 	data := &TokenData{
 		UserID:    userID,
 		ExpiresAt: expiresAt,
