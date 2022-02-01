@@ -2,7 +2,7 @@ package utils
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
 	"github.com/robbert229/jwt"
 	"github.com/saime-0/http-cute-chat/internal/res"
 )
@@ -13,55 +13,63 @@ type TokenData struct {
 }
 
 func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
-	algorithm := jwt.HmacSha256(secretKey)
+
+	var (
+		userID     int
+		expiresAt  int64
+		data       *TokenData
+		err        error
+		claims     *jwt.Claims
+		_userID    interface{}
+		_expiresAt interface{}
+		fuserID    float64
+		fexpiresAt float64
+		ok         bool
+		algorithm  jwt.Algorithm
+	)
+
+	algorithm = jwt.HmacSha256(secretKey)
 	if err := algorithm.Validate(tokenString); err != nil {
-		println("ParseToken:", err.Error()) // debug
-		return nil, err
+		goto handleError
 	}
 
-	claims, err := algorithm.Decode(tokenString)
+	claims, err = algorithm.Decode(tokenString)
 	if err != nil {
-		println("ParseToken:", err.Error()) // debug
-		return nil, err
+		goto handleError
 	}
 
-	_userID, err := claims.Get("userid")
+	_userID, err = claims.Get("userid")
 	if err != nil {
-		println("ParseToken:", err.Error()) // debug
-		return nil, err
+		goto handleError
 	}
-	_expiresAt, err := claims.Get("exp")
+	_expiresAt, err = claims.Get("exp")
 	if err != nil {
-		println("ParseToken:", err.Error()) // debug
-		return nil, err
+		goto handleError
 	}
 
-	fuserID, ok := _userID.(float64)
+	fuserID, ok = _userID.(float64)
 	if !ok {
 		err = errors.New("token not contain userid")
-		println("ParseToken:", err.Error()) // debug
-		return nil, err
+		goto handleError
 	}
-	fexpiresAt, ok := _expiresAt.(float64)
+	fexpiresAt, ok = _expiresAt.(float64)
 	if !ok {
 		err = errors.New("token not contain exp")
-		println("ParseToken:", err.Error()) // debug
-		return nil, err
+		goto handleError
 	}
-	userID := int(fuserID)
-	expiresAt := int64(fexpiresAt)
-	//println("userID", userID)                                    // debug
-	//fmt.Println("expiresAt", expiresAt, time.Unix(expiresAt, 0)) // debug
-	data := &TokenData{
+
+	userID = int(fuserID)
+	expiresAt = int64(fexpiresAt)
+
+	data = &TokenData{
 		UserID:    userID,
 		ExpiresAt: expiresAt,
 	}
 
-	if err != nil {
-		println("ParseToken:", err.Error()) // debug
-		return nil, err
-	}
-	return data, err
+	return data, nil
+
+handleError:
+	return nil, errors.Wrap(err, "не удалось распарсить токен")
 }
 
 func GenerateToken(data *TokenData, secretKey string) (string, error) {
@@ -74,8 +82,7 @@ func GenerateToken(data *TokenData, secretKey string) (string, error) {
 	token, err := algorithm.Encode(claims)
 
 	if err != nil {
-		println("GenerateToken:", err.Error()) // debug
-		return "", err
+		return "", errors.Wrap(err, "не удалось сгенерировать токен")
 	}
 
 	return token, nil
