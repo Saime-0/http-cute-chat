@@ -27,7 +27,7 @@ func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, s
 		return node.Err, nil
 	}
 
-	err := r.Services.Subix.DeleteChatFromListenCollection(sessionKey, memberID)
+	err := r.Subix.DeleteChatFromListenCollection(sessionKey, memberID)
 	if err != nil {
 		println("DeleteChatFromListenCollection:", err) // debug
 		return resp.Error(resp.ErrBadRequest, "не удалось прекратить прослушивать чат"), nil

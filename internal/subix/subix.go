@@ -12,7 +12,6 @@ type Subix struct {
 	clients Clients
 	repo    *repository.Repositories
 	sched   *scheduler.Scheduler
-	Store   *Store
 }
 
 func NewSubix(repo *repository.Repositories, sched *scheduler.Scheduler) *Subix {
@@ -23,6 +22,5 @@ func NewSubix(repo *repository.Repositories, sched *scheduler.Scheduler) *Subix 
 		clients: Clients{},
 		repo:    repo,
 		sched:   sched,
-		Store:   newStore(),
 	}
 }

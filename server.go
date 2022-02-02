@@ -12,15 +12,21 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/directive"
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/resolver"
+	"github.com/saime-0/http-cute-chat/internal/cache"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
+	"github.com/saime-0/http-cute-chat/internal/email"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/middleware"
 	"github.com/saime-0/http-cute-chat/internal/piper"
+	"github.com/saime-0/http-cute-chat/internal/repository"
+	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/service"
 	"github.com/saime-0/http-cute-chat/internal/store"
+	"github.com/saime-0/http-cute-chat/internal/subix"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/pkg/graphiql"
+	"github.com/saime-0/http-cute-chat/pkg/scheduler"
 	"net/http"
 	"time"
 )
@@ -50,15 +56,46 @@ func main() {
 	}
 	defer db.Close()
 
+	// init smtp
+	newSMTPSender, err := email.NewSMTPSender(
+		cfg.SMTP.Author,
+		cfg.SMTP.From,
+		cfg.SMTP.Passwd,
+		cfg.SMTP.Host,
+		cfg.SMTP.Port,
+	)
+	if err != nil {
+		logger.Emergency(err.Error())
+		return
+	}
 	// init services
-	services, err := service.NewServices(db, cfg, logger)
+	services := &service.Services{
+		Repos:     repository.NewRepositories(db),
+		Scheduler: scheduler.NewScheduler(),
+		SMTP:      newSMTPSender,
+		Cache:     cache.NewCache(),
+		Logger:    logger,
+	}
+
+	// init healer
+	hlr, err := healer.NewHealer(cfg, services.Scheduler, services.Cache, services.Logger)
 	if err != nil {
 		logger.Emergency(err.Error())
 		return
 	}
 
-	// init healer
-	hlr, err := healer.NewHealer(services, cfg)
+	// init subix
+	sbx := subix.NewSubix(services.Repos, services.Scheduler)
+
+	// init resolver
+	myResolver := &resolver.Resolver{
+		Services: services,
+		Config:   cfg,
+		Piper:    piper.NewPipeline(services.Repos, hlr),
+		Healer:   hlr,
+		Subix:    sbx,
+	}
+	err = myResolver.RegularSchedule(rules.DurationOfScheduleInterval)
 	if err != nil {
 		logger.Emergency(err.Error())
 		return
@@ -66,12 +103,7 @@ func main() {
 
 	// server handler
 	srv := handler.New(generated.NewExecutableSchema(generated.Config{
-		Resolvers: &resolver.Resolver{
-			Services: services,
-			Config:   cfg,
-			Piper:    piper.NewPipeline(services.Repos),
-			Healer:   hlr,
-		},
+		Resolvers: myResolver,
 		Directives: generated.DirectiveRoot{
 			IsAuth:        directive.IsAuth,
 			InputUnion:    directive.InputUnion,

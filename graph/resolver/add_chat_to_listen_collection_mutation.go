@@ -31,7 +31,7 @@ func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, sessio
 		return node.Err, nil
 	}
 
-	err := r.Services.Subix.AddListenChat(sessionKey, subuser)
+	err := r.Subix.AddListenChat(sessionKey, subuser)
 	if err != nil {
 		println("AddChatToListenCollection:", err) // debug
 		return resp.Error(resp.ErrBadRequest, "не удалось начать прослушивать чат"), nil

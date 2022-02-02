@@ -5,6 +5,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/piper"
 	"github.com/saime-0/http-cute-chat/internal/service"
+	"github.com/saime-0/http-cute-chat/internal/subix"
 )
 
 // This file will not be regenerated automatically.
@@ -15,4 +16,5 @@ type Resolver struct {
 	Config   *config.Config
 	Piper    *piper.Pipeline
 	Healer   *healer.Healer
+	Subix    *subix.Subix
 }

@@ -2,18 +2,21 @@ package piper
 
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/repository"
 )
 
 type Pipeline struct {
 	RootNode *Node
 	repos    *repository.Repositories
+	healer   *healer.Healer
 }
 
-func NewPipeline(repos *repository.Repositories) *Pipeline {
+func NewPipeline(repos *repository.Repositories, healer *healer.Healer) *Pipeline {
 	return &Pipeline{
 		RootNode: &Node{},
 		repos:    repos,
+		healer:   healer,
 	}
 }
 
@@ -21,6 +24,7 @@ type Node struct {
 	prev     *Node
 	next     *Node
 	repos    *repository.Repositories
+	Healer   *healer.Healer
 	Err      *model.AdvancedError
 	timeline *TimeLine
 }
@@ -30,6 +34,7 @@ func (p *Pipeline) CreateNode(processName ...interface{}) *Node {
 		prev:     p.RootNode,
 		next:     p.RootNode.next,
 		repos:    p.repos,
+		Healer:   p.healer,
 		timeline: Start(processName),
 	}
 	if p.RootNode.next != nil {

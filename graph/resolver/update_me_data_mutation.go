@@ -42,7 +42,7 @@ func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateM
 		if err != nil {
 			return nil, err
 		} else {
-			go r.Services.Subix.NotifyChats(
+			go r.Subix.NotifyChats(
 				chats,
 				eventReadyUser,
 			)

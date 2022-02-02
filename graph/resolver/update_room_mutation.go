@@ -33,7 +33,7 @@ func (r *mutationResolver) UpdateRoom(ctx context.Context, roomID int, input mod
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные комнаты"), nil
 	}
 
-	go r.Services.Subix.NotifyChatMembers(
+	go r.Subix.NotifyChatMembers(
 		chatID,
 		eventReadyRoom,
 	)

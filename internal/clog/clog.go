@@ -33,6 +33,13 @@ func NewClog(cfg *config.Config, output Output) (*Clog, error) {
 		return nil, errors.New("the required level does not exist")
 	}
 
+	if output < Multiple {
+		return &Clog{
+			Level:  lvl,
+			Output: output,
+		}, nil
+	} // don't creating db connection
+
 	clientOptions := options.Client().ApplyURI("mongodb+srv://" +
 		cfg.Logger.MongoDBUser +
 		":" + cfg.Logger.MongoDBPassword +

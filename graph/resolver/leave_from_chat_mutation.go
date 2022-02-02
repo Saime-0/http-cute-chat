@@ -31,8 +31,8 @@ func (r *mutationResolver) LeaveFromChat(ctx context.Context, chatID int) (model
 		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
 	}
 
-	r.Services.Subix.DeleteMember(memberID)
-	go r.Services.Subix.NotifyChatMembers(
+	r.Subix.DeleteMember(memberID)
+	go r.Subix.NotifyChatMembers(
 		chatID,
 		eventReadyMember,
 	)

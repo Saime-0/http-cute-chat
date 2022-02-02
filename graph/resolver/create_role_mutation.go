@@ -29,7 +29,7 @@ func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRol
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать роль"), nil
 	}
 
-	go r.Services.Subix.NotifyChatMembers(
+	go r.Subix.NotifyChatMembers(
 		input.ChatID,
 		eventReadyRole,
 	)

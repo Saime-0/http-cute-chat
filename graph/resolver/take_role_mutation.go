@@ -34,7 +34,7 @@ func (r *mutationResolver) TakeRole(ctx context.Context, memberID int) (model.Mu
 	} else if eventReadyMember.ID == 0 {
 		return resp.Error(resp.ErrInternalServerError, "у пользователя нет роли"), nil
 	}
-	go r.Services.Subix.NotifyChatMembers(
+	go r.Subix.NotifyChatMembers(
 		chatID,
 		eventReadyMember,
 	)

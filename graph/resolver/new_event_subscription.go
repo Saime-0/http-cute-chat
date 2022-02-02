@@ -32,7 +32,7 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, 
 		return nil, errors.New(node.Err.Error)
 	}
 
-	client, err := r.Services.Subix.Sub(
+	client, err := r.Subix.Sub(
 		authData.UserID,
 		sessionKey,
 		authData.ExpiresAt,
@@ -46,7 +46,7 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, 
 	go func() {
 		<-ctx.Done()
 		println("client", sessionKey, "is down.") // debug
-		r.Services.Subix.Unsub(sessionKey)
+		r.Subix.Unsub(sessionKey)
 	}()
 
 	return client.Ch, nil

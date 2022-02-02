@@ -31,7 +31,7 @@ func (r *mutationResolver) UpdateRole(ctx context.Context, roleID int, input mod
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные"), nil
 	}
 
-	go r.Services.Subix.NotifyChatMembers(
+	go r.Subix.NotifyChatMembers(
 		chatID,
 		eventReadyRole,
 	)

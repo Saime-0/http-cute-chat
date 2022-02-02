@@ -54,7 +54,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	}
 
 	if sessionKey != nil {
-		err = r.Services.Subix.ExtendClientSession(*sessionKey, tokenExpiresAt)
+		err = r.Subix.ExtendClientSession(*sessionKey, tokenExpiresAt)
 		if err != nil {
 			println("RefreshTokens:", err) // debug
 		}

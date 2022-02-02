@@ -29,6 +29,7 @@ const (
 	// cache keys
 	CacheNextRunRegularScheduleAt
 	CacheCurrentReconnectionAttemptToLogDB
+	CacheScheduleInvites
 
 	// indicators
 	IndicatorLogger

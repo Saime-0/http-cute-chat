@@ -56,7 +56,6 @@ func (c *chain) checkAuth() *chain {
 }
 
 func (c *chain) getUserAgent() *chain {
-	//println("(chain)getUserAgent start!") // debug
 	c.r = c.r.WithContext(context.WithValue(
 		c.r.Context(),
 		res.CtxUserAgent,

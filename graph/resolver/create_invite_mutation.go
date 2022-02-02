@@ -30,13 +30,13 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать инвайт"), nil
 	}
-	go r.Services.Subix.NotifyChatMembers(
+	go r.Subix.NotifyChatMembers(
 		input.ChatID,
 		eventReadyInvite,
 	)
 
 	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); eventReadyInvite.ExpiresAt != nil && ok && *eventReadyInvite.ExpiresAt < runAt.(int64) {
-		r.Services.Subix.CreateScheduledInvite(input.ChatID, eventReadyInvite.Code, eventReadyInvite.ExpiresAt)
+		r.CreateScheduledInvite(input.ChatID, eventReadyInvite.Code, eventReadyInvite.ExpiresAt)
 	}
 
 	return resp.Success("инвайт создан"), nil
