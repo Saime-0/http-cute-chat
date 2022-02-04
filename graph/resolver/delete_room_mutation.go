@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) DeleteRoom(ctx context.Context, roomID int) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > DeleteRoom [rid:", roomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
 		chatID   int

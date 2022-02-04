@@ -14,8 +14,8 @@ import (
 )
 
 func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > AddChatToListenCollection [cid:", chatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID

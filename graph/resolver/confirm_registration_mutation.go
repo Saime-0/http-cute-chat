@@ -13,8 +13,8 @@ import (
 )
 
 func (r *mutationResolver) ConfirmRegistration(ctx context.Context, email string, code string) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > ConfirmRegistration [em:", email, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var regi = &models.RegisterData{}
 	if node.ValidEmail(email) ||

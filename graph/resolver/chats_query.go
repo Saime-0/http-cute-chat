@@ -5,14 +5,16 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 )
 
 func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params *model.Params) (model.ChatsResult, error) {
-	node := r.Piper.CreateNode("queryResolver > Chats [_]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Chats")
+	defer node.MethodTiming()
 
 	if node.ValidParams(&params) ||
 		find.ID != nil && node.ValidID(*find.ID) ||
@@ -23,7 +25,7 @@ func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params 
 
 	chats, err := r.Services.Repos.Chats.FindChats(&find, params)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалось получиться список чатов"), nil
+		return resp.Error(resp.ErrInternalServerError, "не удалось получить список чатов"), nil
 	}
 
 	return chats, nil

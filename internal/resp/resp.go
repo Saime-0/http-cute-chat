@@ -20,6 +20,12 @@ func Error(code ErrCode, msg string) *model.AdvancedError {
 		Error: msg,
 	}
 }
+func ErrorCopy(code ErrCode, msg string) model.AdvancedError {
+	return model.AdvancedError{
+		Code:  string(code),
+		Error: msg,
+	}
+}
 
 type ErrCode string
 

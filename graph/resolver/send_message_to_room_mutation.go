@@ -13,8 +13,9 @@ import (
 )
 
 func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, input model.CreateMessageInput) (model.SendMessageToRoomResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > SendMessageToRoom [rid:", roomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
 	var (
 		chatID   int
 		memberID int

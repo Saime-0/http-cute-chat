@@ -14,8 +14,8 @@ import (
 )
 
 func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserResult, error) {
-	node := r.Piper.CreateNode("chatResolver > Owner [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -35,8 +35,8 @@ func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserRe
 }
 
 func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsResult, error) {
-	node := r.Piper.CreateNode("chatResolver > Rooms [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   = obj.Unit.ID
@@ -56,8 +56,8 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 }
 
 func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.MembersResult, error) {
-	node := r.Piper.CreateNode("chatResolver > Members [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   = obj.Unit.ID
@@ -77,8 +77,8 @@ func (r *chatResolver) Members(ctx context.Context, obj *model.Chat) (model.Memb
 }
 
 func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesResult, error) {
-	node := r.Piper.CreateNode("chatResolver > Roles [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   = obj.Unit.ID
@@ -97,8 +97,8 @@ func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesR
 }
 
 func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.InvitesResult, error) {
-	node := r.Piper.CreateNode("chatResolver > Invites [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   = obj.Unit.ID
@@ -119,8 +119,8 @@ func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.Invi
 }
 
 func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.UsersResult, error) {
-	node := r.Piper.CreateNode("chatResolver > Banlist [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   = obj.Unit.ID
@@ -141,8 +141,8 @@ func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.User
 }
 
 func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberResult, error) {
-	node := r.Piper.CreateNode("chatResolver > Me [cid:", obj.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   = obj.Unit.ID
@@ -162,8 +162,8 @@ func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberRes
 }
 
 func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, error) {
-	node := r.Piper.CreateNode("meResolver > Chats [uid:", obj.User.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
@@ -176,8 +176,8 @@ func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, er
 }
 
 func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) (*model.Chats, error) {
-	node := r.Piper.CreateNode("meResolver > OwnedChats [uid:", obj.User.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
@@ -190,8 +190,8 @@ func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) (*model.Chat
 }
 
 func (r *memberResolver) Chat(ctx context.Context, obj *model.Member) (*model.Chat, error) {
-	node := r.Piper.CreateNode("memberResolver > Chat [uid:", obj.User.Unit.ID, ",cid:", obj.Chat.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	chatID := obj.Chat.Unit.ID
 
@@ -204,8 +204,8 @@ func (r *memberResolver) Chat(ctx context.Context, obj *model.Member) (*model.Ch
 }
 
 func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.RoleResult, error) {
-	node := r.Piper.CreateNode("memberResolver > Role [uid:", obj.User.Unit.ID, ",cid:", obj.Chat.Unit.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	memberID := obj.ID
 
@@ -215,8 +215,8 @@ func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.Rol
 }
 
 func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.Room, error) {
-	node := r.Piper.CreateNode("messageResolver > Room [mesid:", obj.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	roomID := obj.Room.RoomID
 
@@ -228,8 +228,8 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 }
 
 func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*model.Message, error) {
-	node := r.Piper.CreateNode("messageResolver > ReplyTo [mesid:", obj.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	if obj.ReplyTo == nil {
 		return nil, nil // так и надо
@@ -244,8 +244,8 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 }
 
 func (r *messageResolver) User(ctx context.Context, obj *model.Message) (*model.User, error) {
-	node := r.Piper.CreateNode("messageResolver > User [mesid:", obj.ID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	if obj.User == nil {
 		return nil, nil // так и надо
@@ -262,8 +262,8 @@ func (r *messageResolver) User(ctx context.Context, obj *model.Message) (*model.
 }
 
 func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (*model.Chat, error) {
-	node := r.Piper.CreateNode("roomResolver > Chat [rid:", obj.RoomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	chatID := obj.Chat.Unit.ID
 
@@ -276,8 +276,8 @@ func (r *roomResolver) Chat(ctx context.Context, obj *model.Room) (*model.Chat, 
 }
 
 func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFormResult, error) {
-	node := r.Piper.CreateNode("roomResolver > Form [rid:", obj.RoomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		roomID   = obj.RoomID
@@ -296,8 +296,8 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 }
 
 func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.AllowsResult, error) {
-	node := r.Piper.CreateNode("roomResolver > Allows [rid:", obj.RoomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	allows, err := r.Services.Repos.Rooms.Allows(obj.RoomID)
 	if err != nil {
@@ -308,8 +308,8 @@ func (r *roomResolver) Allows(ctx context.Context, obj *model.Room) (model.Allow
 }
 
 func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model.FindMessagesInRoom) (model.MessagesResult, error) {
-	node := r.Piper.CreateNode("roomResolver > Messages [rid:", obj.RoomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID

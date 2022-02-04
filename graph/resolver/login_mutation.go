@@ -17,8 +17,11 @@ import (
 )
 
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (model.LoginResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > Login [_]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Login")
+	defer node.MethodTiming()
 
 	var (
 		clientID   int

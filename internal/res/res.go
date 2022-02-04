@@ -25,6 +25,7 @@ const (
 	// ctx keys
 	CtxAuthData
 	CtxUserAgent
+	CtxNode
 
 	// cache keys
 	CacheNextRunRegularScheduleAt

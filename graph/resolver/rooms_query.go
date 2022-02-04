@@ -11,8 +11,8 @@ import (
 )
 
 func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error) {
-	node := r.Piper.CreateNode("queryResolver > Rooms [cid:", find.ChatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   = find.ChatID

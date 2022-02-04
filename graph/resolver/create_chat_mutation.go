@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateChatInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > CreateChat [_]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 

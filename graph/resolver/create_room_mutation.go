@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > CreateRoom [cid:", input.ChatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 

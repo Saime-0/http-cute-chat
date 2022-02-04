@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) CreateAllows(ctx context.Context, roomID int, input model.AllowsInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > CreateAllows [rid:", roomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID

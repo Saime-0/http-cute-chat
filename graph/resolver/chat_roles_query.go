@@ -12,8 +12,8 @@ import (
 )
 
 func (r *queryResolver) ChatRoles(ctx context.Context, chatID int) (model.ChatRolesResult, error) {
-	node := r.Piper.CreateNode("queryResolver > ChatRoles [cid:", chatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 

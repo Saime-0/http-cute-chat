@@ -11,8 +11,8 @@ import (
 )
 
 func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.UserRoleResult, error) {
-	node := r.Piper.CreateNode("queryResolver > MemberRole [mid:", memberID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID

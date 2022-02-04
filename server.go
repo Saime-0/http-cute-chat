@@ -115,7 +115,7 @@ func main() {
 	// init router and middlewares
 	router := mux.NewRouter()
 	router.Use(
-		middleware.Logging(cfg, logger, hlr),
+		middleware.InitNode(myResolver.Piper, logger, hlr),
 		middleware.ChainShip(cfg, logger, hlr),
 	)
 

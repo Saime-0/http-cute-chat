@@ -12,8 +12,11 @@ import (
 )
 
 func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateMeDataInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > UpdateMeData [_]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("UpdateMeData")
+	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 

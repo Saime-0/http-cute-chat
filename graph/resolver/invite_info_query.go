@@ -11,8 +11,8 @@ import (
 )
 
 func (r *queryResolver) InviteInfo(ctx context.Context, code string) (model.InviteInfoResult, error) {
-	node := r.Piper.CreateNode("queryResolver > InviteInfo [code:", code, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	if node.InviteIsRelevant(code) {
 		return node.Err, nil

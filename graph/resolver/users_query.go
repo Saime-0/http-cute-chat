@@ -10,8 +10,11 @@ import (
 )
 
 func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params *model.Params) (model.UsersResult, error) {
-	node := r.Piper.CreateNode("queryResolver > Users [_]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Users")
+	defer node.MethodTiming()
 
 	if node.ValidParams(&params) ||
 		find.ID != nil && node.ValidID(*find.ID) ||

@@ -16,8 +16,11 @@ import (
 )
 
 func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string, refreshToken string) (model.RefreshTokensResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > RefreshTokens [<token>]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("RefreshTokens")
+	defer node.MethodTiming()
 
 	sessionID, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
 	if err != nil {

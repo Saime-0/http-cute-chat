@@ -12,8 +12,11 @@ import (
 )
 
 func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
-	node := r.Piper.CreateNode("queryResolver > Me [_]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Me")
+	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 	me, err := r.Services.Repos.Users.Me(clientID)

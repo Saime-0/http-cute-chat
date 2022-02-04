@@ -14,8 +14,11 @@ import (
 )
 
 func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, listenChatCollection []int) (<-chan *model.SubscriptionBody, error) {
-	node := r.Piper.CreateNode("subscriptionResolver > NewEvent [_]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("NewEvent")
+	defer node.MethodTiming()
 
 	var (
 		authData    = utils.GetAuthDataFromCtx(ctx)

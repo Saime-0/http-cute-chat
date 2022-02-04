@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model.JoinByInviteResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > JoinByInvite [code:", code, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   int

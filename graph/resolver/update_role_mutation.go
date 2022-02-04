@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) UpdateRole(ctx context.Context, roleID int, input model.UpdateRoleInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > UpdateRole [rid:", roleID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   int

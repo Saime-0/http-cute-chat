@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) DeleteInvite(ctx context.Context, chatID int, code string) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > DeleteInvite [cid:", chatID, ",code:", code, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 

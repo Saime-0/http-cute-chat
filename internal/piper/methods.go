@@ -8,6 +8,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/internal/validator"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
@@ -31,7 +32,10 @@ func (n *Node) UserExists(userId int) (fail bool) {
 
 // ValidParams
 //  with side effect
-func (n *Node) ValidParams(params **model.Params) (fail bool) {
+func (n Node) ValidParams(params **model.Params) (fail bool) {
+	n.SwitchMethod(fmt.Sprint(utils.Fname()))
+	defer n.MethodTiming()
+
 	if *params == nil {
 		*params = &model.Params{
 			Limit:  kit.IntPtr(rules.MaxLimit), // ! unsafe
@@ -59,9 +63,12 @@ func (n *Node) ValidParams(params **model.Params) (fail bool) {
 	return
 }
 
-func (n *Node) ValidNameFragment(fragment string) (fail bool) {
+func (n Node) ValidNameFragment(fragment string) (fail bool) {
+	n.SwitchMethod(fmt.Sprint(utils.Fname()))
+	defer n.MethodTiming()
+
 	if !validator.ValidateNameFragment(fragment) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение для фрагмента имени")
+		*n.Err = resp.ErrorCopy(resp.ErrBadRequest, "недопустимое значение для фрагмента имени")
 		return true
 	}
 	return
@@ -74,9 +81,12 @@ func (n *Node) ValidNote(note string) (fail bool) {
 	return
 }
 
-func (n *Node) ValidID(id int) (fail bool) {
+func (n Node) ValidID(id int) (fail bool) {
+	n.SwitchMethod(fmt.Sprint(utils.Fname()))
+	defer n.MethodTiming()
+
 	if !validator.ValidateID(id) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недопустимое значение для id")
+		*n.Err = resp.ErrorCopy(resp.ErrBadRequest, "недопустимое значение для id")
 		return true
 	}
 	return
@@ -158,9 +168,12 @@ func (n *Node) ChatsLimit(userId int) (fail bool) {
 	return
 }
 
-func (n *Node) ValidDomain(domain string) (fail bool) {
+func (n Node) ValidDomain(domain string) (fail bool) {
+	n.SwitchMethod(fmt.Sprint(utils.Fname()))
+	defer n.MethodTiming()
+
 	if !validator.ValidateDomain(domain) {
-		n.Err = resp.Error(resp.ErrBadRequest, "невалидный домен")
+		*n.Err = resp.ErrorCopy(resp.ErrBadRequest, "невалидный домен")
 		return true
 	}
 	return

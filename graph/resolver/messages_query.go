@@ -12,8 +12,8 @@ import (
 )
 
 func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error) {
-	node := r.Piper.CreateNode("queryResolver > Messages [cid:", find.ChatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID

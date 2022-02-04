@@ -10,8 +10,11 @@ import (
 )
 
 func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params *model.Params) (model.UnitsResult, error) {
-	node := r.Piper.CreateNode("queryResolver > Units [_]")
-	defer node.Kill()
+	node := *r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Units")
+	defer node.MethodTiming()
 
 	var units *model.Units
 

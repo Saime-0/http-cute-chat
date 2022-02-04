@@ -8,9 +8,10 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/healer"
+	"github.com/saime-0/http-cute-chat/internal/piper"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/utils"
-	"go.mongodb.org/mongo-driver/bson"
+	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"net"
 	"net/http"
 	"strings"
@@ -64,21 +65,26 @@ func (c *chain) getUserAgent() *chain {
 	return c
 }
 
-func Logging(cfg *config.Config, logger *clog.Clog, hlr *healer.Healer) func(http.Handler) http.Handler {
+func InitNode(pip *piper.Pipeline, logger *clog.Clog, hlr *healer.Healer) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			start := time.Now()
-			wrapped := wrapResponseWriter(w)
-			next.ServeHTTP(wrapped, r)
-			hlr.MonitorLogger(logger.Debug(
-				bson.M{
-					"status":   wrapped.status,
-					"method":   r.Method,
-					"path":     r.URL.EscapedPath(),
-					"duration": time.Since(start).String(),
-				},
-			))
+			var (
+				start         = time.Now()
+				wrapped       = wrapResponseWriter(w)
+				node, request = pip.CreateNode(kit.RandomSecret(8))
+			)
+			defer node.Execute()
+
+			next.ServeHTTP(
+				wrapped,
+				r.WithContext(context.WithValue(r.Context(), res.CtxNode, node)),
+			)
+
+			request.Status = wrapped.status
+			request.Method = r.Method
+			request.Path = r.URL.EscapedPath()
+			request.Duration = time.Since(start).String()
 		})
 	}
 }

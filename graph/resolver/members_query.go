@@ -11,8 +11,8 @@ import (
 )
 
 func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (model.MembersResult, error) {
-	node := r.Piper.CreateNode("queryResolver > Members [cid:", find.ChatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   int

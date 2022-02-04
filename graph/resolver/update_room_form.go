@@ -14,8 +14,8 @@ import (
 )
 
 func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form *model.UpdateFormInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > UpdateRoomForm [rid:", roomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID

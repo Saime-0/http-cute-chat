@@ -13,8 +13,8 @@ import (
 )
 
 func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateInviteInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > CreateInvite [cid:", input.ChatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 

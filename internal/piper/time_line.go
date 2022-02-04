@@ -1,5 +1,6 @@
 package piper
 
+/*
 import (
 	"fmt"
 	"time"
@@ -53,4 +54,4 @@ func (p PointLine) String() string {
 		}
 	}
 	return str
-}
+} */

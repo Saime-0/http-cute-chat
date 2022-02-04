@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.JoinToChatResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > JoinToChat [cid:", chatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var clientID = utils.GetAuthDataFromCtx(ctx).UserID
 

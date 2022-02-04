@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRoleInput) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > CreateRole [cid:", input.ChatID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 

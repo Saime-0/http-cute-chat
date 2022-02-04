@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) DeleteAllow(ctx context.Context, allowID int) (model.MutationResult, error) {
-	node := r.Piper.CreateNode("mutationResolver > DeleteAllow [aid:", allowID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID

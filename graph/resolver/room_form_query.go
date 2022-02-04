@@ -12,8 +12,8 @@ import (
 )
 
 func (r *queryResolver) RoomForm(ctx context.Context, roomID int) (model.RoomFormResult, error) {
-	node := r.Piper.CreateNode("queryResolver > RoomForm [rid:", roomID, "]")
-	defer node.Kill()
+	node := r.Piper.NodeFromContext(ctx)
+	defer r.Piper.DeleteNode(*node.ID)
 
 	var (
 		chatID   int
