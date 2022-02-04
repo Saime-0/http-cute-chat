@@ -2,6 +2,7 @@ package piper
 
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/repository"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
@@ -27,6 +28,8 @@ type Method struct {
 	Duration string
 	Body     *Rows
 }
+
+var _ clog.Logger = (*Node)(nil)
 
 type Node struct {
 	repos  *repository.Repositories

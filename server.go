@@ -13,7 +13,6 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/resolver"
 	"github.com/saime-0/http-cute-chat/internal/cache"
-	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/email"
 	"github.com/saime-0/http-cute-chat/internal/healer"
@@ -42,16 +41,20 @@ func main() {
 	flag.Parse()
 	cfg := config.NewConfig(configpath)
 
-	// init logger
-	logger, err := clog.NewClog(cfg, clog.Multiple)
+	newSched := scheduler.NewScheduler()
+	newCache := cache.NewCache()
+
+	// init healer
+	hlr, err := healer.NewHealer(cfg, newSched, newCache)
 	if err != nil {
 		panic(err)
+		return
 	}
 
 	// init database
 	db, err := store.InitDB(cfg)
 	if err != nil {
-		logger.Emergency(err.Error())
+		hlr.Emergency(err.Error())
 		return
 	}
 	defer db.Close()
@@ -65,23 +68,15 @@ func main() {
 		cfg.SMTP.Port,
 	)
 	if err != nil {
-		logger.Emergency(err.Error())
+		hlr.Emergency(err.Error())
 		return
 	}
 	// init services
 	services := &service.Services{
 		Repos:     repository.NewRepositories(db),
-		Scheduler: scheduler.NewScheduler(),
+		Scheduler: newSched,
 		SMTP:      newSMTPSender,
-		Cache:     cache.NewCache(),
-		Logger:    logger,
-	}
-
-	// init healer
-	hlr, err := healer.NewHealer(cfg, services.Scheduler, services.Cache, services.Logger)
-	if err != nil {
-		logger.Emergency(err.Error())
-		return
+		Cache:     newCache,
 	}
 
 	// init subix
@@ -97,7 +92,7 @@ func main() {
 	}
 	err = myResolver.RegularSchedule(rules.DurationOfScheduleInterval)
 	if err != nil {
-		logger.Emergency(err.Error())
+		hlr.Emergency(err.Error())
 		return
 	}
 
@@ -115,8 +110,8 @@ func main() {
 	// init router and middlewares
 	router := mux.NewRouter()
 	router.Use(
-		middleware.InitNode(myResolver.Piper, logger, hlr),
-		middleware.ChainShip(cfg, logger, hlr),
+		middleware.InitNode(myResolver.Piper, hlr),
+		middleware.ChainShip(cfg, hlr),
 	)
 
 	// configure available request methods
@@ -144,10 +139,9 @@ func main() {
 	router.Handle("/", graphiql.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 
-	err = logger.Info(fmt.Sprintf("Server started on %s port", cfg.AppPort))
+	hlr.Info(fmt.Sprintf("Server started on %s port", cfg.AppPort))
+	err = http.ListenAndServe(":"+cfg.AppPort, router)
 	if err != nil {
-		logger.Emergency(err.Error())
-		return
+		hlr.Alert(err.Error())
 	}
-	logger.Alert(http.ListenAndServe(":"+cfg.AppPort, router).Error())
 }

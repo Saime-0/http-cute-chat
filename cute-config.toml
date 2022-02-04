@@ -14,6 +14,7 @@ host = "smtp.yandex.ru"
 port = 587
 
 [logger]
+output = 2
 level = "debug"
 mongo_db_cluster = "log-db.5qcx4.mongodb.net"
 db_name = "logs"

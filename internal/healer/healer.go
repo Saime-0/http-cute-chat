@@ -8,17 +8,25 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/pkg/fsm"
 	"github.com/saime-0/http-cute-chat/pkg/scheduler"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+var _ clog.Logger = (*Healer)(nil)
 
 type Healer struct {
 	stateMachine *fsm.Machine
 	cfg          *config.Config
 	sched        *scheduler.Scheduler
 	cache        *cache.Cache
-	logger       *clog.Clog
+
+	// logging
+	db     *mongo.Database
+	Level  clog.LogLevel
+	Output clog.Output
+	client *mongo.Client
 }
 
-func NewHealer(cfg *config.Config, sched *scheduler.Scheduler, cache *cache.Cache, logger *clog.Clog) (*Healer, error) {
+func NewHealer(cfg *config.Config, sched *scheduler.Scheduler, cache *cache.Cache) (*Healer, error) {
 	machine, err := fsm.NewMachine()
 	if err != nil {
 		return nil, errors.Wrap(err, res.FailedToCreateHealer)
@@ -28,13 +36,13 @@ func NewHealer(cfg *config.Config, sched *scheduler.Scheduler, cache *cache.Cach
 		cfg:          cfg,
 		sched:        sched,
 		cache:        cache,
-		logger:       logger,
 	}
 
-	err = h.prepareHealer()
-	if err != nil {
+	if h.prepareHealer() != nil {
 		return nil, errors.Wrap(err, res.FailedToPrepareHealer)
 	}
-
+	if h.PrepareLogging(cfg) != nil {
+		return nil, errors.Wrap(err, "не удалось настроить логирование")
+	}
 	return h, nil
 }

@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/saime-0/http-cute-chat/internal/clog"
 	"os"
 	"strings"
 )
@@ -33,11 +34,12 @@ type SMTP struct {
 }
 
 type Logger struct {
-	Level           string `toml:"level"`
-	MongoDBPassword string `toml:"mongo_db_password"`
-	MongoDBUser     string `toml:"mongo_db_user"`
-	MongoDBCluster  string `toml:"mongo_db_cluster"`
-	DBName          string `toml:"db_name"`
+	Output          clog.Output `toml:"output"`
+	Level           string      `toml:"level"`
+	MongoDBPassword string      `toml:"mongo_db_password"`
+	MongoDBUser     string      `toml:"mongo_db_user"`
+	MongoDBCluster  string      `toml:"mongo_db_cluster"`
+	DBName          string      `toml:"db_name"`
 }
 
 var defaultConfig = &Config{
@@ -56,6 +58,7 @@ var defaultConfig = &Config{
 		Port: 0,
 	},
 	Logger: Logger{
+		Output:          clog.Multiple,
 		Level:           "debug",
 		MongoDBPassword: os.Getenv("LOGDB_PASSWORD"),
 		MongoDBUser:     os.Getenv("LOGDB_USER"),

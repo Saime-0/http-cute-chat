@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/saime-0/http-cute-chat/internal/cache"
-	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/email"
 	"github.com/saime-0/http-cute-chat/internal/repository"
 	"github.com/saime-0/http-cute-chat/pkg/scheduler"
@@ -13,5 +12,4 @@ type Services struct {
 	Scheduler *scheduler.Scheduler
 	SMTP      *email.SMTPSender
 	Cache     *cache.Cache
-	Logger    *clog.Clog
 }

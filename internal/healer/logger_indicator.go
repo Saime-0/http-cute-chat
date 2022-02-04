@@ -25,7 +25,7 @@ func (h *Healer) createLoggerIndicator() (err error) {
 
 func (h *Healer) loggerStateOK() *fsm.State {
 	return fsm.NewState(func(_ *fsm.Indicator) error { // когда возвращается в нормальное состояние
-		h.logger.Notice(res.ConnectionToTheLogDBHasBeenSuccessfullyRestored)
+		h.Notice(res.ConnectionToTheLogDBHasBeenSuccessfullyRestored)
 		return nil
 	})
 }
@@ -34,10 +34,10 @@ func (h *Healer) loggerStateFailedDBConnection() *fsm.State {
 	return fsm.NewState(func(indicator *fsm.Indicator) error { // пропало соединение с бд данных, а возможно и в чем то другом проблема надо проверить
 
 		go func() {
-			h.logger.Info(res.StartingLogDBConnectionRecoveryService)
+			h.Info(res.StartingLogDBConnectionRecoveryService)
 
 			for i := 0; i < rules.AllowedConnectionShutdownDuration/2; i++ {
-				err := h.logger.PingDB()
+				err := h.PingDB()
 				if err == nil {
 					err = indicator.SetState(res.OK)
 					if err != nil {
@@ -49,7 +49,7 @@ func (h *Healer) loggerStateFailedDBConnection() *fsm.State {
 				time.Sleep(time.Second * 2)
 			}
 
-			h.logger.Alert(res.ConnectionToDatabaseCouldNotBeRestored)
+			h.Alert(res.ConnectionToDatabaseCouldNotBeRestored)
 		}()
 		return nil
 	})

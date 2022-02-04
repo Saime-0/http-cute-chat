@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/piper"
@@ -19,27 +18,24 @@ import (
 )
 
 type chain struct {
-	r      *http.Request
-	cfg    *config.Config
-	logger *clog.Clog
-	hlr    *healer.Healer
+	r   *http.Request
+	cfg *config.Config
+	hlr *healer.Healer
 }
 
-func ChainShip(cfg *config.Config, logger *clog.Clog, hlr *healer.Healer) func(http.Handler) http.Handler {
+func ChainShip(cfg *config.Config, hlr *healer.Healer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := &chain{
-				r:      r,
-				cfg:    cfg,
-				logger: logger,
-				hlr:    hlr,
+				r:   r,
+				cfg: cfg,
+				hlr: hlr,
 			}
 
 			if r.Header.Get("Sec-Websocket-Protocol") != "graphql-ws" {
 				c.checkAuth().getUserAgent()
 			} else {
-				err := c.logger.Debug("connection switched to websocket!")
-				c.hlr.MonitorLogger(err)
+				c.hlr.Debug("connection switched to websocket!")
 			}
 
 			next.ServeHTTP(w, c.r)
@@ -50,7 +46,7 @@ func ChainShip(cfg *config.Config, logger *clog.Clog, hlr *healer.Healer) func(h
 func (c *chain) checkAuth() *chain {
 	ctx, err := auth(c.r.Context(), c.cfg, c.r.Header.Get("Authorization"))
 	if err != nil {
-		c.hlr.MonitorLogger(c.logger.Debug(err))
+		c.hlr.Debug(err)
 	}
 	c.r = c.r.WithContext(ctx)
 	return c
@@ -65,7 +61,7 @@ func (c *chain) getUserAgent() *chain {
 	return c
 }
 
-func InitNode(pip *piper.Pipeline, logger *clog.Clog, hlr *healer.Healer) func(http.Handler) http.Handler {
+func InitNode(pip *piper.Pipeline, hlr *healer.Healer) func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
