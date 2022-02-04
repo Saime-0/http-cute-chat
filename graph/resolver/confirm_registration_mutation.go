@@ -5,29 +5,32 @@ package resolver
 
 import (
 	"context"
-	"fmt"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (r *mutationResolver) ConfirmRegistration(ctx context.Context, email string, code string) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("ConfirmRegistration", &bson.M{
+		"email": email,
+		"code":  code,
+	})
+	defer node.MethodTiming()
 
 	var regi = &models.RegisterData{}
 	if node.ValidEmail(email) ||
 		node.GetRegistrationSession(email, code, &regi) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
-	fmt.Printf("RegisterData: %#v\n", regi) // debug
 	err := r.Services.Repos.Users.CreateUser(regi)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удлось создать пользователя"), nil
 	}
 
-	fmt.Printf("email: %s\n", email) // debug
 	r.Services.Repos.Users.DeleteRegistrationSession(email)
 
 	return resp.Success("пользователь создан"), nil

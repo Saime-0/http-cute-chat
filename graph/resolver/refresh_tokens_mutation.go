@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -19,7 +20,10 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("RefreshTokens")
+	node.SwitchMethod("RefreshTokens", &bson.M{
+		"sessionKey":   sessionKey,
+		"refreshToken": refreshToken,
+	})
 	defer node.MethodTiming()
 
 	sessionID, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)

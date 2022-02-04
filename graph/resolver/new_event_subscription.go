@@ -6,6 +6,7 @@ package resolver
 import (
 	"context"
 	"errors"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -17,7 +18,10 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, 
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("NewEvent")
+	node.SwitchMethod("NewEvent", &bson.M{
+		"sessionKey":           sessionKey,
+		"listenChatCollection": listenChatCollection,
+	})
 	defer node.MethodTiming()
 
 	var (
@@ -32,7 +36,7 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, 
 	listenChatCollection = kit.GetUniqueInts(listenChatCollection) // избавляемся от повторяющихся значений
 	if node.ValidSessionKey(sessionKey) ||
 		node.UserHasAccessToChats(authData.UserID, &listenChatCollection, &userMembers) {
-		return nil, errors.New(node.Err.Error)
+		return nil, errors.New(node.GetError().Error)
 	}
 
 	client, err := r.Subix.Sub(

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,14 @@ import (
 )
 
 func (r *mutationResolver) DeleteInvite(ctx context.Context, chatID int, code string) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("DeleteInvite", &bson.M{
+		"chatID": chatID,
+		"code":   code,
+	})
+	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
@@ -22,7 +29,7 @@ func (r *mutationResolver) DeleteInvite(ctx context.Context, chatID int, code st
 		node.CanCreateInvite(clientID, chatID) ||
 		node.HasInvite(chatID, code) ||
 		node.InviteIsRelevant(code) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyInvite, err := r.Services.Repos.Chats.DeleteInvite(code)

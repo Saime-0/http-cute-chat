@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,13 @@ import (
 )
 
 func (r *mutationResolver) DeleteRole(ctx context.Context, roleID int) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("DeleteRole", &bson.M{
+		"roleID": roleID,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -22,7 +28,7 @@ func (r *mutationResolver) DeleteRole(ctx context.Context, roleID int) (model.Mu
 
 	if node.GetChatIDByRole(roleID, &chatID) ||
 		node.CanCreateRole(clientID, chatID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyRole, err := r.Services.Repos.Chats.DeleteRole(roleID)

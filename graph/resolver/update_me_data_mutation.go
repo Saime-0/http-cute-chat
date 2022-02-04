@@ -5,6 +5,9 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/res"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -15,7 +18,9 @@ func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateM
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("UpdateMeData")
+	node.SwitchMethod("UpdateMeData", &bson.M{
+		"input": input,
+	})
 	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
@@ -27,12 +32,14 @@ func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateM
 			var err error
 			*input.Password, err = utils.HashPassword(*input.Password, r.Config.PasswordSalt)
 			if err != nil {
-				panic(err)
+				node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				node.SetError(resp.ErrInternalServerError, res.UnexpectedError)
+				return true
 			}
 			return false
 		}()) ||
 		input.Email != nil && node.ValidDomain(*input.Email) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyUser, err := r.Services.Repos.Users.UpdateMe(clientID, &input)

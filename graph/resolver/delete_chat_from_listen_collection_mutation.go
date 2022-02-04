@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,14 @@ import (
 )
 
 func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("DeleteChatFromListenCollection", &bson.M{
+		"sessionKey": sessionKey,
+		"chatID":     chatID,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -24,7 +31,7 @@ func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, s
 		node.ValidID(chatID) ||
 		node.ChatExists(chatID) ||
 		node.GetMemberBy(clientID, chatID, &memberID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	err := r.Subix.DeleteChatFromListenCollection(sessionKey, memberID)

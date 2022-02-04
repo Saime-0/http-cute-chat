@@ -5,17 +5,23 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 )
 
 func (r *queryResolver) InviteInfo(ctx context.Context, code string) (model.InviteInfoResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
+	node.SwitchMethod("InviteInfo", &bson.M{
+		"code": code,
+	})
+	defer node.MethodTiming()
+
 	if node.InviteIsRelevant(code) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	info, err := r.Services.Repos.Chats.InviteInfo(code)

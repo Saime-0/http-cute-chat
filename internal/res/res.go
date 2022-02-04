@@ -39,15 +39,3 @@ const (
 	FailedDBConnection
 	RepairingConnection
 )
-
-type LogField string
-
-const (
-	RequestID  LogField = "requestID"
-	UserID     LogField = "userID"
-	SessionKey LogField = "sessionKey"
-	Desc       LogField = "desc"
-	Loc        LogField = "loc"
-)
-
-type LogMsg map[LogField]interface{}

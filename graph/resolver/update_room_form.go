@@ -6,6 +6,7 @@ package resolver
 import (
 	"context"
 	"encoding/json"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -14,8 +15,14 @@ import (
 )
 
 func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form *model.UpdateFormInput) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("UpdateRoomForm", &bson.M{
+		"roomID": roomID,
+		"form":   form,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -27,7 +34,7 @@ func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form 
 		node.IsMember(clientID, chatID) ||
 		node.CanUpdateRoom(clientID, chatID) ||
 		form != nil && node.ValidForm(form) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	var (

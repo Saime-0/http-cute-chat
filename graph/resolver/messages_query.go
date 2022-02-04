@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -12,8 +13,13 @@ import (
 )
 
 func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, params *model.Params) (model.MessagesResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Messages", &bson.M{
+		"find": find,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -28,7 +34,7 @@ func (r *queryResolver) Messages(ctx context.Context, find model.FindMessages, p
 		find.RoomID != nil && node.ValidID(*find.RoomID) ||
 		find.UserID != nil && node.ValidID(*find.UserID) ||
 		node.GetAllowHolder(clientID, chatID, &holder) { // todo bodyfragment valid
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	messages = r.Services.Repos.Chats.FindMessages(&find, params, &holder)

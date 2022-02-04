@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -19,13 +20,15 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Register")
+	node.SwitchMethod("Register", &bson.M{
+		"input": input,
+	})
 	defer node.MethodTiming()
 
 	if node.ValidRegisterInput(&input) ||
 		node.DomainIsFree(input.Domain) ||
 		node.EmailIsFree(input.Email) {
-		return node.Err, nil
+		return node.GetError(), nil
 
 	}
 	expAt := time.Now().Unix() + rules.LiftimeOfRegistrationSession

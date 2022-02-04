@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -13,8 +14,14 @@ import (
 )
 
 func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, input model.CreateMessageInput) (model.SendMessageToRoomResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("SendMessageToRoom", &bson.M{
+		"roomID": roomID,
+		"input":  input,
+	})
+	defer node.MethodTiming()
 
 	var (
 		chatID   int
@@ -31,7 +38,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		node.GetAllowHolder(clientID, chatID, &holder) ||
 		node.IsAllowedTo(model.ActionTypeWrite, roomID, &holder) ||
 		r.Services.Repos.Rooms.FormIsSet(roomID) && node.HandleChoice(input.Body, roomID, &input.Body) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 	println(clientID, "clientID\n", memberID, "memberID\n", chatID, "chatID\n")
 	// todo if message is anonimus or room

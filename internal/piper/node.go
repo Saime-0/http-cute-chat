@@ -5,6 +5,7 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/repository"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"go.mongodb.org/mongo-driver/bson"
 	"time"
@@ -24,6 +25,7 @@ type Request struct {
 
 type Method struct {
 	Method   string
+	Vars     *bson.M
 	startAt  time.Time
 	Duration string
 	Body     *Rows
@@ -34,7 +36,7 @@ var _ clog.Logger = (*Node)(nil)
 type Node struct {
 	repos  *repository.Repositories
 	Healer *healer.Healer
-	Err    *model.AdvancedError
+	err    **model.AdvancedError
 
 	ID            *string
 	RootContainer interface{}
@@ -54,6 +56,7 @@ func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
 	n := &Node{
 		repos:  p.repos,
 		Healer: p.healer,
+		err:    new(*model.AdvancedError),
 
 		ID: &id,
 		RootContainer: bson.M{
@@ -77,9 +80,10 @@ func (n *Node) Execute() {
 	n.Healer.Log(n.RootContainer)
 }
 
-func (n *Node) SwitchMethod(name string) {
+func (n *Node) SwitchMethod(name string, vars *bson.M) {
 	meth := &Method{
 		Method:  name,
+		Vars:    vars,
 		Body:    &Rows{},
 		startAt: time.Now(),
 	}
@@ -92,4 +96,11 @@ func (n *Node) MethodTiming() {
 	if n.ScopeMethod != nil {
 		n.ScopeMethod.Duration = time.Since(n.ScopeMethod.startAt).String()
 	}
+}
+
+func (n Node) SetError(code resp.ErrCode, msg string) {
+	*n.err = resp.Error(resp.ErrBadRequest, "недостаточно прав на это действие")
+}
+func (n Node) GetError() *model.AdvancedError {
+	return *n.err
 }

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,13 @@ import (
 )
 
 func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.JoinToChatResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("JoinToChat", &bson.M{
+		"chatID": chatID,
+	})
+	defer node.MethodTiming()
 
 	var clientID = utils.GetAuthDataFromCtx(ctx).UserID
 
@@ -23,7 +29,7 @@ func (r *mutationResolver) JoinToChat(ctx context.Context, chatID int) (model.Jo
 		node.ChatIsNotPrivate(chatID) ||
 		node.MembersLimit(chatID) ||
 		node.ChatsLimit(clientID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 	eventReadyMember, err := r.Services.Repos.Chats.AddUserToChat(clientID, chatID)
 	if err != nil {

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,14 @@ import (
 )
 
 func (r *mutationResolver) UpdateMember(ctx context.Context, memberID int, input model.UpdateMemberInput) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("UpdateMember", &bson.M{
+		"memberID": memberID,
+		"input":    input,
+	})
+	defer node.MethodTiming()
 
 	var (
 		chatID   int
@@ -24,7 +31,7 @@ func (r *mutationResolver) UpdateMember(ctx context.Context, memberID int, input
 		input.RoleID != nil && node.CanGiveRole(clientID, chatID) && node.RoleExists(chatID, *input.RoleID) ||
 		input.Char != nil && node.CanGiveChar(clientID, chatID) ||
 		input.Muted != nil && node.CanMuteMember(clientID, chatID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyMember, err := r.Services.Repos.Chats.UpdateMember(memberID, &input)

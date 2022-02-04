@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,13 @@ import (
 )
 
 func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("CreateRoom", &bson.M{
+		"input": input,
+	})
+	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
@@ -24,7 +30,7 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 		input.Parent != nil && node.IsNotChild(*input.Parent) ||
 		input.Parent != nil && node.RoomExists(*input.Parent) ||
 		input.Allows != nil && node.ValidRoomAllows(input.ChatID, input.Allows) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyRoom, err := r.Services.Repos.Rooms.CreateRoom(&input)

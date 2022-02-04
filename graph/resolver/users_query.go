@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
@@ -13,14 +14,17 @@ func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params 
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Users")
+	node.SwitchMethod("Users", &bson.M{
+		"find":   find,
+		"params": params,
+	})
 	defer node.MethodTiming()
 
 	if node.ValidParams(&params) ||
 		find.ID != nil && node.ValidID(*find.ID) ||
 		find.Domain != nil && node.ValidDomain(*find.Domain) ||
 		find.NameFragment != nil && node.ValidNameFragment(*find.NameFragment) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	users := r.Services.Repos.Users.FindUsers(&find)

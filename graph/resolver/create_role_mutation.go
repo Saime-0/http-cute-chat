@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,13 @@ import (
 )
 
 func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRoleInput) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("CreateRole", &bson.M{
+		"input": input,
+	})
+	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
@@ -21,7 +27,7 @@ func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRol
 		node.IsMember(clientID, input.ChatID) ||
 		node.CanCreateRole(clientID, input.ChatID) ||
 		node.RolesLimit(input.ChatID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyRole, err := r.Services.Repos.Chats.CreateRoleInChat(&input)

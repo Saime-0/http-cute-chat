@@ -7,24 +7,31 @@ import (
 	"context"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params *model.Params) (model.ChatsResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Chats")
+	node.SwitchMethod("Chats", &bson.M{
+		"find":   find,
+		"params": params,
+	})
 	defer node.MethodTiming()
+
+	//node.Debug(errors.Wrap(errors.New("debuging error testing"), utils.GetCallerPos()))
 
 	if node.ValidParams(&params) ||
 		find.ID != nil && node.ValidID(*find.ID) ||
 		find.Domain != nil && node.ValidDomain(*find.Domain) ||
 		find.NameFragment != nil && node.ValidNameFragment(*find.NameFragment) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	chats, err := r.Services.Repos.Chats.FindChats(&find, params)
 	if err != nil {
+		//node.Alert()
 		return resp.Error(resp.ErrInternalServerError, "не удалось получить список чатов"), nil
 	}
 

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/res"
@@ -13,8 +14,13 @@ import (
 )
 
 func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateInviteInput) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("CreateInvite", &bson.M{
+		"input": input,
+	})
+	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 
@@ -23,7 +29,7 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 		node.CanCreateInvite(clientID, input.ChatID) ||
 		node.InvitesLimit(input.ChatID) ||
 		node.ValidInviteInput(input) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyInvite, err := r.Services.Repos.Chats.CreateInvite(&input)

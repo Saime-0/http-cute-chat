@@ -8,4 +8,5 @@ const (
 	ConnectionToDatabaseCouldNotBeRestored          = "не удалось восстановить соединение с базой данных"
 	ConnectionToTheLogDBHasBeenSuccessfullyRestored = "соединение с LogDB успешно восстановлено"
 	StartingLogDBConnectionRecoveryService          = "запуск службы восстановления соединения с LogDB"
+	UnexpectedError                                 = "епредвиденная ошибка"
 )

@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,14 @@ import (
 )
 
 func (r *mutationResolver) CreateAllows(ctx context.Context, roomID int, input model.AllowsInput) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("ConfirmRegistration", &bson.M{
+		"roomID": roomID,
+		"input":  input,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -26,7 +33,7 @@ func (r *mutationResolver) CreateAllows(ctx context.Context, roomID int, input m
 		node.CanCreateAllow(clientID, chatID) ||
 		node.AllowsNotExists(roomID, &input) ||
 		node.ValidRoomAllows(chatID, &input) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyAllow, err := r.Services.Repos.Rooms.CreateAllows(roomID, &input)

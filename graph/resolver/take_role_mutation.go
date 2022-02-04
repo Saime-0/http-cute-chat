@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,13 @@ import (
 )
 
 func (r *mutationResolver) TakeRole(ctx context.Context, memberID int) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("TakeRole", &bson.M{
+		"memberID": memberID,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID       = utils.GetAuthDataFromCtx(ctx).UserID
@@ -25,7 +31,7 @@ func (r *mutationResolver) TakeRole(ctx context.Context, memberID int) (model.Mu
 		node.GetChatIDByMember(memberID, &chatID) ||
 		node.GetMemberBy(clientID, chatID, &clientMemberID) ||
 		node.CanTakeRole(clientMemberID, memberID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyMember, err := r.Services.Repos.Chats.TakeRole(memberID)

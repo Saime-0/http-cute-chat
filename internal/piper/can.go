@@ -73,7 +73,7 @@ func (n *Node) CanMuteMember(uid, cid int) (fail bool) {
 
 func (n *Node) CanLeaveFromChat(uid, cid int) (fail bool) {
 	if n.repos.Chats.UserIsChatOwner(uid, cid) {
-		n.Err = resp.Error(resp.ErrBadRequest, "невозможно выйти из чата")
+		n.SetError(resp.ErrBadRequest, "невозможно выйти из чата")
 		return
 	}
 	return true

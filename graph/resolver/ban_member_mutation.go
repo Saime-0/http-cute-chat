@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -13,8 +14,13 @@ import (
 )
 
 func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("BanMember", &bson.M{
+		"memberID": memberID,
+	})
+	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 	var (
@@ -23,7 +29,7 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 
 	if node.GetDefMember(memberID, &member) ||
 		node.CanBan(clientID, member.UserID, member.ChatID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 	if r.Services.Repos.Chats.AddToBanlist(member.UserID, member.ChatID) != nil {
 		return resp.Error(resp.ErrInternalServerError, "не удалось забанить пользователя"), nil

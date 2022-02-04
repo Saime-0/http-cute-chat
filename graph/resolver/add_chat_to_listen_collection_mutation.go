@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -14,8 +15,14 @@ import (
 )
 
 func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("AddChatToListenCollection", &bson.M{
+		"sessionKey": sessionKey,
+		"chatID":     chatID,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -28,7 +35,7 @@ func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, sessio
 	if node.ValidSessionKey(sessionKey) ||
 		node.ChatExists(chatID) ||
 		node.GetMemberBy(clientID, chatID, subuser.MemberID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	err := r.Subix.AddListenChat(sessionKey, subuser)

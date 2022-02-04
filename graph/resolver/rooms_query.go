@@ -5,14 +5,21 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 )
 
 func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params *model.Params) (model.RoomsResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Rooms", &bson.M{
+		"find":   find,
+		"params": params,
+	})
+	defer node.MethodTiming()
 
 	var (
 		chatID   = find.ChatID
@@ -25,7 +32,7 @@ func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params 
 		node.IsMember(clientID, chatID) ||
 		find.RoomID != nil && node.ValidID(*find.RoomID) ||
 		find.ParentID != nil && node.ValidID(*find.ParentID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	rooms = r.Services.Repos.Rooms.FindRooms(&find, params)

@@ -5,7 +5,6 @@ package resolver
 
 import (
 	"context"
-
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -15,7 +14,7 @@ func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Me")
+	node.SwitchMethod("Me", nil)
 	defer node.MethodTiming()
 
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID

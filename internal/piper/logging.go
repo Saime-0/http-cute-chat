@@ -1,6 +1,7 @@
 package piper
 
 import (
+	"fmt"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 )
 
@@ -16,11 +17,12 @@ func NewLoggingRow(lvl string, body interface{}) *LoggingRow {
 	}
 }
 
-func (n Node) addLoggingRowToScope(level clog.LogLevel, document interface{}) {
+func (n *Node) addLoggingRowToScope(level clog.LogLevel, document interface{}) {
+
 	if n.scope != nil {
 		*n.scope = append(*n.scope, NewLoggingRow(
 			level.String(),
-			document,
+			fmt.Sprint(document),
 		))
 	}
 }

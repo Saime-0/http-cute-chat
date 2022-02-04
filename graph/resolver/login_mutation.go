@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -20,7 +21,9 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Login")
+	node.SwitchMethod("Login", &bson.M{
+		"input": input,
+	})
 	defer node.MethodTiming()
 
 	var (
@@ -39,7 +42,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 
 	if node.UserExistsByRequisites(requisites) ||
 		node.GetUserIDByRequisites(requisites, &clientID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	var (

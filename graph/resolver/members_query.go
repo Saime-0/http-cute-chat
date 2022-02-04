@@ -5,14 +5,20 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 )
 
 func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (model.MembersResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("Members", &bson.M{
+		"find": find,
+	})
+	defer node.MethodTiming()
 
 	var (
 		chatID   int
@@ -24,7 +30,7 @@ func (r *queryResolver) Members(ctx context.Context, find model.FindMembers) (mo
 		node.IsMember(clientID, chatID) ||
 		find.MemberID != nil && node.ValidID(*find.MemberID) ||
 		find.RoleID != nil && node.ValidID(*find.RoleID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	members = r.Services.Repos.Chats.FindMembers(&find)

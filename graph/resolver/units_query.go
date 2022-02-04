@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
@@ -13,7 +14,10 @@ func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params 
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
-	node.SwitchMethod("Units")
+	node.SwitchMethod("Units", &bson.M{
+		"find":   find,
+		"params": params,
+	})
 	defer node.MethodTiming()
 
 	var units *model.Units
@@ -22,7 +26,7 @@ func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params 
 		find.ID != nil && node.ValidID(*find.ID) ||
 		find.NameFragment != nil && node.ValidNameFragment(*find.NameFragment) ||
 		find.Domain != nil && node.ValidNameFragment(*find.Domain) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	units = r.Services.Repos.Units.FindUnits(&find, params)

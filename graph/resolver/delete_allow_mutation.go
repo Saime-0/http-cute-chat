@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -12,8 +13,13 @@ import (
 )
 
 func (r *mutationResolver) DeleteAllow(ctx context.Context, allowID int) (model.MutationResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("CreateRoom", &bson.M{
+		"allowID": allowID,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -24,7 +30,7 @@ func (r *mutationResolver) DeleteAllow(ctx context.Context, allowID int) (model.
 		node.GetChatIDByAllow(allowID, &chatID) ||
 		node.IsMember(clientID, chatID) ||
 		node.CanCreateAllow(clientID, chatID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 
 	eventReadyAllow, err := r.Services.Repos.Rooms.DeleteAllow(allowID)

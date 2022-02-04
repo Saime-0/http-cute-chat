@@ -5,14 +5,20 @@ package resolver
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 )
 
 func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.UserRoleResult, error) {
-	node := r.Piper.NodeFromContext(ctx)
+	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
+
+	node.SwitchMethod("MemberRole", &bson.M{
+		"memberID": memberID,
+	})
+	defer node.MethodTiming()
 
 	var (
 		clientID = utils.GetAuthDataFromCtx(ctx).UserID
@@ -21,7 +27,7 @@ func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.Use
 
 	if node.GetChatIDByMember(memberID, &chatID) ||
 		node.IsMember(clientID, chatID) {
-		return node.Err, nil
+		return node.GetError(), nil
 	}
 	role := r.Services.Repos.Chats.MemberRole(memberID)
 

@@ -28,22 +28,22 @@ const (
 func (n *Node) diffLevelCheck(applyToOwner, applyToSelfChar bool, minCharLevel mlevel, master, slave *models.DemoMember) (bad bool) {
 	fmt.Printf("%#v\n%#v\n", master, slave) // debug
 	if master == nil || slave == nil {
-		n.Err = resp.Error(resp.ErrBadRequest, "мемберса не существует")
+		n.SetError(resp.ErrBadRequest, "мемберса не существует")
 		return true
 	}
 	if !applyToOwner && slave.IsOwner {
-		n.Err = resp.Error(resp.ErrBadRequest, "невозможно применить на этого участника")
+		n.SetError(resp.ErrBadRequest, "невозможно применить на этого участника")
 		return true
 	}
 	if master.IsOwner {
 		return false
 	}
 	if !applyToSelfChar && (charLevels[master.Char] == charLevels[slave.Char]) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостотачный уровень")
+		n.SetError(resp.ErrBadRequest, "недостотачный уровень")
 		return true
 	}
 	if charLevels[master.Char] < charLevels[charPtr(minCharLevel)] && charLevels[master.Char] < charLevels[slave.Char] {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостотачный уровень")
+		n.SetError(resp.ErrBadRequest, "недостотачный уровень")
 		return true
 	}
 	return false
@@ -51,11 +51,11 @@ func (n *Node) diffLevelCheck(applyToOwner, applyToSelfChar bool, minCharLevel m
 
 func (n *Node) levelCheck(minCharLevel mlevel, demo *models.DemoMember) (bad bool) {
 	if demo == nil {
-		n.Err = resp.Error(resp.ErrBadRequest, "не является участником чата")
+		n.SetError(resp.ErrBadRequest, "не является участником чата")
 		return true
 	}
 	if !(demo.IsOwner || charLevels[demo.Char] >= charLevels[charPtr(minCharLevel)]) {
-		n.Err = resp.Error(resp.ErrBadRequest, "недостаточно прав")
+		n.SetError(resp.ErrBadRequest, "недостаточно прав")
 		return true
 	}
 	return false
