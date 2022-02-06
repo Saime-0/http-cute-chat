@@ -5,56 +5,77 @@ import (
 	"github.com/lib/pq"
 )
 
-type UserIsChatMemberInp struct {
-	UserID int
-	ChatID int
-}
+func (r *UserIsChatMemberResult) IsRequestResult() {}
+func (r *UserIsChatMemberInp) IsRequestInput()     {}
 
-type UserIsChatMemberResult struct {
-	Exists bool
-}
+type (
+	UserIsChatMemberInp struct {
+		UserID int
+		ChatID int
+	}
+	UserIsChatMemberResult struct {
+		Exists bool
+	}
+)
 
-func (r *UserIsChatMemberCategory) AddRequest(userID, chatID int) chan *UserIsChatMemberResult {
-	newClient := make(chan *UserIsChatMemberResult)
+func (c *ParentCategory) AddUserIsChatMemberRequest(userID, chatID int) BaseResultChan {
+	//newClient := make(chan *UserIsChatMemberResult)
+	//
+	//c.Lock()
+	//c.Requests[fmt.Sprint(newClient)] = &UserIsChatMemberRequest{
+	//	Ch: newClient,
+	//	Inp: UserIsChatMemberInp{
+	//		UserID: userID,
+	//		ChatID: chatID,
+	//	},
+	//	Result: &UserIsChatMemberResult{},
+	//}
+	//c.Unlock()
+	//
+	//defer c.OnAddRequest()
+	//return newClient
 
-	r.Requests[fmt.Sprint(newClient)] = &UserIsChatMemberRequest{
+	newClient := make(BaseResultChan)
+	c.Lock()
+	c.Requests[fmt.Sprint(newClient)] = &BaseRequest{
 		Ch: newClient,
-		Inp: UserIsChatMemberInp{
-			UserID: userID,
+		Inp: &UserIsChatMemberInp{
 			ChatID: chatID,
 		},
-		Result: &UserIsChatMemberResult{},
+		Result: &UserIsChatMemberResult{Exists: false},
 	}
+	c.Unlock()
 
-	defer r.OnAddRequest()
+	go c.OnAddRequest()
 	return newClient
 }
 
 func (d *Dataloader) UserIsChatMember(userID, chatID int) (bool, error) {
-	res := <-d.Categories.UserIsChatMember.AddRequest(userID, chatID)
+
+	res := <-d.Categories.UserIsChatMember.AddUserIsChatMemberRequest(userID, chatID)
 	if res == nil {
-		println("реквест выполнился с ошибкой видимо") // debug
+		println("реквест выполнился с ошибкой видимо", d.Categories.UserIsChatMember.Error) // debug
 		return false, d.Categories.UserIsChatMember.Error
 	}
 	println("реквест выполнился нормально") // debug
-	return res.Exists, nil
+	return res.(*UserIsChatMemberResult).Exists, nil
 }
 
-func (r *UserIsChatMemberCategory) userIsChatMember() {
+func (c *ParentCategory) userIsChatMember() {
 	var (
-		inp = r.Requests
+		inp = c.Requests
 
 		ptrs    []chanPtr
 		userIDs []int
 		chatIDs []int
 	)
 	for _, query := range inp {
-		userIDs = append(userIDs, query.Inp.UserID)
-		chatIDs = append(chatIDs, query.Inp.ChatID)
+		userIDs = append(userIDs, query.Inp.(*UserIsChatMemberInp).UserID)
+		chatIDs = append(chatIDs, query.Inp.(*UserIsChatMemberInp).ChatID)
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
 	}
 
-	rows, err := r.Dataloader.DB.Query(`
+	rows, err := c.Dataloader.DB.Query(`
 		SELECT arr.id, m.id is not null 
 		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) arr(id, userid, chatid)
 		LEFT JOIN chat_members m ON m.chat_id = arr.chatid AND m.user_id = arr.userid
@@ -65,8 +86,8 @@ func (r *UserIsChatMemberCategory) userIsChatMember() {
 	)
 	if err != nil {
 		println("userIsChatMember:", err.Error()) // debug
-		//r.Requests = ?
-		r.Error = err
+		//c.Requests = ?
+		c.Error = err
 		return
 	}
 	defer rows.Close()
@@ -78,61 +99,34 @@ func (r *UserIsChatMemberCategory) userIsChatMember() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &isMember); err != nil {
-			//r.Requests = ?
-			r.Error = err
+			//c.Requests = ?
+			c.Error = err
 			return
 		}
 
-		request, ok := r.Requests[ptr]
+		request, ok := c.Requests[ptr]
 		if !ok { // если еще не создавали то надо паниковать
-			panic("r.Requests not exists")
+			panic("c.Requests not exists")
 		}
-		request.Result.Exists = isMember
+		request.Result.(*UserIsChatMemberResult).Exists = isMember
 	}
 
-	r.Error = nil
+	c.Error = nil
 }
 
-type UserIsChatMemberCategory struct {
-	ParentCategory
-	Requests map[chanPtr]*UserIsChatMemberRequest
-}
+//type UserIsChatMemberCategory struct {
+//	ParentCategory
+//	Requests map[chanPtr]*UserIsChatMemberRequest
+//}
 
-func (d *Dataloader) NewUserIsChatMemberCategory() *UserIsChatMemberCategory {
-	c := &UserIsChatMemberCategory{
-		ParentCategory: ParentCategory{
-			Dataloader:             d,
-			RemainingRequestsCount: d.CapactiyRequests,
-		},
-		Requests: map[chanPtr]*UserIsChatMemberRequest{},
-	}
-	c.LoadFn = func() {
-		c.userIsChatMember()
-		if c.Error != nil {
-			for _, request := range c.Requests {
-				select {
-				case request.Ch <- nil:
-				default:
-				}
-			}
-		}
-		for _, request := range c.Requests {
-			select {
-			case request.Ch <- request.Result:
-			default:
-			}
-		}
-	}
-	c.PrepareForNextLaunch = func() {
-		for ptr := range c.Requests {
-			delete(c.Requests, ptr)
-		}
-	}
+func (d *Dataloader) NewUserIsChatMemberCategory() *ParentCategory {
+	c := d.NewParentCategory()
+	c.LoadFn = c.userIsChatMember
 	return c
 }
 
-type UserIsChatMemberRequest struct {
-	Ch     chan *UserIsChatMemberResult
-	Inp    UserIsChatMemberInp
-	Result *UserIsChatMemberResult
-}
+//type UserIsChatMemberRequest struct {
+//	Ch     chan *UserIsChatMemberResult
+//	Inp    UserIsChatMemberInp
+//	Result *UserIsChatMemberResult
+//}

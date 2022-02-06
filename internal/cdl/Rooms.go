@@ -6,22 +6,27 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-type RoomsResult struct {
-	Rooms *model.Rooms
-}
+func (r *RoomsResult) IsRequestResult() {}
+func (r *RoomsInp) IsRequestInput()     {}
 
-//func (r *RoomsResult) IsRequestResult() {}
+//func (r RoomsResultChan) IsRequestResultChan() {}
 
-type RoomsInp struct {
-	ChatID int
-}
+type (
+	RoomsResult struct {
+		Rooms *model.Rooms
+	}
+	RoomsInp struct {
+		ChatID int
+	}
+	//RoomsResultChan chan *RoomsResult
+)
 
-func (r *RoomsCategory) AddRequest(chatID int) chan *RoomsResult {
-	newClient := make(chan *RoomsResult)
-
-	r.Requests[fmt.Sprint(newClient)] = &RoomsRequest{
+func (c *ParentCategory) AddRoomsRequest(chatID int) BaseResultChan {
+	newClient := make(BaseResultChan)
+	c.Lock()
+	c.Requests[fmt.Sprint(newClient)] = &BaseRequest{
 		Ch: newClient,
-		Inp: RoomsInp{
+		Inp: &RoomsInp{
 			ChatID: chatID,
 		},
 		Result: &RoomsResult{
@@ -30,45 +35,57 @@ func (r *RoomsCategory) AddRequest(chatID int) chan *RoomsResult {
 			},
 		},
 	}
+	//c.Requests[fmt.Sprint(newClient)] = &RoomsRequest{
+	//	Ch: newClient,
+	//	Inp: RoomsInp{
+	//		ChatID: chatID,
+	//	},
+	//	Result: &RoomsResult{
+	//		Rooms: &model.Rooms{
+	//			Rooms: []*model.Room{},
+	//		},
+	//	},
+	//}
+	c.Unlock()
 
-	defer r.OnAddRequest()
+	go c.OnAddRequest()
 	return newClient
 }
 
 func (d *Dataloader) Rooms(chatID int) (*model.Rooms, error) {
-	res := <-d.Categories.Rooms.AddRequest(chatID)
+	res := <-d.Categories.Rooms.AddRoomsRequest(chatID)
 	if res == nil {
 		println("реквест выполнился с ошибкой видимо") // debug
 		return nil, d.Categories.Rooms.Error
 	}
 	println("реквест выполнился нормально") // debug
-	return res.Rooms, nil
+	return res.(*RoomsResult).Rooms, nil
 }
 
-func (r *RoomsCategory) rooms() {
+func (c *ParentCategory) rooms() {
 	var (
-		inp = r.Requests
+		inp = c.Requests
 
 		ptrs    []chanPtr
 		chatIDs []int
 	)
 	for _, query := range inp {
-		chatIDs = append(chatIDs, query.Inp.ChatID)
+		chatIDs = append(chatIDs, query.Inp.(*RoomsInp).ChatID)
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
 	}
 
-	rows, err := r.Dataloader.DB.Query(`
-		SELECT arr.id, r.chat_id, r.id, parent_id, name, note
+	rows, err := c.Dataloader.DB.Query(`
+		SELECT arr.id, c.chat_id, c.id, parent_id, name, note
 		FROM unnest($1::varchar[], $2::bigint[]) arr(id, chatid)
-		JOIN rooms r ON r.chat_id = arr.chatid
+		JOIN rooms c ON c.chat_id = arr.chatid
 		`,
 		pq.Array(ptrs),
 		pq.Array(chatIDs),
 	)
 	if err != nil {
 		println("Rooms:", err.Error()) // debug
-		//r.Requests = ?
-		r.Error = err
+		//c.Requests = ?
+		c.Error = err
 		return
 	}
 	defer rows.Close()
@@ -85,62 +102,35 @@ func (r *RoomsCategory) rooms() {
 		}
 
 		if err = rows.Scan(&ptr, &chatID, &m.RoomID, &m.ParentID, &m.Name, &m.Note); err != nil {
-			//r.Requests = ?
-			r.Error = err
+			//c.Requests = ?
+			c.Error = err
 			return
 		}
 		m.Chat.Unit.ID = chatID // для того чтобы в roomResolver.Chat можно было узнать ид чата который надо вернуть
 
-		request, ok := r.Requests[ptr]
+		request, ok := c.Requests[ptr]
 		if !ok { // если еще не создавали то надо паниковать
-			panic("r.Requests not exists")
+			panic("c.Requests not exists")
 		}
-		request.Result.Rooms.Rooms = append(request.Result.Rooms.Rooms, m)
+		request.Result.(*RoomsResult).Rooms.Rooms = append(request.Result.(*RoomsResult).Rooms.Rooms, m)
 	}
 
-	r.Error = nil
+	c.Error = nil
 }
 
-type RoomsCategory struct {
-	ParentCategory
-	Requests map[chanPtr]*RoomsRequest
-}
+//type RoomsCategory struct {
+//	ParentCategory
+//	Requests map[chanPtr]*RoomsRequest
+//}
 
-func (d *Dataloader) NewRoomsCategory() *RoomsCategory {
-	c := &RoomsCategory{
-		ParentCategory: ParentCategory{
-			Dataloader:             d,
-			RemainingRequestsCount: d.CapactiyRequests,
-		},
-		Requests: map[chanPtr]*RoomsRequest{},
-	}
-	c.LoadFn = func() {
-		c.rooms()
-		if c.Error != nil {
-			for _, request := range c.Requests {
-				select {
-				case request.Ch <- nil:
-				default:
-				}
-			}
-		}
-		for _, request := range c.Requests {
-			select {
-			case request.Ch <- request.Result:
-			default:
-			}
-		}
-	}
-	c.PrepareForNextLaunch = func() {
-		for ptr := range c.Requests {
-			delete(c.Requests, ptr)
-		}
-	}
+func (d *Dataloader) NewRoomsCategory() *ParentCategory {
+	c := d.NewParentCategory()
+	c.LoadFn = c.rooms
 	return c
 }
 
-type RoomsRequest struct {
-	Ch     chan *RoomsResult
-	Inp    RoomsInp
-	Result *RoomsResult
-}
+//type RoomsRequest struct {
+//	Ch     chan *RoomsResult
+//	Inp    RoomsInp
+//	Result *RoomsResult
+//}
