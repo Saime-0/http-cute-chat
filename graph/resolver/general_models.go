@@ -58,7 +58,11 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 		return node.GetError(), nil
 	}
 
-	rooms, err := r.Services.Repos.Chats.Rooms(chatID)
+	//rooms, err := r.Services.Repos.Chats.Rooms(chatID)
+	//if err != nil {
+	//	return resp.Error(resp.ErrInternalServerError, "ошибка при попытке получить данные"), nil
+	//}
+	rooms, err := r.Dataloader.Rooms(chatID)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при попытке получить данные"), nil
 	}

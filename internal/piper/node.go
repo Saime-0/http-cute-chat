@@ -2,6 +2,7 @@ package piper
 
 import (
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cdl"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/repository"
@@ -34,9 +35,10 @@ type Method struct {
 var _ clog.Logger = (*Node)(nil)
 
 type Node struct {
-	repos  *repository.Repositories
-	Healer *healer.Healer
-	err    **model.AdvancedError
+	repos      *repository.Repositories
+	Healer     *healer.Healer
+	Dataloader *cdl.Dataloader
+	err        **model.AdvancedError
 
 	ID            *string
 	RootContainer interface{}
@@ -54,9 +56,10 @@ func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
 	}
 
 	n := &Node{
-		repos:  p.repos,
-		Healer: p.healer,
-		err:    new(*model.AdvancedError),
+		repos:      p.repos,
+		Healer:     p.healer,
+		Dataloader: p.dataloader,
+		err:        new(*model.AdvancedError),
 
 		ID: &id,
 		RootContainer: bson.M{
@@ -66,10 +69,6 @@ func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
 	}
 	p.Nodes[id] = n
 	return n, request
-}
-
-func (n *Node) Delete() {
-	panic("deprecated")
 }
 
 func (p *Pipeline) DeleteNode(id string) {

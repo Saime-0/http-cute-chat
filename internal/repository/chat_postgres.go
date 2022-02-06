@@ -970,8 +970,8 @@ func (r *ChatsRepo) Rooms(chatId int) (*model.Rooms, error) {
 	rooms := &model.Rooms{
 		Rooms: []*model.Room{},
 	}
-	rows, err := r.db.Query(
-		`SELECT id, parent_id, name, note
+	rows, err := r.db.Query(`
+		SELECT id, parent_id, name, note
 		FROM rooms
 		WHERE chat_id = $1`,
 		chatId,

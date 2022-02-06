@@ -3,11 +3,13 @@ package piper
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/internal/validator"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"go.mongodb.org/mongo-driver/bson"
@@ -321,7 +323,13 @@ func (n Node) IsMember(userId, chatId int) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	if !n.repos.Chats.UserIsChatMember(userId, chatId) {
+	isMember, err := n.Dataloader.UserIsChatMember(userId, chatId)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		return true
+	}
+	if !isMember {
 		n.SetError(resp.ErrBadRequest, "пользователь не является участником чата")
 		return true
 	}

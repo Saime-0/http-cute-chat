@@ -13,6 +13,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/resolver"
 	"github.com/saime-0/http-cute-chat/internal/cache"
+	"github.com/saime-0/http-cute-chat/internal/cdl"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/email"
 	"github.com/saime-0/http-cute-chat/internal/healer"
@@ -82,13 +83,17 @@ func main() {
 	// init subix
 	sbx := subix.NewSubix(services.Repos, services.Scheduler)
 
+	// init dataloader
+	dataloader := cdl.NewDataloader(time.Millisecond*5, 10, db)
+
 	// init resolver
 	myResolver := &resolver.Resolver{
-		Services: services,
-		Config:   cfg,
-		Piper:    piper.NewPipeline(services.Repos, hlr),
-		Healer:   hlr,
-		Subix:    sbx,
+		Services:   services,
+		Config:     cfg,
+		Piper:      piper.NewPipeline(services.Repos, hlr, dataloader),
+		Healer:     hlr,
+		Subix:      sbx,
+		Dataloader: dataloader,
 	}
 	err = myResolver.RegularSchedule(rules.DurationOfScheduleInterval)
 	if err != nil {

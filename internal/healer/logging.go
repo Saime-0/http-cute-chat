@@ -2,7 +2,6 @@ package healer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"time"
@@ -16,8 +15,9 @@ type LogRow struct {
 
 func (h *Healer) Log(document interface{}) {
 	if h.Output <= clog.Multiple {
-		b, _ := json.MarshalIndent(document, "", " ")
-		fmt.Println(string(b))
+		//b, _ := json.MarshalIndent(document, "", " ")
+		//fmt.Println(string(b))
+		fmt.Printf("%#v", document)
 	}
 	if h.Output >= clog.Multiple {
 		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
