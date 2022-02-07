@@ -344,7 +344,13 @@ func (n Node) IsNotMember(userId, chatId int) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	if n.repos.Chats.UserIsChatMember(userId, chatId) {
+	isMember, err := n.Dataloader.UserIsChatMember(userId, chatId)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		return true
+	}
+	if isMember {
 		n.SetError(resp.ErrBadRequest, "пользователь является участником чата")
 		return true
 	}
