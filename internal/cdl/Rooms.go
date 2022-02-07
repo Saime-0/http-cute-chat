@@ -9,8 +9,6 @@ import (
 func (r *RoomsResult) IsRequestResult() {}
 func (r *RoomsInp) IsRequestInput()     {}
 
-//func (r RoomsResultChan) IsRequestResultChan() {}
-
 type (
 	RoomsResult struct {
 		Rooms *model.Rooms
@@ -18,7 +16,6 @@ type (
 	RoomsInp struct {
 		ChatID int
 	}
-	//RoomsResultChan chan *RoomsResult
 )
 
 func (c *ParentCategory) AddRoomsRequest(chatID int) BaseResultChan {
@@ -35,17 +32,6 @@ func (c *ParentCategory) AddRoomsRequest(chatID int) BaseResultChan {
 			},
 		},
 	}
-	//c.Requests[fmt.Sprint(newClient)] = &RoomsRequest{
-	//	Ch: newClient,
-	//	Inp: RoomsInp{
-	//		ChatID: chatID,
-	//	},
-	//	Result: &RoomsResult{
-	//		Rooms: &model.Rooms{
-	//			Rooms: []*model.Room{},
-	//		},
-	//	},
-	//}
 	c.Unlock()
 
 	go c.OnAddRequest()
@@ -55,10 +41,10 @@ func (c *ParentCategory) AddRoomsRequest(chatID int) BaseResultChan {
 func (d *Dataloader) Rooms(chatID int) (*model.Rooms, error) {
 	res := <-d.Categories.Rooms.AddRoomsRequest(chatID)
 	if res == nil {
-		println("реквест выполнился с ошибкой видимо") // debug
+		println("Rooms реквест выполнился с ошибкой видимо") // debug
 		return nil, d.Categories.Rooms.Error
 	}
-	println("реквест выполнился нормально") // debug
+	println("Rooms реквест выполнился нормально") // debug
 	return res.(*RoomsResult).Rooms, nil
 }
 
@@ -118,19 +104,8 @@ func (c *ParentCategory) rooms() {
 	c.Error = nil
 }
 
-//type RoomsCategory struct {
-//	ParentCategory
-//	Requests map[chanPtr]*RoomsRequest
-//}
-
 func (d *Dataloader) NewRoomsCategory() *ParentCategory {
 	c := d.NewParentCategory()
 	c.LoadFn = c.rooms
 	return c
 }
-
-//type RoomsRequest struct {
-//	Ch     chan *RoomsResult
-//	Inp    RoomsInp
-//	Result *RoomsResult
-//}
