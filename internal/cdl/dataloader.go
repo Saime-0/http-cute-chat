@@ -31,13 +31,6 @@ func NewDataloader(wait time.Duration, maxBatch RequestsCount, db *sql.DB) *Data
 	return d
 }
 
-func (d *Dataloader) ConfigureDataloader() {
-	d.Categories = &Categories{
-		Rooms:            d.NewRoomsCategory(),
-		UserIsChatMember: d.NewUserIsChatMemberCategory(),
-	}
-}
-
 //func (d *Dataloader) AddCategory(v CategoryCell) {
 //	d.Categories[v.Name] = &ParentCategory{
 //		Dataloader:             d,

@@ -84,7 +84,7 @@ func main() {
 	sbx := subix.NewSubix(services.Repos, services.Scheduler)
 
 	// init dataloader
-	dataloader := cdl.NewDataloader(time.Millisecond*5, 10, db)
+	dataloader := cdl.NewDataloader(time.Millisecond*5, 1, db)
 
 	// init resolver
 	myResolver := &resolver.Resolver{

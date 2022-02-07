@@ -324,7 +324,11 @@ func (r *messageResolver) User(ctx context.Context, obj *model.Message) (*model.
 
 	userID := obj.User.Unit.ID
 
-	user, err := r.Services.Repos.Users.User(userID)
+	//user, err := r.Services.Repos.Users.User(userID)
+	//if err != nil {
+	//	return nil, err // todo resp.Error
+	//}
+	user, err := r.Dataloader.User(userID)
 	if err != nil {
 		return nil, err // todo resp.Error
 	}

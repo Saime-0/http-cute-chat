@@ -98,7 +98,7 @@ func (n *Node) MethodTiming() {
 }
 
 func (n Node) SetError(code resp.ErrCode, msg string) {
-	*n.err = resp.Error(resp.ErrBadRequest, "недостаточно прав на это действие")
+	*n.err = resp.Error(code, msg)
 }
 func (n Node) GetError() *model.AdvancedError {
 	return *n.err

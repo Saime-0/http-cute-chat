@@ -18,33 +18,21 @@ type (
 	}
 )
 
-func (c *ParentCategory) AddRoomsRequest(chatID int) BaseResultChan {
-	newClient := make(BaseResultChan)
-	c.Lock()
-	c.Requests[fmt.Sprint(newClient)] = &BaseRequest{
-		Ch: newClient,
-		Inp: &RoomsInp{
+func (d *Dataloader) Rooms(chatID int) (*model.Rooms, error) {
+	res := <-d.Categories.Rooms.AddBaseRequest(
+		&RoomsInp{
 			ChatID: chatID,
 		},
-		Result: &RoomsResult{
+		&RoomsResult{
 			Rooms: &model.Rooms{
 				Rooms: []*model.Room{},
 			},
 		},
-	}
-	c.Unlock()
-
-	go c.OnAddRequest()
-	return newClient
-}
-
-func (d *Dataloader) Rooms(chatID int) (*model.Rooms, error) {
-	res := <-d.Categories.Rooms.AddRoomsRequest(chatID)
+	)
 	if res == nil {
-		println("Rooms реквест выполнился с ошибкой видимо") // debug
+		fmt.Println("Dataloader: Rooms:", d.Categories.Rooms.Error)
 		return nil, d.Categories.Rooms.Error
 	}
-	println("Rooms реквест выполнился нормально") // debug
 	return res.(*RoomsResult).Rooms, nil
 }
 
@@ -70,7 +58,6 @@ func (c *ParentCategory) rooms() {
 	)
 	if err != nil {
 		println("Rooms:", err.Error()) // debug
-		//c.Requests = ?
 		c.Error = err
 		return
 	}
@@ -88,7 +75,6 @@ func (c *ParentCategory) rooms() {
 		}
 
 		if err = rows.Scan(&ptr, &chatID, &m.RoomID, &m.ParentID, &m.Name, &m.Note); err != nil {
-			//c.Requests = ?
 			c.Error = err
 			return
 		}
@@ -96,16 +82,10 @@ func (c *ParentCategory) rooms() {
 
 		request, ok := c.Requests[ptr]
 		if !ok { // если еще не создавали то надо паниковать
-			panic("c.Requests not exists")
+			panic("c.Requests not exists by" + ptr)
 		}
 		request.Result.(*RoomsResult).Rooms.Rooms = append(request.Result.(*RoomsResult).Rooms.Rooms, m)
 	}
 
 	c.Error = nil
-}
-
-func (d *Dataloader) NewRoomsCategory() *ParentCategory {
-	c := d.NewParentCategory()
-	c.LoadFn = c.rooms
-	return c
 }

@@ -18,27 +18,15 @@ type (
 	}
 )
 
-func (c *ParentCategory) AddUserIsChatMemberRequest(userID, chatID int) BaseResultChan {
+func (d *Dataloader) UserIsChatMember(userID, chatID int) (bool, error) {
 
-	newClient := make(BaseResultChan)
-	c.Lock()
-	c.Requests[fmt.Sprint(newClient)] = &BaseRequest{
-		Ch: newClient,
-		Inp: &UserIsChatMemberInp{
+	res := <-d.Categories.UserIsChatMember.AddBaseRequest(
+		&UserIsChatMemberInp{
 			UserID: userID,
 			ChatID: chatID,
 		},
-		Result: &UserIsChatMemberResult{Exists: false},
-	}
-	c.Unlock()
-
-	go c.OnAddRequest()
-	return newClient
-}
-
-func (d *Dataloader) UserIsChatMember(userID, chatID int) (bool, error) {
-
-	res := <-d.Categories.UserIsChatMember.AddUserIsChatMemberRequest(userID, chatID)
+		&UserIsChatMemberResult{Exists: false},
+	)
 	if res == nil {
 		return false, d.Categories.UserIsChatMember.Error
 	}
@@ -70,7 +58,6 @@ func (c *ParentCategory) userIsChatMember() {
 	)
 	if err != nil {
 		println("userIsChatMember:", err.Error()) // debug
-		//c.Requests = ?
 		c.Error = err
 		return
 	}
@@ -83,7 +70,6 @@ func (c *ParentCategory) userIsChatMember() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &isMember); err != nil {
-			//c.Requests = ?
 			c.Error = err
 			return
 		}
@@ -96,10 +82,4 @@ func (c *ParentCategory) userIsChatMember() {
 	}
 
 	c.Error = nil
-}
-
-func (d *Dataloader) NewUserIsChatMemberCategory() *ParentCategory {
-	c := d.NewParentCategory()
-	c.LoadFn = c.userIsChatMember
-	return c
 }
