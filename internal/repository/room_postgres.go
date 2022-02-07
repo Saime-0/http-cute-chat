@@ -7,9 +7,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
-	"strconv"
 )
 
 type RoomsRepo struct {
@@ -252,8 +250,6 @@ func (r *RoomsRepo) GetChatIDByAllowID(allowID int) (chatId int, err error) {
 }
 
 func (r *RoomsRepo) RoomForm(roomId int) *model.Form {
-	tl := tlog.Start("RoomsRepo > RoomForm [rid:" + strconv.Itoa(roomId) + "]")
-	defer tl.Fine()
 	var (
 		format *string
 		form   *model.Form
@@ -355,8 +351,6 @@ func (r *RoomsRepo) HasParent(roomId int) (has bool) {
 }
 
 func (r *RoomsRepo) Allowed(action model.ActionType, roomId int, holder *models.AllowHolder) (yes bool) {
-	tl := tlog.Start("RoomsRepo > Allowed [rid:" + strconv.Itoa(roomId) + ",uid:" + strconv.Itoa(holder.UserID) + "]")
-	defer tl.Fine()
 	err := r.db.QueryRow(`
 		SELECT EXISTS(
 		    SELECT 1 
@@ -393,8 +387,6 @@ func (r *RoomsRepo) Allowed(action model.ActionType, roomId int, holder *models.
 }
 
 func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error) {
-	tl := tlog.Start("RoomsRepo > AllowHolder [uid:" + strconv.Itoa(userId) + ",cid:" + strconv.Itoa(chatId) + "]")
-	defer tl.Fine()
 
 	holder := &models.AllowHolder{}
 	err := r.db.QueryRow(

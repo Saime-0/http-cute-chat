@@ -58,7 +58,7 @@ var defaultConfig = &Config{
 		Port: 0,
 	},
 	Logger: Logger{
-		Output:          clog.Multiple,
+		Output:          clog.MongoDB,
 		Level:           "debug",
 		MongoDBPassword: os.Getenv("LOGDB_PASSWORD"),
 		MongoDBUser:     os.Getenv("LOGDB_USER"),

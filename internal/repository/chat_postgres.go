@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/tlog"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"strconv"
 	"time"
@@ -62,8 +61,6 @@ func (r *ChatsRepo) GetChatByID(chatId int) (chat models.Chat, err error) {
 	return
 }
 func (r *ChatsRepo) Chat(chatId int) (*model.Chat, error) {
-	tl := tlog.Start("ChatsRepo > Chat [cid:" + strconv.Itoa(chatId) + "]")
-	defer tl.Fine()
 	chat := &model.Chat{
 		Unit: &model.Unit{},
 	}
@@ -149,8 +146,6 @@ func (r *ChatsRepo) GetChatsByNameFragment(fragment string, limit int, offset in
 
 }
 func (r *ChatsRepo) Members(chatId int) (*model.Members, error) {
-	tl := tlog.Start("ChatsRepo > Members [cid:" + strconv.Itoa(chatId) + "]")
-	defer tl.Fine()
 	members := &model.Members{}
 	rows, err := r.db.Query(
 		`SELECT member.id, units.id, units.domain, units.name, units.type, member.chat_id, member.char, member.joined_at, member.muted
@@ -241,8 +236,7 @@ func (r *ChatsRepo) UserIsChatOwner(userId int, chatId int) bool {
 	return isOwner
 }
 func (r *ChatsRepo) UserIsChatMember(userId int, chatId int) (isMember bool) {
-	tl := tlog.Start("ChatsRepo > UserIsChatMember [uid:" + strconv.Itoa(userId) + ",cid:" + strconv.Itoa(chatId) + "]")
-	defer tl.Fine()
+
 	err := r.db.QueryRow(`
 		SELECT EXISTS(
 	        SELECT 1
@@ -628,8 +622,7 @@ func (r *ChatsRepo) Banlist(chatId int) (*model.Users, error) {
 }
 
 func (r *ChatsRepo) MemberRole(memberId int) *model.Role {
-	tl := tlog.Start("ChatsRepo > MemberRole [mid:" + strconv.Itoa(memberId) + "]")
-	defer tl.Fine()
+
 	_role := models.RoleReference{}
 	err := r.db.QueryRow(`
 		SELECT roles.id, roles.name, roles.color
@@ -1021,8 +1014,7 @@ func (r *RoomsRepo) RolesByArray(roleIds *[]int) (*model.Roles, error) {
 }
 
 func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, holder *models.AllowHolder) *model.Messages {
-	tl := tlog.Start("ChatsRepo > FindMessages [cid:" + strconv.Itoa(inp.ChatID) + "]")
-	defer tl.Fine()
+
 	messages := &model.Messages{
 		Messages: []*model.Message{},
 	}
@@ -1119,9 +1111,12 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 
 func (r *ChatsRepo) ChatIDByMemberID(memberId int) (chatId int, err error) {
 	err = r.db.QueryRow(`
-		SELECT chat_id
-		FROM chat_members
-		WHERE id = $1
+		select coalesce(
+		    (SELECT chat_id
+			FROM chat_members
+			WHERE id = $1),
+		    0
+		    ) as chat_id
 		`,
 		memberId,
 	).Scan(&chatId)

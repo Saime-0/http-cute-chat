@@ -10,7 +10,7 @@ import (
 )
 
 func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-	println("IsAuth directive start!") // debug
+	//println("IsAuth directive start!") // debug
 
 	if utils.GetAuthDataFromCtx(ctx) == nil {
 		err = errors.New("не аутентифицирован")
@@ -22,7 +22,7 @@ func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res in
 }
 
 func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-	println("InputUnion directive start!") // debug
+	//println("InputUnion directive start!") // debug
 
 	v := reflect.ValueOf(obj)
 	if v.Kind() == reflect.Ptr {
@@ -52,7 +52,7 @@ func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (re
 }
 
 func InputLeastOne(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-	println("InputLeastOne directive start!") // debug
+	//println("InputLeastOne directive start!") // debug
 	fmt.Printf("%#v %T\n", obj, obj)
 	input, ok := obj.(map[string]interface{})
 	if !ok {

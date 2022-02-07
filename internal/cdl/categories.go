@@ -1,33 +1,49 @@
 package cdl
 
 type Categories struct {
-	Rooms            *ParentCategory
-	UserIsChatMember *ParentCategory
-	User             *ParentCategory
+	Rooms            *parentCategory
+	UserIsChatMember *parentCategory
+	User             *parentCategory
+	FindMemberBy     *parentCategory
+	ChatIDByMemberID *parentCategory
 }
 
 func (d *Dataloader) ConfigureDataloader() {
-	d.Categories = &Categories{
-		Rooms:            d.NewRoomsCategory(),
-		UserIsChatMember: d.NewUserIsChatMemberCategory(),
-		User:             d.NewUserCategory(),
+	d.categories = &Categories{
+		Rooms:            d.newRoomsCategory(),
+		UserIsChatMember: d.newUserIsChatMemberCategory(),
+		User:             d.newUserCategory(),
+		FindMemberBy:     d.newFindMemberByCategory(),
+		ChatIDByMemberID: d.newChatIDByMemberIDCategory(),
 	}
 }
 
-func (d *Dataloader) NewRoomsCategory() *ParentCategory {
-	c := d.NewParentCategory()
-	c.LoadFn = c.rooms
+func (d *Dataloader) newChatIDByMemberIDCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.chatIDByMemberID
 	return c
 }
 
-func (d *Dataloader) NewUserIsChatMemberCategory() *ParentCategory {
-	c := d.NewParentCategory()
+func (d *Dataloader) newFindMemberByCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.findMemberBy
+	return c
+}
+
+func (d *Dataloader) newUserCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.user
+	return c
+}
+
+func (d *Dataloader) newUserIsChatMemberCategory() *parentCategory {
+	c := d.newParentCategory()
 	c.LoadFn = c.userIsChatMember
 	return c
 }
 
-func (d *Dataloader) NewUserCategory() *ParentCategory {
-	c := d.NewParentCategory()
-	c.LoadFn = c.user
+func (d *Dataloader) newRoomsCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.rooms
 	return c
 }

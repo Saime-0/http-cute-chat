@@ -646,7 +646,7 @@ func (n Node) GetAllowHolder(userId, chatId int, holder *models.AllowHolder) (fa
 	})
 	defer n.MethodTiming()
 
-	fmt.Printf("userID: %d\nchatID: %d\n", userId, chatId) // debug
+	//fmt.Printf("userID: %d\nchatID: %d\n", userId, chatId) // debug
 	_holder, err := n.repos.Rooms.AllowHolder(userId, chatId)
 	if err != nil {
 		n.SetError(resp.ErrInternalServerError, "не удалось связать пользователя с чатом")
@@ -693,12 +693,18 @@ func (n Node) GetChatIDByMember(memberId int, chatId *int) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	_chatId, err := n.repos.Chats.ChatIDByMemberID(memberId)
+	var err error
+	*chatId, err = n.Dataloader.ChatIDByMemberID(memberId)
 	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		return true
+	}
+	if *chatId < 1 {
 		n.SetError(resp.ErrBadRequest, "участник не найден")
 		return true
 	}
-	*chatId = _chatId
+
 	return
 }
 
@@ -710,7 +716,12 @@ func (n Node) GetMemberBy(userId, chatId int, memberId *int) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	by := n.repos.Chats.FindMemberBy(userId, chatId)
+	by, err := n.Dataloader.FindMemberBy(userId, chatId)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		return true
+	}
 	if by == nil || *by == 0 {
 		n.SetError(resp.ErrBadRequest, "мембер не найден")
 		return true
@@ -891,10 +902,15 @@ func (n Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 			n.SetError(resp.ErrBadRequest, "невалидное значение")
 			return true
 		}
-		_chatID, err := n.repos.Chats.ChatIDByMemberID(intVal)
-		if err != nil || _chatID != chatID {
+		_chatID, err := n.Dataloader.ChatIDByMemberID(intVal)
+		if err != nil {
+			n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+			n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+			return true
+		}
+		if _chatID < 1 || _chatID != chatID {
 			println("ValidAllowInput:", err.Error())
-			n.SetError(resp.ErrBadRequest, "не удалось определить участника чата")
+			n.SetError(resp.ErrBadRequest, "не является участником чата")
 			return true
 		}
 

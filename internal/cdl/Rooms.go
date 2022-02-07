@@ -6,8 +6,8 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *RoomsResult) IsRequestResult() {}
-func (r *RoomsInp) IsRequestInput()     {}
+func (r *RoomsResult) isRequestResult() {}
+func (r *RoomsInp) isRequestInput()     {}
 
 type (
 	RoomsResult struct {
@@ -19,7 +19,7 @@ type (
 )
 
 func (d *Dataloader) Rooms(chatID int) (*model.Rooms, error) {
-	res := <-d.Categories.Rooms.AddBaseRequest(
+	res := <-d.categories.Rooms.addBaseRequest(
 		&RoomsInp{
 			ChatID: chatID,
 		},
@@ -30,13 +30,12 @@ func (d *Dataloader) Rooms(chatID int) (*model.Rooms, error) {
 		},
 	)
 	if res == nil {
-		fmt.Println("Dataloader: Rooms:", d.Categories.Rooms.Error)
-		return nil, d.Categories.Rooms.Error
+		return nil, d.categories.Rooms.Error
 	}
 	return res.(*RoomsResult).Rooms, nil
 }
 
-func (c *ParentCategory) rooms() {
+func (c *parentCategory) rooms() {
 	var (
 		inp = c.Requests
 
@@ -48,7 +47,7 @@ func (c *ParentCategory) rooms() {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
 	}
 
-	rows, err := c.Dataloader.DB.Query(`
+	rows, err := c.Dataloader.db.Query(`
 		SELECT arr.id, c.chat_id, c.id, parent_id, name, note
 		FROM unnest($1::varchar[], $2::bigint[]) arr(id, chatid)
 		JOIN rooms c ON c.chat_id = arr.chatid

@@ -5,35 +5,36 @@ import (
 	"github.com/lib/pq"
 )
 
-func (r *UserIsChatMemberResult) isRequestResult() {}
-func (r *UserIsChatMemberInp) isRequestInput()     {}
+func (r *findMemberByResult) isRequestResult() {}
+func (r *findMemberByInp) isRequestInput()     {}
 
 type (
-	UserIsChatMemberInp struct {
+	findMemberByInp struct {
 		UserID int
 		ChatID int
 	}
-	UserIsChatMemberResult struct {
-		Exists bool
+	findMemberByResult struct {
+		MemberID *int
 	}
 )
 
-func (d *Dataloader) UserIsChatMember(userID, chatID int) (bool, error) {
-
-	res := <-d.categories.UserIsChatMember.addBaseRequest(
-		&UserIsChatMemberInp{
-			UserID: userID,
+func (d *Dataloader) FindMemberBy(userID, chatID int) (*int, error) {
+	res := <-d.categories.FindMemberBy.addBaseRequest(
+		&findMemberByInp{
 			ChatID: chatID,
+			UserID: userID,
 		},
-		&UserIsChatMemberResult{Exists: false},
+		&findMemberByResult{
+			MemberID: nil,
+		},
 	)
 	if res == nil {
-		return false, d.categories.UserIsChatMember.Error
+		return nil, d.categories.FindMemberBy.Error
 	}
-	return res.(*UserIsChatMemberResult).Exists, nil
+	return res.(*findMemberByResult).MemberID, nil
 }
 
-func (c *parentCategory) userIsChatMember() {
+func (c *parentCategory) findMemberBy() {
 	var (
 		inp = c.Requests
 
@@ -43,12 +44,12 @@ func (c *parentCategory) userIsChatMember() {
 	)
 	for _, query := range inp {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
-		userIDs = append(userIDs, query.Inp.(*UserIsChatMemberInp).UserID)
-		chatIDs = append(chatIDs, query.Inp.(*UserIsChatMemberInp).ChatID)
+		userIDs = append(userIDs, query.Inp.(*findMemberByInp).UserID)
+		chatIDs = append(chatIDs, query.Inp.(*findMemberByInp).ChatID)
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT arr.id, m.id is not null 
+		SELECT arr.id, m.id
 		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) arr(id, userid, chatid)
 		LEFT JOIN chat_members m ON m.chat_id = arr.chatid AND m.user_id = arr.userid
 		`,
@@ -57,19 +58,18 @@ func (c *parentCategory) userIsChatMember() {
 		pq.Array(chatIDs),
 	)
 	if err != nil {
-		println("userIsChatMember:", err.Error()) // debug
+		println("findMemberBy:", err.Error()) // debug
 		c.Error = err
 		return
 	}
 	defer rows.Close()
 
 	var ( // каждую итерацию будем менять значения
-		isMember bool
 		ptr      chanPtr
+		memberID *int
 	)
 	for rows.Next() {
-
-		if err = rows.Scan(&ptr, &isMember); err != nil {
+		if err = rows.Scan(&ptr, &memberID); err != nil {
 			c.Error = err
 			return
 		}
@@ -78,7 +78,7 @@ func (c *parentCategory) userIsChatMember() {
 		if !ok { // если еще не создавали то надо паниковать
 			panic("c.Requests not exists")
 		}
-		request.Result.(*UserIsChatMemberResult).Exists = isMember
+		request.Result.(*findMemberByResult).MemberID = memberID
 	}
 
 	c.Error = nil

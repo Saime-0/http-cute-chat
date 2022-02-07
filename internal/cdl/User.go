@@ -6,36 +6,36 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 )
 
-func (r *UserResult) IsRequestResult() {}
-func (r *UserInp) IsRequestInput()     {}
+func (r *userResult) isRequestResult() {}
+func (r *userInp) isRequestInput()     {}
 
 type (
-	UserInp struct {
+	userInp struct {
 		UserID int
 	}
-	UserResult struct {
+	userResult struct {
 		User *model.User
 	}
 )
 
 func (d *Dataloader) User(userID int) (*model.User, error) {
-	res := <-d.Categories.User.AddBaseRequest(
-		&UserInp{
+	res := <-d.categories.User.addBaseRequest(
+		&userInp{
 			UserID: userID,
 		},
-		&UserResult{
+		&userResult{
 			User: &model.User{
 				Unit: &model.Unit{},
 			},
 		},
 	)
 	if res == nil {
-		return nil, d.Categories.User.Error
+		return nil, d.categories.User.Error
 	}
-	return res.(*UserResult).User, nil
+	return res.(*userResult).User, nil
 }
 
-func (c *ParentCategory) user() {
+func (c *parentCategory) user() {
 	var (
 		inp = c.Requests
 
@@ -44,10 +44,10 @@ func (c *ParentCategory) user() {
 	)
 	for _, query := range inp {
 		ptrs = append(ptrs, fmt.Sprint(query.Ch))
-		userIDs = append(userIDs, query.Inp.(*UserInp).UserID)
+		userIDs = append(userIDs, query.Inp.(*userInp).UserID)
 	}
 
-	rows, err := c.Dataloader.DB.Query(`
+	rows, err := c.Dataloader.db.Query(`
 		SELECT arr.id, u.id, domain, name, type 
 		FROM unnest($1::varchar[], $2::bigint[]) arr(id, userid)
 		LEFT JOIN units u ON u.id = arr.userid AND u.type = 'USER'
@@ -78,7 +78,7 @@ func (c *ParentCategory) user() {
 		if !ok { // если еще не создавали то надо паниковать
 			panic("c.Requests not exists")
 		}
-		request.Result.(*UserResult).User = m
+		request.Result.(*userResult).User = m
 	}
 
 	c.Error = nil
