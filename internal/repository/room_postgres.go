@@ -21,8 +21,13 @@ func NewRoomsRepo(db *sql.DB) *RoomsRepo {
 }
 
 func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
-	err := r.db.QueryRow(
-		`SELECT EXISTS(SELECT 1 FROM rooms WHERE id=$1)`,
+	err := r.db.QueryRow(`
+		SELECT EXISTS (
+    		SELECT 1 
+    		FROM rooms 
+    		WHERE id=$1
+		)
+		`,
 		roomId,
 	).Scan(&isExists)
 	if err != nil || !isExists {

@@ -29,7 +29,7 @@ func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.Use
 		node.IsMember(clientID, chatID) {
 		return node.GetError(), nil
 	}
-	role := r.Services.Repos.Chats.MemberRole(memberID)
+	role, _ := r.Dataloader.MemberRole(memberID)
 
 	return role, nil
 }

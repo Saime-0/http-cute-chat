@@ -6,7 +6,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
-	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -16,26 +15,38 @@ import (
 	"strconv"
 )
 
-func (n Node) ChatExists(chatId int) (fail bool) {
+func (n Node) ChatExists(chatID int) (fail bool) {
 	n.SwitchMethod("ChatExists", &bson.M{
-		"chatId": chatId,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	if !n.repos.Units.UnitExistsByID(chatId, res.Chat) {
+	exists, err := n.Dataloader.UnitExistsByID(chatID, model.UnitTypeChat)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		return true
+	}
+	if !exists {
 		n.SetError(resp.ErrBadRequest, "такого чата не существует")
 		return true
 	}
 	return
 }
 
-func (n Node) UserExists(userId int) (fail bool) {
+func (n Node) UserExists(userID int) (fail bool) {
 	n.SwitchMethod("UserExists", &bson.M{
-		"userId": userId,
+		"userID": userID,
 	})
 	defer n.MethodTiming()
 
-	if !n.repos.Units.UnitExistsByID(userId, res.User) {
+	exists, err := n.Dataloader.UnitExistsByID(userID, model.UnitTypeUser)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		return true
+	}
+	if !exists {
 		n.SetError(resp.ErrBadRequest, "пользователь не найден")
 		return true
 	}
@@ -393,13 +404,20 @@ func (n Node) RoomsLimit(chatId int) (fail bool) {
 	return
 }
 
-func (n Node) RoomExists(roomId int) (fail bool) {
+func (n Node) RoomExists(roomID int) (fail bool) {
 	n.SwitchMethod("RoomExists", &bson.M{
-		"roomId": roomId,
+		"roomID": roomID,
 	})
 	defer n.MethodTiming()
 
-	if !n.repos.Rooms.RoomExistsByID(roomId) {
+	//if !n.repos.Rooms.RoomExistsByID(roomID) {
+	exists, err := n.Dataloader.RoomExistsByID(roomID)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		return true
+	}
+	if !exists {
 		n.SetError(resp.ErrBadRequest, "такой комнаты не существует")
 		return true
 	}

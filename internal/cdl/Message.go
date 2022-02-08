@@ -50,7 +50,7 @@ func (c *parentCategory) message() {
 		       coalesce(user_id, 0), 
 		       coalesce(room_id, 0), 
 		       coalesce(body, ''), 
-		       coalesce(type, ''), 
+		       coalesce(type, 'USER'),
 		       coalesce(created_at, 0)
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, messageid)
 		LEFT JOIN messages m ON m.id = inp.messageid

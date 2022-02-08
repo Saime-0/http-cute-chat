@@ -48,7 +48,7 @@ func (c *parentCategory) user() {
 		       coalesce(id, 0), 
 		       coalesce(domain, ''), 
 		       coalesce(name, ''), 
-		       coalesce(type, '') 
+		       coalesce(type, 'USER') 
 		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, userid)
 		LEFT JOIN units u ON u.id = inp.userid AND u.type = 'USER'
 		`,
