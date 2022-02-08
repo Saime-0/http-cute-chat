@@ -52,10 +52,11 @@ func (r *MessagesRepo) Message(messageId int) (*model.Message, error) {
 		_replid *int
 		_userID *int
 	)
-	err := r.db.QueryRow(
-		`SELECT id, reply_to, user_id, room_id, body, type, created_at
+	err := r.db.QueryRow(`
+		SELECT id, reply_to, user_id, room_id, body, type, created_at
 		FROM messages
-		WHERE id = $1`,
+		WHERE id = $1
+		`,
 		messageId,
 	).Scan(
 		&message.ID,

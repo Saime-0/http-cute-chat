@@ -49,7 +49,6 @@ func main() {
 	hlr, err := healer.NewHealer(cfg, newSched, newCache)
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	// init database

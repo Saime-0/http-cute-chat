@@ -24,9 +24,7 @@ func (d *Dataloader) FindMemberBy(userID, chatID int) (*int, error) {
 			ChatID: chatID,
 			UserID: userID,
 		},
-		&findMemberByResult{
-			MemberID: nil,
-		},
+		new(findMemberByResult),
 	)
 	if res == nil {
 		return nil, d.categories.FindMemberBy.Error
@@ -49,9 +47,9 @@ func (c *parentCategory) findMemberBy() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT arr.id, m.id
-		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) arr(id, userid, chatid)
-		LEFT JOIN chat_members m ON m.chat_id = arr.chatid AND m.user_id = arr.userid
+		SELECT ptr, coalesce(id, 0)
+		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, userid, chatid)
+		LEFT JOIN chat_members m ON m.chat_id = inp.chatid AND m.user_id = inp.userid
 		`,
 		pq.Array(ptrs),
 		pq.Array(userIDs),
@@ -74,10 +72,7 @@ func (c *parentCategory) findMemberBy() {
 			return
 		}
 
-		request, ok := c.Requests[ptr]
-		if !ok { // если еще не создавали то надо паниковать
-			panic("c.Requests not exists")
-		}
+		request := c.getRequest(ptr)
 		request.Result.(*findMemberByResult).MemberID = memberID
 	}
 

@@ -97,10 +97,11 @@ func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
 			Unit: &model.Unit{},
 		},
 	}
-	err := r.db.QueryRow(
-		`SELECT  id, chat_id, parent_id, name, note
+	err := r.db.QueryRow(`
+		SELECT  id, chat_id, parent_id, name, note
 		FROM rooms
-		WHERE id = $1`,
+		WHERE id = $1
+		`,
 		roomId,
 	).Scan(
 		&room.RoomID,

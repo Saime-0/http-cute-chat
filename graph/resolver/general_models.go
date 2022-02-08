@@ -265,7 +265,7 @@ func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.Rol
 
 	memberID := obj.ID
 
-	role := r.Services.Repos.Chats.MemberRole(memberID)
+	role, _ := r.Dataloader.MemberRole(memberID)
 
 	return role, nil
 }
@@ -281,7 +281,8 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 
 	roomID := obj.Room.RoomID
 
-	room, err := r.Services.Repos.Rooms.Room(roomID)
+	//room, err := r.Services.Repos.Rooms.Room(roomID)
+	room, err := r.Dataloader.Room(roomID)
 	if err != nil {
 		return nil, err // todo resp.Error
 	}
@@ -301,7 +302,8 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 		return nil, nil // так и надо
 	}
 
-	message, err := r.Services.Repos.Messages.Message(obj.ReplyTo.ID)
+	//message, err := r.Services.Repos.Messages.Message(obj.ReplyTo.ID)
+	message, err := r.Dataloader.Message(obj.ReplyTo.ID)
 	if err != nil {
 		return nil, err // todo resp.Error
 	}

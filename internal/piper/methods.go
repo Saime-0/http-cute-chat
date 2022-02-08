@@ -670,6 +670,7 @@ func (n Node) IsAllowsSet(roomId int) (fail bool) {
 	return
 }
 
+// deprecated
 func (n *Node) GetMessageByID(msgId int, message *model.Message) (fail bool) {
 	n.SwitchMethod("GetMessageByID", &bson.M{
 		"msgId":   msgId,
@@ -677,12 +678,12 @@ func (n *Node) GetMessageByID(msgId int, message *model.Message) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	_message, err := n.repos.Messages.Message(msgId)
+	_message, err := n.Dataloader.Message(msgId)
 	if err != nil {
 		n.SetError(resp.ErrBadRequest, "сообщение не найдено")
 		return true
 	}
-	message = _message
+	*message = *_message
 	return
 }
 

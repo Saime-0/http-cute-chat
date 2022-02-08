@@ -42,7 +42,6 @@ func (h *Healer) loggerStateFailedDBConnection() *fsm.State {
 					err = indicator.SetState(res.OK)
 					if err != nil {
 						panic("not handling")
-						return
 					}
 					return
 				}

@@ -6,6 +6,9 @@ type Categories struct {
 	User             *parentCategory
 	FindMemberBy     *parentCategory
 	ChatIDByMemberID *parentCategory
+	Message          *parentCategory
+	Room             *parentCategory
+	MemberRole       *parentCategory
 }
 
 func (d *Dataloader) ConfigureDataloader() {
@@ -15,7 +18,28 @@ func (d *Dataloader) ConfigureDataloader() {
 		User:             d.newUserCategory(),
 		FindMemberBy:     d.newFindMemberByCategory(),
 		ChatIDByMemberID: d.newChatIDByMemberIDCategory(),
+		Message:          d.newMessageCategory(),
+		Room:             d.newRoomCategory(),
+		MemberRole:       d.newMemberRoleCategory(),
 	}
+}
+
+func (d *Dataloader) newMemberRoleCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.memberRole
+	return c
+}
+
+func (d *Dataloader) newRoomCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.room
+	return c
+}
+
+func (d *Dataloader) newMessageCategory() *parentCategory {
+	c := d.newParentCategory()
+	c.LoadFn = c.message
+	return c
 }
 
 func (d *Dataloader) newChatIDByMemberIDCategory() *parentCategory {

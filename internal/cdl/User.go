@@ -23,11 +23,7 @@ func (d *Dataloader) User(userID int) (*model.User, error) {
 		&userInp{
 			UserID: userID,
 		},
-		&userResult{
-			User: &model.User{
-				Unit: &model.Unit{},
-			},
-		},
+		new(userResult),
 	)
 	if res == nil {
 		return nil, d.categories.User.Error
@@ -48,9 +44,13 @@ func (c *parentCategory) user() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT arr.id, u.id, domain, name, type 
-		FROM unnest($1::varchar[], $2::bigint[]) arr(id, userid)
-		LEFT JOIN units u ON u.id = arr.userid AND u.type = 'USER'
+		SELECT ptr, 
+		       coalesce(id, 0), 
+		       coalesce(domain, ''), 
+		       coalesce(name, ''), 
+		       coalesce(type, '') 
+		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, userid)
+		LEFT JOIN units u ON u.id = inp.userid AND u.type = 'USER'
 		`,
 		pq.Array(ptrs),
 		pq.Array(userIDs),
@@ -66,18 +66,17 @@ func (c *parentCategory) user() {
 		ptr chanPtr
 	)
 	for rows.Next() {
-		m := &model.User{
-			Unit: &model.Unit{},
-		}
+		m := &model.User{Unit: new(model.Unit)}
+
 		if err = rows.Scan(&ptr, &m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
 			c.Error = err
 			return
 		}
-
-		request, ok := c.Requests[ptr]
-		if !ok { // если еще не создавали то надо паниковать
-			panic("c.Requests not exists")
+		if m.Unit.ID == 0 {
+			m = nil
 		}
+
+		request := c.getRequest(ptr)
 		request.Result.(*userResult).User = m
 	}
 

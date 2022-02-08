@@ -48,9 +48,14 @@ func (c *parentCategory) rooms() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT arr.id, c.chat_id, c.id, parent_id, name, note
-		FROM unnest($1::varchar[], $2::bigint[]) arr(id, chatid)
-		JOIN rooms c ON c.chat_id = arr.chatid
+		SELECT ptr,
+				coalesce(id, 0),
+				coalesce(chat_id, 0),
+				coalesce(parent_id, 0),
+				coalesce(name, ''), 
+				coalesce(note, '')
+		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, chatid)
+		LEFT JOIN rooms c ON c.chat_id = inp.chatid
 		`,
 		pq.Array(ptrs),
 		pq.Array(chatIDs),
@@ -63,26 +68,21 @@ func (c *parentCategory) rooms() {
 	defer rows.Close()
 
 	var ( // каждую итерацию будем менять значения
-		chatID int
-		ptr    chanPtr
+		ptr chanPtr
 	)
 	for rows.Next() {
 		m := &model.Room{
-			Chat: &model.Chat{
-				Unit: &model.Unit{},
-			},
+			Chat: &model.Chat{Unit: new(model.Unit)},
 		}
 
-		if err = rows.Scan(&ptr, &chatID, &m.RoomID, &m.ParentID, &m.Name, &m.Note); err != nil {
+		if err = rows.Scan(&ptr, &m.RoomID, &m.Chat.Unit.ID, &m.ParentID, &m.Name, &m.Note); err != nil {
 			c.Error = err
 			return
 		}
-		m.Chat.Unit.ID = chatID // для того чтобы в roomResolver.Chat можно было узнать ид чата который надо вернуть
-
-		request, ok := c.Requests[ptr]
-		if !ok { // если еще не создавали то надо паниковать
-			panic("c.Requests not exists by" + ptr)
+		if m.RoomID == 0 {
+			continue
 		}
+		request := c.getRequest(ptr)
 		request.Result.(*RoomsResult).Rooms.Rooms = append(request.Result.(*RoomsResult).Rooms.Rooms, m)
 	}
 

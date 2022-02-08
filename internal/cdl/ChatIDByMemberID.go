@@ -22,7 +22,7 @@ func (d *Dataloader) ChatIDByMemberID(memberID int) (int, error) {
 		&chatIDByMemberIDInp{
 			MemberID: memberID,
 		},
-		&chatIDByMemberIDResult{},
+		new(chatIDByMemberIDResult),
 	)
 	if res == nil {
 		return 0, d.categories.ChatIDByMemberID.Error
@@ -43,9 +43,9 @@ func (c *parentCategory) chatIDByMemberID() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT arr.id, coalesce(m.chat_id, 0)
-		FROM unnest($1::varchar[], $2::bigint[]) arr(id, memberid)
-		LEFT JOIN chat_members m ON m.chat_id = arr.memberid = m.id
+		SELECT ptr, coalesce(chat_id, 0)
+		FROM unnest($1::varchar[], $2::bigint[]) inp(ptr, memberid)
+		LEFT JOIN chat_members m ON m.chat_id = inp.memberid = m.id
 		`,
 		pq.Array(ptrs),
 		pq.Array(memberIDs),
@@ -67,10 +67,7 @@ func (c *parentCategory) chatIDByMemberID() {
 			return
 		}
 
-		request, ok := c.Requests[ptr]
-		if !ok { // если еще не создавали то надо паниковать
-			panic("c.Requests not exists")
-		}
+		request := c.getRequest(ptr)
 		request.Result.(*chatIDByMemberIDResult).ChatID = chatID
 	}
 

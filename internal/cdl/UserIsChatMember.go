@@ -25,7 +25,7 @@ func (d *Dataloader) UserIsChatMember(userID, chatID int) (bool, error) {
 			UserID: userID,
 			ChatID: chatID,
 		},
-		&UserIsChatMemberResult{Exists: false},
+		new(UserIsChatMemberResult),
 	)
 	if res == nil {
 		return false, d.categories.UserIsChatMember.Error
@@ -48,9 +48,9 @@ func (c *parentCategory) userIsChatMember() {
 	}
 
 	rows, err := c.Dataloader.db.Query(`
-		SELECT arr.id, m.id is not null 
-		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) arr(id, userid, chatid)
-		LEFT JOIN chat_members m ON m.chat_id = arr.chatid AND m.user_id = arr.userid
+		SELECT ptr, id is not null 
+		FROM unnest($1::varchar[], $2::bigint[], $3::bigint[]) inp(ptr, userid, chatid)
+		LEFT JOIN chat_members m ON m.chat_id = inp.chatid AND m.user_id = inp.userid
 		`,
 		pq.Array(ptrs),
 		pq.Array(userIDs),
@@ -64,8 +64,8 @@ func (c *parentCategory) userIsChatMember() {
 	defer rows.Close()
 
 	var ( // каждую итерацию будем менять значения
-		isMember bool
 		ptr      chanPtr
+		isMember bool
 	)
 	for rows.Next() {
 
@@ -74,10 +74,7 @@ func (c *parentCategory) userIsChatMember() {
 			return
 		}
 
-		request, ok := c.Requests[ptr]
-		if !ok { // если еще не создавали то надо паниковать
-			panic("c.Requests not exists")
-		}
+		request := c.getRequest(ptr)
 		request.Result.(*UserIsChatMemberResult).Exists = isMember
 	}
 
