@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -74,7 +75,10 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
-				r.Services.Repos.Users.DeleteRefreshSession(sessionID)
+				err := r.Services.Repos.Users.DeleteRefreshSession(sessionID)
+				if err != nil {
+					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				}
 			},
 			expAt,
 		)

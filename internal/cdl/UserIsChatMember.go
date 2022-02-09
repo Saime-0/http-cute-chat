@@ -57,7 +57,7 @@ func (c *parentCategory) userIsChatMember() {
 		pq.Array(chatIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("userIsChatMember:" + err.Error()) // debug
+		//c.Dataloader.healer.Alert("userIsChatMember:" + err.Error())
 		c.Error = err
 		return
 	}
@@ -70,7 +70,7 @@ func (c *parentCategory) userIsChatMember() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &isMember); err != nil {
-			//c.Dataloader.healer.Alert("userIsChatMember (scan rows):" + err.Error()) // debug
+			//c.Dataloader.healer.Alert("userIsChatMember (scan rows):" + err.Error())
 			c.Error = err
 			return
 		}

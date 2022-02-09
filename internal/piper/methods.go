@@ -23,7 +23,7 @@ func (n Node) ChatExists(chatID int) (fail bool) {
 	exists, err := n.Dataloader.UnitExistsByID(chatID, model.UnitTypeChat)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if !exists {
@@ -42,7 +42,7 @@ func (n Node) UserExists(userID int) (fail bool) {
 	exists, err := n.Dataloader.UnitExistsByID(userID, model.UnitTypeUser)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if !exists {
@@ -304,6 +304,7 @@ func (n Node) InvitesLimit(chatId int) (fail bool) {
 
 	count, err := n.repos.Chats.GetCountLinks(chatId)
 	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -342,7 +343,7 @@ func (n Node) IsMember(userId, chatId int) (fail bool) {
 	isMember, err := n.Dataloader.UserIsChatMember(userId, chatId)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if !isMember {
@@ -363,7 +364,7 @@ func (n Node) IsNotMember(userId, chatId int) (fail bool) {
 	isMember, err := n.Dataloader.UserIsChatMember(userId, chatId)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if isMember {
@@ -419,7 +420,7 @@ func (n Node) RoomExists(roomID int) (fail bool) {
 	exists, err := n.Dataloader.RoomExistsByID(roomID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if !exists {
@@ -607,19 +608,20 @@ func (n Node) IsNotBanned(userId, chatId int) (fail bool) {
 	return
 }
 
-func (n Node) GetChatIDByRoom(roomId int, chatId *int) (fail bool) {
+func (n Node) GetChatIDByRoom(roomID int, chatID *int) (fail bool) {
 	n.SwitchMethod("GetChatIDByRoom", &bson.M{
-		"roomId": roomId,
-		"chatId": chatId,
+		"roomID": roomID,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	_chatId, err := n.repos.Rooms.GetChatIDByRoomID(roomId)
+	_chatId, err := n.repos.Rooms.GetChatIDByRoomID(roomID)
 	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "не удалось найти комнату")
 		return true
 	}
-	*chatId = _chatId
+	*chatID = _chatId
 	return
 }
 func (n Node) GetChatIDByAllow(allowID int, chatId *int) (fail bool) {
@@ -631,6 +633,11 @@ func (n Node) GetChatIDByAllow(allowID int, chatId *int) (fail bool) {
 
 	_chatId, err := n.repos.Rooms.GetChatIDByAllowID(allowID)
 	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	if _chatId == 0 {
 		n.SetError(resp.ErrInternalServerError, "такого разрешения не существует")
 		return true
 	}
@@ -728,7 +735,7 @@ func (n Node) GetChatIDByMember(memberId int, chatId *int) (fail bool) {
 	*chatId, err = n.Dataloader.ChatIDByMemberID(memberId)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if *chatId < 1 {
@@ -750,7 +757,7 @@ func (n Node) GetMemberBy(userId, chatId int, memberId *int) (fail bool) {
 	by, err := n.Dataloader.FindMemberBy(userId, chatId)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if by == nil || *by == 0 {
@@ -785,10 +792,16 @@ func (n Node) HandleChoice(choiceString string, roomId int, handledChoice *strin
 	var userChoice model.UserChoice
 	err := json.Unmarshal([]byte(choiceString), &userChoice)
 	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "невалидное тело запроса")
 		return true
 	}
-	form := n.repos.Rooms.RoomForm(roomId)
+	form, err := n.repos.Rooms.RoomForm(roomId)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
+		return true
+	}
 
 	choice, aerr := matchMessageType(&userChoice, form)
 	if aerr != nil {
@@ -797,6 +810,7 @@ func (n Node) HandleChoice(choiceString string, roomId int, handledChoice *strin
 	}
 	choiceBody, err := json.Marshal(choice)
 	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка при обработке запроса")
 		return true
 	}
@@ -902,8 +916,14 @@ func (n Node) AllowsNotExists(roomID int, inp *model.AllowsInput) (fail bool) {
 		"inp":    inp,
 	})
 	defer n.MethodTiming()
+	exists, err := n.repos.Rooms.AllowsExists(roomID, inp)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
 
-	if n.repos.Rooms.AllowsExists(roomID, inp) {
+	if exists {
 		n.SetError(resp.ErrBadRequest, "такое разрешение уже существует")
 		return true
 	}
@@ -935,7 +955,7 @@ func (n Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 		_chatID, err := n.Dataloader.ChatIDByMemberID(intVal)
 		if err != nil {
 			n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-			n.SetError(resp.ErrBadRequest, "ошибка при обработке данных")
+			n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 			return true
 		}
 		if _chatID < 1 || _chatID != chatID {
@@ -1020,6 +1040,11 @@ func (n Node) GetRegistrationSession(email, code string, regi **models.RegisterD
 	var err error
 	*regi, err = n.repos.Users.GetRegistrationSession(email, code)
 	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+	if *regi == nil {
 		n.SetError(resp.ErrBadRequest, "сессии не существует")
 		return true
 	}

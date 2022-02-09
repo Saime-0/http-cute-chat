@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -48,7 +49,8 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		expAt,
 	)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "внутренняя ошибка сервера"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return nil, errors.New("произошла ошибка во время обработки данных")
 	}
 
 	err = r.Services.SMTP.Send(
@@ -64,7 +66,10 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); ok && expAt < runAt.(int64) {
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
-				r.Services.Repos.Users.DeleteRegistrationSession(input.Email)
+				err := r.Services.Repos.Users.DeleteRegistrationSession(input.Email)
+				if err != nil {
+					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				}
 			},
 			expAt,
 		)

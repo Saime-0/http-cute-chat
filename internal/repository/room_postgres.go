@@ -47,8 +47,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 		var marshal []byte
 		marshal, err = json.Marshal(*inp.Form)
 		if err != nil {
-			println("CreateRoom:", err.Error()) // debug
-			return room, err
+			return nil, err
 		}
 		format = kit.StringPtr(string(marshal))
 	}
@@ -71,8 +70,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 		&room.Note,
 	)
 	if err != nil {
-		println("CreateRoom:", err.Error()) // debug
-		return room, err
+		return nil, err
 	}
 
 	if inp.Allows != nil {
@@ -88,8 +86,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 			VALUES` + allows,
 		).Err()
 		if err != nil {
-			println("CreateRoom:", err.Error()) // debug
-			return room, err
+			return nil, err
 		}
 
 	}
@@ -139,9 +136,6 @@ func (r *RoomsRepo) UpdateRoom(roomId int, inp *model.UpdateRoomInput) (*model.U
 		&room.ParentID,
 		&room.Note,
 	)
-	if err != nil {
-		println("UpdateRoom:", err.Error()) // debug
-	}
 
 	return room, err
 }
@@ -154,9 +148,6 @@ func (r *RoomsRepo) DeleteRoom(roomID int) (*model.DeleteRoom, error) {
 		RETURNING id`,
 		roomID,
 	).Scan(&room.ID)
-	if err != nil {
-		println("DeleteRoom:", err.Error()) // debug
-	}
 
 	return room, err
 }
@@ -169,15 +160,12 @@ func (r *RoomsRepo) DeleteAllow(allowID int) (*model.DeleteAllow, error) {
 		RETURNING id`,
 		allowID,
 	).Scan(&allow.AllowID)
-	if err != nil {
-		println("DeleteAllow:", err.Error()) // debug
-	}
 
 	return allow, err
 }
 
-func (r *RoomsRepo) AllowsExists(roomID int, allows *model.AllowsInput) (desired bool) {
-	err := r.db.QueryRow(`
+func (r *RoomsRepo) AllowsExists(roomID int, allows *model.AllowsInput) (desired bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT *
 		FROM unnest($2::findallow[]) elem (act,gr,val)
 		LEFT JOIN allows a ON a.room_id =  $1
@@ -188,9 +176,6 @@ func (r *RoomsRepo) AllowsExists(roomID int, allows *model.AllowsInput) (desired
 		roomID,
 		pq.Array(allows.Allows),
 	).Scan(&desired)
-	if err != nil {
-		println("AllowsExists:", err.Error()) // debug
-	}
 
 	return
 }
@@ -213,8 +198,7 @@ func (r *RoomsRepo) CreateAllows(roomID int, inp *model.AllowsInput) (*model.Cre
 		RETURNING id, action_type, group_type, value`,
 	)
 	if err != nil {
-		println("CreateAllows:", err.Error()) // debug
-		return allows, err
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -236,26 +220,24 @@ func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {
 		WHERE id = $1`,
 		roomId,
 	).Scan(&chatId)
-	if err != nil {
-		println("GetChatIDByRoomID:", err.Error()) // debug
-	}
+
 	return
 }
 func (r *RoomsRepo) GetChatIDByAllowID(allowID int) (chatId int, err error) {
 	err = r.db.QueryRow(`
-		SELECT chat_id
-		FROM rooms r
-		JOIN allows a on r.id = a.room_id
-		WHERE a.id = $1`,
+		SELECT coalesce((
+		    SELECT chat_id
+			FROM rooms r
+			JOIN allows a on r.id = a.room_id
+			WHERE a.id = $1
+		), 0)`,
 		allowID,
 	).Scan(&chatId)
-	if err != nil {
-		println("GetChatIDByAllowID:", err.Error()) // debug
-	}
+
 	return
 }
 
-func (r *RoomsRepo) RoomForm(roomId int) *model.Form {
+func (r *RoomsRepo) RoomForm(roomId int) (*model.Form, error) {
 	var (
 		format *string
 		form   *model.Form
@@ -267,20 +249,18 @@ func (r *RoomsRepo) RoomForm(roomId int) *model.Form {
 		roomId,
 	).Scan(&format)
 	if err != nil {
-		println("RoomForm:", err.Error()) // debug
-		return nil
+		return nil, err
 	}
 	if format == nil {
-		return nil
+		return nil, nil
 	}
 
 	err = json.Unmarshal([]byte(*format), &form)
 	if err != nil {
-		println("RoomForm:", err.Error()) // debug
-		return nil
+		return nil, err
 	}
 
-	return form
+	return form, err
 }
 
 func (r *RoomsRepo) UpdateRoomForm(roomId int, form *string) (err error) {
@@ -291,9 +271,6 @@ func (r *RoomsRepo) UpdateRoomForm(roomId int, form *string) (err error) {
 		roomId,
 		form,
 	).Err()
-	if err != nil {
-		println("UpdateRoomForm:", err.Error()) // debug
-	}
 
 	return
 }
@@ -428,7 +405,7 @@ func (r *RoomsRepo) AllowsIsSet(roomId int) (have bool) {
 	return
 }
 
-func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) *model.Rooms {
+func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) (*model.Rooms, error) {
 	rooms := &model.Rooms{
 		Rooms: []*model.Room{},
 	}
@@ -470,9 +447,8 @@ func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) *model
 		params.Limit,
 		params.Offset,
 	)
-	if err != nil {
-		println("FindRooms:", err.Error()) // debug
-		return rooms
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -483,11 +459,11 @@ func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) *model
 		}
 		if err = rows.Scan(&m.RoomID, &m.Chat.Unit.ID, &m.Name, &m.ParentID, &m.Note); err != nil {
 			println("rows.scan:", err.Error()) // debug
-			return rooms
+			return nil, err
 		}
 
 		rooms.Rooms = append(rooms.Rooms, m)
 	}
 
-	return rooms
+	return rooms, nil
 }

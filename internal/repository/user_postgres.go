@@ -178,9 +178,6 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 		&me.User.Unit.Type,
 		&me.Data.Email,
 	)
-	if err != nil {
-		println("Me:", err.Error()) // debug
-	}
 
 	return me, err
 }
@@ -196,24 +193,19 @@ func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
 		WHERE chats.owner_id = $1`,
 		userId,
 	)
-	if err != nil {
-		println("OwnedChats:", err.Error()) // debug
-		return chats, err
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Chat{}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
-			println("OwnedChats:", err.Error()) // debug
-			return chats, err
+			return nil, err
 		}
 
 		chats.Chats = append(chats.Chats, m)
 	}
-	if !rows.NextResultSet() {
-		println("OwnedChats:", err.Error()) // debug
-		return chats, err
-	}
+
 	return chats, nil
 }
 
@@ -232,8 +224,7 @@ func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
 		userId,
 	)
 	if err != nil {
-		println("Chats:", err.Error()) // debug
-		return chats, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -241,8 +232,7 @@ func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
 			Unit: &model.Unit{},
 		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
-			println("Chats:", err.Error()) // debug
-			return chats, err
+			return nil, err
 		}
 
 		chats.Chats = append(chats.Chats, m)
@@ -258,19 +248,15 @@ func (r *UsersRepo) ChatsID(userId int) ([]int, error) {
 		userId,
 	)
 	if err != nil {
-		println("ChatsID:", err.Error()) // debug
-		return []int{}, err
+		return nil, err
 	}
 	defer rows.Close()
 
 	chats, err := completeIntArray(rows)
-	if err != nil {
-		println("ChatsID:", err.Error()) // debug
-	}
 
-	return chats, nil
+	return chats, err
 }
-func (r *UsersRepo) FindUsers(inp *model.FindUsers) *model.Users {
+func (r *UsersRepo) FindUsers(inp *model.FindUsers) (*model.Users, error) {
 	users := &model.Users{}
 	if inp.NameFragment != nil {
 		*inp.NameFragment = "%" + *inp.NameFragment + "%"
@@ -286,9 +272,8 @@ func (r *UsersRepo) FindUsers(inp *model.FindUsers) *model.Users {
 		inp.Domain,
 		inp.NameFragment,
 	)
-	if err != nil {
-		println("FindUsers:", err.Error()) // debug
-		return users
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -296,12 +281,12 @@ func (r *UsersRepo) FindUsers(inp *model.FindUsers) *model.Users {
 			Unit: &model.Unit{},
 		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
-			return users
+			return nil, err
 		}
 		users.Users = append(users.Users, m)
 	}
 
-	return users
+	return users, nil
 }
 
 func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (*model.UpdateUser, error) {
@@ -333,9 +318,6 @@ func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (*model.Up
 		&unit.Domain,
 		&unit.Name,
 	)
-	if err != nil {
-		println("UpdateMe:", err.Error()) // debug
-	}
 
 	return unit, err
 }
@@ -343,9 +325,12 @@ func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (*model.Up
 func (r UsersRepo) GetRegistrationSession(email, code string) (*models.RegisterData, error) {
 	regi := &models.RegisterData{}
 	err := r.db.QueryRow(`
-	    SELECT domain, name, email, hashed_password
-		FROM registration_session
-	    WHERE email = $1 AND verify_code = $2
+	    SELECT coalesce(domain, ''), 
+	           coalesce(name, ''), 
+	           coalesce(email, ''), 
+	           coalesce(hashed_password, '')
+		FROM (SELECT 1) _
+		LEFT JOIN registration_session ON email = $1 AND verify_code = $2
 		`,
 		email,
 		code,
@@ -356,36 +341,34 @@ func (r UsersRepo) GetRegistrationSession(email, code string) (*models.RegisterD
 		&regi.HashPassword,
 	)
 	if err != nil {
-		println("GetRegistrationSession:", err.Error()) // debug
 		return nil, err
+	}
+	if regi.Domain == "" {
+		regi = nil
 	}
 	return regi, nil
 }
 
-func (r UsersRepo) DeleteRegistrationSession(email string) {
-	err := r.db.QueryRow(`
+func (r UsersRepo) DeleteRegistrationSession(email string) (err error) {
+	err = r.db.QueryRow(`
 		DELETE FROM registration_session
 	    WHERE email = $1
 		`,
 		email,
 	).Err()
-	if err != nil {
-		println("DeleteRegistrationSession:", err.Error()) // debug
-	}
+
 	return
 }
 
-func (r UsersRepo) DeleteRefreshSession(id int) {
+func (r UsersRepo) DeleteRefreshSession(id int) error {
 	err := r.db.QueryRow(`
 		DELETE FROM refresh_sessions
 	    WHERE id = $1
 		`,
 		id,
 	).Err()
-	if err != nil {
-		println("DeleteRefreshSession:", err.Error()) // debug
-	}
-	return
+
+	return err
 }
 
 func (r *UsersRepo) CreateRegistrationSession(userModel *models.RegisterData, expAt int64) (verifyCode string, err error) {
@@ -399,9 +382,7 @@ func (r *UsersRepo) CreateRegistrationSession(userModel *models.RegisterData, ex
 		userModel.HashPassword,
 		expAt,
 	).Scan(&verifyCode)
-	if err != nil {
-		println("CreateRegistrationSession:", err.Error()) // debug
-	}
+
 	return
 }
 

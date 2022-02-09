@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -35,7 +36,11 @@ func (r *queryResolver) Rooms(ctx context.Context, find model.FindRooms, params 
 		return node.GetError(), nil
 	}
 
-	rooms = r.Services.Repos.Rooms.FindRooms(&find, params)
+	rooms, err := r.Services.Repos.Rooms.FindRooms(&find, params)
+	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return nil, errors.New("произошла ошибка во время обработки данных")
+	}
 
 	return rooms, nil
 }

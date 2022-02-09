@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -31,12 +32,11 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 		node.CanBan(clientID, member.UserID, member.ChatID) {
 		return node.GetError(), nil
 	}
-	if r.Services.Repos.Chats.AddToBanlist(member.UserID, member.ChatID) != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалось забанить пользователя"), nil
-	}
-	eventReadyMember, err := r.Services.Repos.Chats.RemoveUserFromChat(member.UserID, member.ChatID)
+
+	eventReadyMember, err := r.Services.Repos.Chats.BanUserInChat(member.UserID, member.ChatID)
 	if err != nil {
-		panic(err)
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "не удалось забанить пользователя"), nil
 	}
 
 	go r.Subix.NotifyChatMembers(

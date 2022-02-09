@@ -10,7 +10,6 @@ import (
 )
 
 func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-	//println("IsAuth directive start!") // debug
 
 	if utils.GetAuthDataFromCtx(ctx) == nil {
 		err = errors.New("не аутентифицирован")

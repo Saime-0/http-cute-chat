@@ -35,7 +35,10 @@ func (r *mutationResolver) ConfirmRegistration(ctx context.Context, email string
 		return resp.Error(resp.ErrInternalServerError, "не удлось создать пользователя"), nil
 	}
 
-	r.Services.Repos.Users.DeleteRegistrationSession(email)
+	err = r.Services.Repos.Users.DeleteRegistrationSession(email)
+	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+	}
 
 	return resp.Success("пользователь создан"), nil
 }

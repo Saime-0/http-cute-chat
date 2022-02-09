@@ -25,7 +25,7 @@ func completeIntArray(rows *sql.Rows) (arr []int, err error) {
 	for rows.Next() {
 		var id int
 		if err = rows.Scan(&id); err != nil {
-			return arr, err
+			return nil, err
 		}
 		arr = append(arr, id)
 	}

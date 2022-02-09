@@ -72,24 +72,23 @@ func (c *parentCategory) runLoadFunc() {
 }
 
 func (c *parentCategory) onAddRequest() {
-	//fmt.Println("реквест добавлен") // debug
-	//fmt.Printf("таймер на момент onAddRequest %#v\n", c.Timer)
+	// реквест уже добавлен
+
 	c.RemainingRequestsCount -= 1
 	if c.RemainingRequestsCount <= 0 {
 		if c.Timer != nil {
+			// таймер остановлен тк нужное количество реквестов набралось
 			c.Timer.Stop()
-			//fmt.Println("таймер остановлен тк нужное количество реквестов набралось") // debug
 		}
+		// функция выполнилнится по набору максимального количества реквестов
 		c.runLoadFunc()
-		//fmt.Println("функция выполнилась по набору максимального количества реквестов") // debug
 		return
 	}
 
 	if c.Timer == nil {
-		//fmt.Println("таймер запущен") // debug
+		// запуск таймера
 		c.Timer = time.AfterFunc(c.Dataloader.wait, func() {
 			c.runLoadFunc()
-			//fmt.Println("функция выполнилась по таймеру") // debug
 		})
 	}
 }

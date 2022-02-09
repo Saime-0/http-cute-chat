@@ -5,6 +5,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/res"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
 	"time"
 )
@@ -32,11 +33,10 @@ func (r *Resolver) RegularSchedule(interval int64) (err error) {
 
 		select {
 		case ready <- 1:
-			println("RegularSchedule: сигнал о готовности был услышан") // debug
+			//  сигнал о готовности был услышан
 		default:
-			println("RegularSchedule: сигнал о готовности никто не услышал") // debug
+			// сигнал о готовности никто не услышал
 		}
-		println("RegularSchedule come true") // debug
 	}
 
 	regFn()
@@ -53,9 +53,9 @@ func (r *Resolver) RegularSchedule(interval int64) (err error) {
 			}
 			r.Services.Cache.Set(res.CacheNextRunRegularScheduleAt, runAt)
 
-			println("RegularSchedule: начато прослушивание канала") // debug
+			// начато прослушивание канала
 			<-ready
-			println("RegularSchedule: получен сигнал о готовности") // debug
+			// получен сигнал о готовности
 		}
 	}()
 
@@ -79,10 +79,10 @@ func (r *Resolver) prepareScheduleInvites(before int64) (err error) {
 		}
 
 		if *inv.Exp <= time.Now().Unix() {
+			// удаляю инвайт, тк он уже истек
 			if _, err := r.Services.Repos.Chats.DeleteInvite(inv.Code); err != nil {
 				return err
 			}
-			println("prepareScheduleInvites: удаляю инвайт, тк он уже истек", inv.Code) // debug
 			continue
 		}
 
@@ -100,14 +100,20 @@ func (r *Resolver) prepareScheduleRegisterSessions(before int64) (err error) {
 	for _, rs := range sessions {
 
 		if rs.Exp <= time.Now().Unix() {
-			r.Services.Repos.Users.DeleteRegistrationSession(rs.Email)
-			println("prepareScheduleRegisterSessions: удаляю сессию, тк она уже истекла", rs.Email) // debug
+			// удаляю сессию, тк она уже истекла
+			err := r.Services.Repos.Users.DeleteRegistrationSession(rs.Email)
+			if err != nil {
+				r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			}
 			continue
 		}
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
-				r.Services.Repos.Users.DeleteRegistrationSession(rs.Email)
-				println("prepareScheduleRegisterSessions: спланирвоанное удаление", rs.Email) // debug
+				// спланированное удаление
+				err := r.Services.Repos.Users.DeleteRegistrationSession(rs.Email)
+				if err != nil {
+					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				}
 			},
 			rs.Exp,
 		)
@@ -126,14 +132,20 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 	for _, rs := range sessions {
 
 		if rs.Exp <= time.Now().Unix() {
-			r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
-			println("prepareScheduleRefreshSessions: удаляю сессию, тк она уже истекла", rs.ID) // debug
+			// удаляю сессию, тк она уже истекла
+			err := r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
+			if err != nil {
+				r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			}
 			continue
 		}
 		_, err = r.Services.Scheduler.AddTask(
 			func() {
-				r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
-				println("prepareScheduleRefreshSessions: спланированное удаление", rs.ID) // debug
+				// спланированное удаление
+				err := r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
+				if err != nil {
+					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				}
 			},
 			rs.Exp,
 		)
@@ -192,8 +204,8 @@ func (r *Resolver) CreateScheduledInvite(chatID int, code string, exp *int64) er
 					Code:   code,
 				},
 			)
+			// удаляю инвайт, тк он уже истек
 			delete(*invites, code)
-			println("prepareScheduleInvites: удаляю инвайт, тк он уже истек", code) // debug
 		},
 		*exp,
 	)

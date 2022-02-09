@@ -56,7 +56,7 @@ func (c *parentCategory) user() {
 		pq.Array(userIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("user:" + err.Error()) // debug
+		//c.Dataloader.healer.Alert("user:" + err.Error())
 		c.Error = err
 		return
 	}
@@ -69,7 +69,7 @@ func (c *parentCategory) user() {
 		m := &model.User{Unit: new(model.Unit)}
 
 		if err = rows.Scan(&ptr, &m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
-			//c.Dataloader.healer.Alert("user (scan rows):" + err.Error()) // debug
+			//c.Dataloader.healer.Alert("user (scan rows):" + err.Error())
 			c.Error = err
 			return
 		}

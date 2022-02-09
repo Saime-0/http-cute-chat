@@ -44,13 +44,15 @@ func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateM
 
 	eventReadyUser, err := r.Services.Repos.Users.UpdateMe(clientID, &input)
 	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось обновить данные"), nil
 	}
 
 	if input.Name != nil || input.Domain != nil {
 		chats, err := r.Services.Repos.Users.ChatsID(clientID)
 		if err != nil {
-			return nil, err
+			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			return nil, errors.New("произошла ошибка во время обработки данных")
 		} else {
 			go r.Subix.NotifyChats(
 				chats,

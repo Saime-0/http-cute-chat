@@ -140,7 +140,8 @@ func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.Invi
 
 	invites, err := r.Services.Repos.Chats.Invites(chatID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "ошибка при попытке получить данные"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return nil, errors.New("произошла ошибка во время обработки данных")
 	}
 
 	return invites, nil
@@ -210,7 +211,8 @@ func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, er
 
 	chats, err := r.Services.Repos.Users.Chats(clientID)
 	if err != nil {
-		return nil, nil // todo resp.Error
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return nil, errors.New("произошла ошибка во время обработки данных")
 	}
 
 	return chats, nil
@@ -227,7 +229,8 @@ func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) (*model.Chat
 
 	chats, err := r.Services.Repos.Users.OwnedChats(clientID)
 	if err != nil {
-		return nil, nil // todo resp.Error
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return chats, nil
@@ -286,7 +289,7 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 	room, err := r.Dataloader.Room(roomID)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("ошибка при обрабтке данных") // todo resp.Error
+		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 	return room, nil
 }
@@ -308,7 +311,7 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 	message, err := r.Dataloader.Message(obj.ReplyTo.ID)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("ошибка при обработке данных") // todo resp.Error
+		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return message, nil
@@ -332,7 +335,7 @@ func (r *messageResolver) User(ctx context.Context, obj *model.Message) (*model.
 	user, err := r.Dataloader.User(userID)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("ошибка при обработке данных") // todo resp.Error
+		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return user, nil
@@ -378,7 +381,11 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 		node.IsAllowedTo(model.ActionTypeRead, roomID, &holder) {
 		return node.GetError(), nil
 	}
-	form := r.Services.Repos.Rooms.RoomForm(roomID)
+	form, err := r.Services.Repos.Rooms.RoomForm(roomID)
+	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return nil, errors.New("произошла ошибка во время обработки данных")
+	}
 
 	return form, nil
 }
@@ -425,7 +432,7 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 	room, err := r.Services.Repos.Messages.MessagesFromRoom(roomID, chatID, &find)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return resp.Error(resp.ErrBadRequest, "ошибка при обработке данных"), nil
+		return resp.Error(resp.ErrBadRequest, "произошла ошибка во время обработки данных"), nil
 	}
 
 	return room, nil

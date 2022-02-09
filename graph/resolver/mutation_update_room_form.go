@@ -6,6 +6,7 @@ package resolver
 import (
 	"context"
 	"encoding/json"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -51,7 +52,8 @@ func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form 
 
 	err = r.Services.Repos.Rooms.UpdateRoomForm(roomID, bodyForm)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалось установить новую форму"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return nil, errors.New("произошла ошибка во время обработки данных")
 	}
 
 	return resp.Success("форма успешно обновлена"), nil

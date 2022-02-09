@@ -40,8 +40,8 @@ func (s *Subix) CreateMemberIfNotExists(memberID, chatID, userID int) *Member {
 			UserID:  userID,
 			clients: Clients{},
 		}
+
 		s.members[memberID] = member
-		println("Создан мембер", member.ID) // debug
 	}
 	return member
 }

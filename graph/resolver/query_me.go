@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -21,6 +22,7 @@ func (r *queryResolver) Me(ctx context.Context) (model.MeResult, error) {
 	clientID := utils.GetAuthDataFromCtx(ctx).UserID
 	me, err := r.Services.Repos.Users.Me(clientID)
 	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось получить данные"), nil
 	}
 

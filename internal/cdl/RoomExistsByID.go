@@ -52,7 +52,7 @@ func (c *parentCategory) roomExistsByID() {
 		pq.Array(roomIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("roomExistsByID:" + err.Error()) // debug
+		//c.Dataloader.healer.Alert("roomExistsByID:" + err.Error())
 		c.Error = err
 		return
 	}
@@ -65,7 +65,7 @@ func (c *parentCategory) roomExistsByID() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &exists); err != nil {
-			//c.Dataloader.healer.Alert("roomExistsByID (scan rows):" + err.Error()) // debug
+			//c.Dataloader.healer.Alert("roomExistsByID (scan rows):" + err.Error())
 			c.Error = err
 			return
 		}

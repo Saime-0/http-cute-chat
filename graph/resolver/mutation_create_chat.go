@@ -40,6 +40,7 @@ func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateCha
 
 	_, err = r.Services.Repos.Chats.AddUserToChat(clientID, chatID)
 	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться к чату"), nil
 	}
 

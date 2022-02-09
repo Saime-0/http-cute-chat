@@ -59,7 +59,7 @@ func (c *parentCategory) message() {
 		pq.Array(messageIDs),
 	)
 	if err != nil {
-		//c.Dataloader.healer.Alert("message:" + err.Error()) // debug
+		//c.Dataloader.healer.Alert("message:" + err.Error())
 		c.Error = err
 		return
 	}
@@ -74,7 +74,7 @@ func (c *parentCategory) message() {
 		m := &model.Message{Room: new(model.Room)}
 
 		if err = rows.Scan(&ptr, &m.ID, &replyTo, &userID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
-			//c.Dataloader.healer.Alert("message (scan rows):" + err.Error()) // debug
+			//c.Dataloader.healer.Alert("message (scan rows):" + err.Error())
 			c.Error = err
 			return
 		}
