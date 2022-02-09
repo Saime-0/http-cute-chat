@@ -6,6 +6,7 @@ package resolver
 import (
 	"context"
 	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
@@ -32,7 +33,7 @@ func (r *queryResolver) Users(ctx context.Context, find model.FindUsers, params 
 	users, err := r.Services.Repos.Users.FindUsers(&find)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных")
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	return users, nil

@@ -25,15 +25,13 @@ func (r *PreparesRepo) ScheduleInvites(before int64) ([]*models.ScheduleInvite, 
 		before,
 	)
 	if err != nil {
-		println("ScheduleInvites:", err.Error()) // debug
-		return invites, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		inv := &models.ScheduleInvite{}
 		if err = rows.Scan(&inv.Code, &inv.ChatID, &inv.Exp); err != nil {
-			println("ScheduleInvites:", err.Error()) // debug
-			return invites, err
+			return nil, err
 		}
 		invites = append(invites, inv)
 	}
@@ -52,15 +50,14 @@ func (r *PreparesRepo) ScheduleRegisterSessions(before int64) ([]*models.Schedul
 		before,
 	)
 	if err != nil {
-		println("ScheduleRegisterSessions:", err.Error()) // debug
-		return sessions, err
+		return nil, err
 	}
+
 	defer rows.Close()
 	for rows.Next() {
 		rs := &models.ScheduleRegisterSession{}
 		if err = rows.Scan(&rs.Email, &rs.Exp); err != nil {
-			println("scanScheduleRegisterSessions:", err.Error()) // debug
-			return sessions, err
+			return nil, err
 		}
 		sessions = append(sessions, rs)
 	}
@@ -79,14 +76,12 @@ func (r *PreparesRepo) ScheduleRefreshSessions(before int64) ([]*models.Schedule
 		before,
 	)
 	if err != nil {
-		println("ScheduleRefreshSessions:", err.Error()) // debug
 		return sessions, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		rs := &models.ScheduleRefreshSession{}
 		if err = rows.Scan(&rs.ID, &rs.Exp); err != nil {
-			println("scanScheduleRegisterSessions:", err.Error()) // debug
 			return sessions, err
 		}
 		sessions = append(sessions, rs)

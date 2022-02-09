@@ -5,6 +5,8 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -32,7 +34,7 @@ func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params 
 
 	chats, err := r.Services.Repos.Chats.FindChats(&find, params)
 	if err != nil {
-		//node.Alert()
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось получить список чатов"), nil
 	}
 

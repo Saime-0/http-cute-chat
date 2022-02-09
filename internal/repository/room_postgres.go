@@ -458,7 +458,6 @@ func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) (*mode
 			},
 		}
 		if err = rows.Scan(&m.RoomID, &m.Chat.Unit.ID, &m.Name, &m.ParentID, &m.Note); err != nil {
-			println("rows.scan:", err.Error()) // debug
 			return nil, err
 		}
 

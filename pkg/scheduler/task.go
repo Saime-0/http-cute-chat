@@ -20,6 +20,7 @@ func emptyTask() **Task {
 }
 
 func (s *Scheduler) RunTask(task **Task) error {
+	// принудительный запуск задачи
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if task == nil || *task == nil {
@@ -27,7 +28,6 @@ func (s *Scheduler) RunTask(task **Task) error {
 	}
 	go (*task).taskFunc()
 	*task = *(*task).next
-	println("RunTask: задача запущена принудительно") // debug
 	return nil
 }
 
@@ -75,6 +75,5 @@ func (s *Scheduler) DropTask(task **Task) error {
 		return errors.New("task not found")
 	}
 	*task = *(*task).next
-	println("DropTask: задача удалена") // debug
 	return nil
 }

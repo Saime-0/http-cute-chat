@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -33,7 +34,8 @@ func (r *mutationResolver) DeleteRole(ctx context.Context, roleID int) (model.Mu
 
 	eventReadyRole, err := r.Services.Repos.Chats.DeleteRole(roleID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалось удалить роль"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	go r.Subix.NotifyChatMembers(

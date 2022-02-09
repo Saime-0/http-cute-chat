@@ -13,7 +13,6 @@ func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res in
 
 	if utils.GetAuthDataFromCtx(ctx) == nil {
 		err = errors.New("не аутентифицирован")
-		println("IsAuth:", err.Error()) // debug
 		return obj, err
 	}
 

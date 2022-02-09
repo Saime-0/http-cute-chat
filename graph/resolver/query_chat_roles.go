@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -30,7 +31,8 @@ func (r *queryResolver) ChatRoles(ctx context.Context, chatID int) (model.ChatRo
 
 	roles, err := r.Services.Repos.Chats.Roles(chatID)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалось получить список ролей в комнате"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	return roles, nil

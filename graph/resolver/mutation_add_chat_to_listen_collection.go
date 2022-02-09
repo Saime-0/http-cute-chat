@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -40,7 +41,7 @@ func (r *mutationResolver) AddChatToListenCollection(ctx context.Context, sessio
 
 	err := r.Subix.AddListenChat(sessionKey, subuser)
 	if err != nil {
-		println("AddChatToListenCollection:", err) // debug
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrBadRequest, "не удалось начать прослушивать чат"), nil
 	}
 

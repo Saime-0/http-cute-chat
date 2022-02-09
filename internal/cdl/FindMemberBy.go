@@ -3,6 +3,8 @@ package cdl
 import (
 	"fmt"
 	"github.com/lib/pq"
+	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 )
 
 func (r *findMemberByResult) isRequestResult() {}
@@ -56,7 +58,7 @@ func (c *parentCategory) findMemberBy() {
 		pq.Array(chatIDs),
 	)
 	if err != nil {
-		println("findMemberBy:", err.Error()) // debug
+		c.Dataloader.healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		c.Error = err
 		return
 	}

@@ -50,7 +50,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 	)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных")
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	err = r.Services.SMTP.Send(
@@ -59,7 +59,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		input.Email,
 	)
 	if err != nil {
-		println("Register:", err.Error()) // debug
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось отправить код подтверждения на указанную почту"), nil
 	}
 
@@ -74,7 +74,8 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 			expAt,
 		)
 		if err != nil {
-			panic(err)
+			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			//panic(err)
 		}
 	}
 

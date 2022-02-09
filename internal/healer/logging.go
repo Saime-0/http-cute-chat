@@ -17,7 +17,7 @@ func (h *Healer) Log(document interface{}) {
 	if h.Output <= clog.Multiple {
 		//b, _ := json.MarshalIndent(document, "", " ")
 		//fmt.Println(string(b))
-		fmt.Printf("%#v", document)
+		fmt.Printf("%#v\n", document)
 	}
 	if h.Output >= clog.Multiple {
 		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)

@@ -52,7 +52,7 @@ func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateM
 		chats, err := r.Services.Repos.Users.ChatsID(clientID)
 		if err != nil {
 			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-			return nil, errors.New("произошла ошибка во время обработки данных")
+			return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 		} else {
 			go r.Subix.NotifyChats(
 				chats,

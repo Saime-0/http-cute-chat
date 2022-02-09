@@ -20,14 +20,17 @@ func (r *Resolver) RegularSchedule(interval int64) (err error) {
 
 		err = r.prepareScheduleInvites(end)
 		if err != nil {
+			r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 			panic(err)
 		}
 		err = r.prepareScheduleRegisterSessions(end)
 		if err != nil {
+			r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 			panic(err)
 		}
 		err = r.prepareScheduleRefreshSessions(end)
 		if err != nil {
+			r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 			panic(err)
 		}
 
@@ -68,7 +71,7 @@ type scheduleInviteMap map[string]*models.ScheduleInvite
 func (r *Resolver) prepareScheduleInvites(before int64) (err error) {
 	invites, err := r.Services.Repos.Prepares.ScheduleInvites(before)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "не удалось подготовить инвайты")
 	}
 
 	r.Services.Cache.Set(res.CacheScheduleInvites, &scheduleInviteMap{})
@@ -86,7 +89,10 @@ func (r *Resolver) prepareScheduleInvites(before int64) (err error) {
 			continue
 		}
 
-		r.CreateScheduledInvite(inv.ChatID, inv.Code, inv.Exp)
+		err = r.CreateScheduledInvite(inv.ChatID, inv.Code, inv.Exp)
+		if err != nil {
+			return errors.Wrap(err, "не удалось подготовить инвайты")
+		}
 	}
 
 	return nil
@@ -193,9 +199,7 @@ func (r *Resolver) CreateScheduledInvite(chatID int, code string, exp *int64) er
 
 			_, err := r.Services.Repos.Chats.DeleteInvite(code)
 			if err != nil {
-				//return errors.Wrap(err, "не удалось удалить инвайт")
-				panic(err)
-				//todo log
+				r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 			}
 			r.Subix.NotifyChatMembers(
 				chatID,
@@ -210,6 +214,7 @@ func (r *Resolver) CreateScheduledInvite(chatID int, code string, exp *int64) er
 		*exp,
 	)
 	if err != nil {
+		r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return errors.Wrap(err, "не удалось запланировать задачу")
 	}
 	(*invites)[code] = &models.ScheduleInvite{

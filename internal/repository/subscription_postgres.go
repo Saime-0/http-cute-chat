@@ -44,14 +44,12 @@ func (r *SubscribersRepo) initFuncs() {
 		)
 		defer rows.Close()
 		if err != nil {
-			println("Members:", err.Error()) // debug
-			return users, err
+			return nil, err
 		}
 
 		users, err = completeIntArray(rows)
 		if err != nil {
-			println("Members(Scan):", err.Error()) // debug
-			return users, err
+			return nil, err
 		}
 
 		return users, nil
@@ -82,15 +80,13 @@ func (r *SubscribersRepo) initFuncs() {
 			pq.Array(roomIDs),
 		)
 		if err != nil {
-			println("Members:", err.Error()) // debug
-			return users, err
+			return nil, err
 		}
 		defer rows.Close()
 
 		users, err = completeIntArray(rows)
 		if err != nil {
-			println("Members(Scan):", err.Error()) // debug
-			return users, err
+			return nil, err
 		}
 
 		return users, nil

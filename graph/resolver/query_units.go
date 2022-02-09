@@ -35,7 +35,7 @@ func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params 
 	units, err := r.Services.Repos.Units.FindUnits(&find, params)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return resp.Error(resp.ErrBadRequest, "произошла ошибка во время обработки данных"), nil
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	return units, nil

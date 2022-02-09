@@ -6,11 +6,10 @@ import (
 )
 
 func (h Healer) MonitorLogger(err error) {
-	fmt.Println("MonitorLogger:", err) // debug
 	if err != nil {
 		err = h.stateMachine.Indicators[res.IndicatorLogger].SetState(res.FailedDBConnection)
 		if err != nil {
-			println("MonitorLogger:", err.Error()) // debug
+			fmt.Println("MonitorLogger:", err) // debug
 		}
 	}
 }

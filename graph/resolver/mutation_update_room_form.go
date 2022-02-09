@@ -46,6 +46,7 @@ func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form 
 		byteForm, err := json.Marshal(*form)
 		bodyForm = kit.StringPtr(string(byteForm))
 		if err != nil {
+			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 			return resp.Error(resp.ErrInternalServerError, "не удалось обработать тело запроса"), nil
 		}
 	}
@@ -53,7 +54,7 @@ func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form 
 	err = r.Services.Repos.Rooms.UpdateRoomForm(roomID, bodyForm)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных")
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	return resp.Success("форма успешно обновлена"), nil

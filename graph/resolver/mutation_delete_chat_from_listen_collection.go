@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -36,7 +37,7 @@ func (r *mutationResolver) DeleteChatFromListenCollection(ctx context.Context, s
 
 	err := r.Subix.DeleteChatFromListenCollection(sessionKey, memberID)
 	if err != nil {
-		println("DeleteChatFromListenCollection:", err) // debug
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrBadRequest, "не удалось прекратить прослушивать чат"), nil
 	}
 

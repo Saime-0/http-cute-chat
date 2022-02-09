@@ -1,7 +1,6 @@
 package piper
 
 import (
-	"fmt"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -26,7 +25,6 @@ const (
 )
 
 func (n *Node) diffLevelCheck(applyToOwner, applyToSelfChar bool, minCharLevel mlevel, master, slave *models.DemoMember) (bad bool) {
-	fmt.Printf("%#v\n%#v\n", master, slave) // debug
 	if master == nil || slave == nil {
 		n.SetError(resp.ErrBadRequest, "мемберса не существует")
 		return true

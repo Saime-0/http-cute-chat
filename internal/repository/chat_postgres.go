@@ -382,7 +382,6 @@ func (r *ChatsRepo) Invites(chatId int) (*model.Invites, error) {
 	for rows.Next() {
 		m := &model.Invite{}
 		if err = rows.Scan(&m.Code, &m.Aliens, &m.ExpiresAt); err != nil {
-			println("Invites:", err.Error()) // debug
 			return nil, err
 		}
 		invites.Invites = append(invites.Invites, m)
@@ -391,8 +390,8 @@ func (r *ChatsRepo) Invites(chatId int) (*model.Invites, error) {
 	return invites, nil
 }
 
-func (r *ChatsRepo) InviteExistsByCode(code string) (exists bool) {
-	err := r.db.QueryRow(`
+func (r *ChatsRepo) InviteExistsByCode(code string) (exists bool, err error) {
+	err = r.db.QueryRow(`
 			SELECT EXISTS(
 			SELECT 1
 			FROM invites
@@ -400,9 +399,7 @@ func (r *ChatsRepo) InviteExistsByCode(code string) (exists bool) {
 			)`,
 		code,
 	).Scan(&exists)
-	if err != nil {
-		println("InviteExistsByCode:", err.Error()) // debug
-	}
+
 	return
 }
 func (r *ChatsRepo) FindInviteLinkByCode(code string) (link models.Invite, err error) {
@@ -429,9 +426,7 @@ func (r *ChatsRepo) DeleteInvite(code string) (*model.DeleteInvite, error) {
 		RETURNING code`,
 		code,
 	).Scan(&invite.Code)
-	if err != nil {
-		println("DeleteInvite:", err.Error()) // debug
-	}
+
 	return invite, err
 }
 
@@ -449,16 +444,13 @@ func (r *ChatsRepo) CreateInvite(linkModel *model.CreateInviteInput) (*model.Cre
 		&invite.Aliens,
 		&invite.ExpiresAt,
 	)
-	if err != nil {
-		println("CreateInvite:", err.Error()) // debug
-	}
+
 	return invite, err
 }
 
-// InviteIsRelevant
 //  alt: InviteIsExists
-func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool) {
-	err := r.db.QueryRow(`
+func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1
 			FROM invites
@@ -476,14 +468,14 @@ func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool) {
 		time.Now().UTC().Unix(),
 	).Scan(&relevant)
 	if err != nil {
-		println("InviteIsRelevant:", err.Error()) // debug
+		return
 	}
 	if !relevant {
-		r.db.Exec(`
+		err = r.db.QueryRow(`
 			DELETE FROM invites
 			WHERE code = $1`,
 			code,
-		)
+		).Err()
 	}
 
 	return
@@ -517,9 +509,7 @@ func (r *ChatsRepo) AddUserByCode(code string, userId int) (*model.CreateMember,
 		&member.Unit.Name,
 		&member.Unit.Type,
 	)
-	if err != nil {
-		println("AddUserByCode:", err.Error()) // debug
-	}
+
 	return member, err
 }
 
@@ -598,52 +588,45 @@ func (r *ChatsRepo) Banlist(chatId int) (*model.Users, error) {
 		chatId,
 	)
 	if err != nil {
-		println("Banlist:", err.Error()) // debug
-		return users, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.User{}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
-			println("Banlist:", err.Error()) // debug
-			return users, err
+			return nil, err
 		}
 		users.Users = append(users.Users, m)
 	}
-	if !rows.NextResultSet() {
-		println("Banlist:", err.Error()) // debug
-		return users, err
-	}
+
 	return users, nil
 }
 
-func (r *ChatsRepo) MemberRole(memberId int) *model.Role {
+func (r *ChatsRepo) MemberRole(memberId int) (*model.Role, error) {
+	role := &model.Role{}
 
-	_role := models.RoleReference{}
 	err := r.db.QueryRow(`
-		SELECT roles.id, roles.name, roles.color
-		FROM chat_members 
-		LEFT JOIN roles  
-		    ON chat_members.role_id = roles.id
-		WHERE chat_members.id = $1
+		SELECT coalesce(roles.id, 0), 
+		       coalesce(roles.name, ''), 
+		       coalesce(roles.color, '')
+		FROM (SELECT 1) _
+		LEFT JOIN chat_members ON chat_members.id = $1
+		LEFT JOIN roles ON chat_members.role_id = roles.id
 		`,
 		memberId,
 	).Scan(
-		&_role.ID,
-		&_role.Name,
-		&_role.Color,
+		&role.ID,
+		&role.Name,
+		&role.Color,
 	)
-	if _role.ID != nil {
-		return &model.Role{
-			ID:    *_role.ID,
-			Name:  *_role.Name,
-			Color: *_role.Color,
-		}
-	}
 	if err != nil {
-		println("MemberRole:", err.Error()) // debug
+		return nil, err
 	}
-	return nil
+	if role.ID == 0 {
+		return nil, nil
+	}
+
+	return role, nil
 }
 
 func (r *ChatsRepo) CreateRoleInChat(inp *model.CreateRoleInput) (*model.CreateRole, error) {
@@ -662,9 +645,7 @@ func (r *ChatsRepo) CreateRoleInChat(inp *model.CreateRoleInput) (*model.CreateR
 		&role.Name,
 		&role.Color,
 	)
-	if err != nil {
-		println("CreateRoleInChat:", err.Error()) // debug
-	}
+
 	return role, err
 }
 
@@ -678,30 +659,27 @@ func (r *ChatsRepo) DeleteRole(roleID int) (*model.DeleteRole, error) {
 	).Scan(
 		&role.ID,
 	)
-	if err != nil {
-		println("DeleteRole:", err.Error()) // debug
-	}
 
 	return role, err
 }
 
 func (r *ChatsRepo) Roles(chatId int) (*model.Roles, error) {
 	roles := &model.Roles{}
-	rows, err := r.db.Query(
-		`SELECT id, name, color
+	rows, err := r.db.Query(`
+		SELECT id, name, color
 		FROM roles 
-		WHERE chat_id = $1`,
+		WHERE chat_id = $1
+		`,
 		chatId,
 	)
 	if err != nil {
-		println("Roles:", err.Error()) // debug
-		return roles, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Role{}
 		if err = rows.Scan(&m.ID, &m.Name, &m.Color); err != nil {
-			return roles, err
+			return nil, err
 		}
 		roles.Roles = append(roles.Roles, m)
 	}
@@ -710,15 +688,13 @@ func (r *ChatsRepo) Roles(chatId int) (*model.Roles, error) {
 }
 
 func (r *ChatsRepo) GetCountChatRoles(chatId int) (count int, err error) {
-	err = r.db.QueryRow(
-		`SELECT count(*)
+	err = r.db.QueryRow(`
+		SELECT count(*)
 		FROM roles 
 		WHERE chat_id = $1`,
 		chatId,
 	).Scan(&count)
-	if err != nil {
-		println("GetCountChatRoles:", err.Error()) // debug
-	}
+
 	return
 }
 
@@ -761,9 +737,7 @@ func (r *ChatsRepo) TakeRole(memberId int) (*model.UpdateMember, error) {
 		&member.Char,
 		&member.Muted,
 	)
-	if err != nil {
-		println("TakeRole:", err.Error()) // debug
-	}
+
 	return member, err
 }
 
@@ -787,14 +761,12 @@ func (r *ChatsRepo) TakeChar(memberId int) (*model.UpdateMember, error) {
 		&member.Char,
 		&member.Muted,
 	)
-	if err != nil {
-		println("TakeChar:", err.Error()) // debug
-	}
+
 	return member, err
 }
 
-func (r *ChatsRepo) HasInvite(chatId int, code string) (has bool) {
-	err := r.db.QueryRow(`
+func (r *ChatsRepo) HasInvite(chatId int, code string) (has bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1 
 			FROM invites
@@ -803,14 +775,12 @@ func (r *ChatsRepo) HasInvite(chatId int, code string) (has bool) {
 		chatId,
 		code,
 	).Scan(&has)
-	if err != nil {
-		println("HasInvite:", err.Error()) // debug
-	}
+
 	return
 }
 
-func (r *ChatsRepo) RoleExistsByID(chatId, roleId int) (exists bool) {
-	err := r.db.QueryRow(
+func (r *ChatsRepo) RoleExistsByID(chatId, roleId int) (exists bool, err error) {
+	err = r.db.QueryRow(
 		`SELECT EXISTS(
 		SELECT 1 
 		FROM roles
@@ -819,9 +789,7 @@ func (r *ChatsRepo) RoleExistsByID(chatId, roleId int) (exists bool) {
 		chatId,
 		roleId,
 	).Scan(&exists)
-	if err != nil {
-		println("RoleExistsByID:", err.Error()) // debug
-	}
+
 	return
 }
 
@@ -829,8 +797,8 @@ func (r *ChatsRepo) InviteInfo(code string) (info *model.InviteInfo, err error) 
 	info = &model.InviteInfo{
 		Unit: &model.Unit{},
 	}
-	err = r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, units.type, cm.count_value, chats.private
+	err = r.db.QueryRow(`
+		SELECT units.id, units.domain, units.name, units.type, cm.count_value, chats.private
 		FROM units 
 		INNER JOIN chats
 			ON units.id = chats.id
@@ -847,9 +815,7 @@ func (r *ChatsRepo) InviteInfo(code string) (info *model.InviteInfo, err error) 
 		&info.CountMembers,
 		&info.Private,
 	)
-	if err != nil {
-		println("InviteInfo:", err.Error()) // debug
-	}
+
 	return
 }
 
@@ -872,20 +838,16 @@ func (r *ChatsRepo) Owner(chatId int) (*model.User, error) {
 		&owner.Unit.Name,
 		&owner.Unit.Type,
 	)
-	if err != nil {
-		println("Owner:", err.Error()) // debug
-	}
+
 	return owner, err
 }
-func (r *ChatsRepo) UserIsBanned(userId int, chatId int) (banned bool) {
-	err := r.db.QueryRow(
+func (r *ChatsRepo) UserIsBanned(userId int, chatId int) (banned bool, err error) {
+	err = r.db.QueryRow(
 		`SELECT EXISTS(SELECT 1 FROM chat_banlist WHERE user_id = $1 AND chat_id = $2)`,
 		userId,
 		chatId,
 	).Scan(&banned)
-	if err != nil {
-		println("UserIsBanned:", err.Error()) // debug
-	}
+
 	return
 }
 func (r *ChatsRepo) MemberBy(userId, chatId int) (*model.Member, error) {
@@ -916,9 +878,7 @@ func (r *ChatsRepo) MemberBy(userId, chatId int) (*model.Member, error) {
 		&member.JoinedAt,
 		&member.Muted,
 	)
-	if err != nil {
-		println("MemberBy:", err.Error()) // debug
-	}
+
 	return member, err
 }
 func (r *ChatsRepo) Member(memberId int) (*model.Member, error) {
@@ -947,9 +907,7 @@ func (r *ChatsRepo) Member(memberId int) (*model.Member, error) {
 		&member.JoinedAt,
 		&member.Muted,
 	)
-	if err != nil {
-		println("Member:", err.Error()) // debug
-	}
+
 	return member, err
 }
 
@@ -964,7 +922,6 @@ func (r *ChatsRepo) Rooms(chatId int) (*model.Rooms, error) {
 		chatId,
 	)
 	if err != nil {
-		println("Rooms:", err.Error()) // debug
 		return nil, err
 	}
 	defer rows.Close()
@@ -983,15 +940,17 @@ func (r *ChatsRepo) Rooms(chatId int) (*model.Rooms, error) {
 	return rooms, nil
 }
 
-// RolesByArray sorry
 func (r *RoomsRepo) RolesByArray(roleIds *[]int) (*model.Roles, error) {
 	roles := &model.Roles{}
-	query := `SELECT id, name, color
+
+	rows, err := r.db.Query(`
+		SELECT id, name, color
 		FROM roles 
-		WHERE id IN (` + kit.CommaSeparate(roleIds) + `)`
-	rows, err := r.db.Query(query)
+		WHERE id = ANY($1)
+		`,
+		pq.Array(roleIds),
+	)
 	if err != nil {
-		println("RolesByArray:", err.Error()) // debug
 		return nil, err
 	}
 	defer rows.Close()
@@ -1007,7 +966,7 @@ func (r *RoomsRepo) RolesByArray(roleIds *[]int) (*model.Roles, error) {
 
 }
 
-func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, holder *models.AllowHolder) *model.Messages {
+func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, holder *models.AllowHolder) (*model.Messages, error) {
 
 	messages := &model.Messages{
 		Messages: []*model.Message{},
@@ -1066,9 +1025,8 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 		params.Limit,
 		params.Offset,
 	)
-	if err != nil {
-		println("FindMessages:", err.Error()) // debug
-		return messages
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -1084,8 +1042,7 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 			_userID *int
 		)
 		if err = rows.Scan(&m.ID, &_replid, &_userID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
-			println("rows.scan:", err.Error()) // debug
-			return messages
+			return nil, err
 		}
 		if _replid != nil {
 			m.ReplyTo = &model.Message{
@@ -1100,7 +1057,7 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 		messages.Messages = append(messages.Messages, m)
 	}
 
-	return messages
+	return messages, nil
 }
 
 func (r *ChatsRepo) ChatIDByMemberID(memberId int) (chatId int, err error) {
@@ -1114,14 +1071,12 @@ func (r *ChatsRepo) ChatIDByMemberID(memberId int) (chatId int, err error) {
 		`,
 		memberId,
 	).Scan(&chatId)
-	if err != nil {
-		println("ChatIDByMemberID:", err.Error()) // debug
-	}
+
 	return
 }
 
-func (r *ChatsRepo) MemberIsMuted(memberId int) (muted bool) {
-	err := r.db.QueryRow(`
+func (r *ChatsRepo) MemberIsMuted(memberId int) (muted bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT EXISTS(
 		    SELECT 1
 		    FROM chat_members
@@ -1130,13 +1085,11 @@ func (r *ChatsRepo) MemberIsMuted(memberId int) (muted bool) {
 		`,
 		memberId,
 	).Scan(&muted)
-	if err != nil {
-		println("MemberIsMuted:", err.Error()) // debug
-	}
+
 	return
 }
 
-func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
+func (r *ChatsRepo) FindMembers(inp *model.FindMembers) (*model.Members, error) {
 	members := &model.Members{
 		Members: []*model.Member{},
 	}
@@ -1177,8 +1130,7 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 		inp.Muted,
 	)
 	if err != nil {
-		println("FindMembers:", err.Error()) // debug
-		return members
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -1193,20 +1145,8 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 		var (
 			_roleid *int
 		)
-		if err = rows.Scan(
-			&m.ID,
-			&m.Chat.Unit.ID,
-			&m.User.Unit.ID,
-			&m.User.Unit.Domain,
-			&m.User.Unit.Name,
-			&m.User.Unit.Type,
-			&_roleid,
-			&m.Char,
-			&m.JoinedAt,
-			&m.Muted,
-		); err != nil {
-			println("rows.scan:", err.Error()) // debug
-			return members
+		if err = rows.Scan(&m.ID, &m.Chat.Unit.ID, &m.User.Unit.ID, &m.User.Unit.Domain, &m.User.Unit.Name, &m.User.Unit.Type, &_roleid, &m.Char, &m.JoinedAt, &m.Muted); err != nil {
+			return nil, err
 		}
 		if _roleid != nil {
 			m.Role = &model.Role{
@@ -1216,7 +1156,7 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) *model.Members {
 		members.Members = append(members.Members, m)
 	}
 
-	return members
+	return members, nil
 
 }
 
@@ -1229,7 +1169,6 @@ func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.D
 		selectType = 1
 	}
 	if len(ids) > 2 {
-		println("DemoMembers: todo") // debug
 		return demoMembers
 	}
 
@@ -1246,7 +1185,6 @@ func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.D
 		pq.Array(ids),
 	)
 	if err != nil {
-		println("DemoMembers:", err.Error()) // debug
 		return demoMembers
 	}
 	defer rows.Close()
@@ -1266,7 +1204,6 @@ func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.D
 	for rows.Next() {
 		m := &models.DemoMember{}
 		if err = rows.Scan(&m.UserID, &m.MemberID, &m.IsOwner, &m.Char, &m.Muted); err != nil {
-			println("rows.scan:", err.Error()) // debug
 			return sort()
 		}
 		demoMembers[i] = m
@@ -1290,9 +1227,6 @@ func (r *ChatsRepo) UpdateRole(roleId int, inp *model.UpdateRoleInput) (*model.U
 		&role.Name,
 		&role.Color,
 	)
-	if err != nil {
-		println("UpdateRole:", err.Error()) // debug
-	}
 
 	return role, err
 }
@@ -1323,13 +1257,11 @@ func (r *ChatsRepo) UpdateChat(chatId int, inp *model.UpdateChatInput) (*model.U
 		&chat.Name,
 		&chat.Private,
 	)
-	if err != nil {
-		println("UpdateChat:", err.Error()) // debug
-	}
+
 	return chat, err
 }
 
-func (r *ChatsRepo) DefMember(memberId int) (defMember models.DefMember, err error) {
+func (r *ChatsRepo) DefMember(memberId int) (defMember *models.DefMember, err error) {
 	err = r.db.QueryRow(`
 		SELECT user_id, chat_id
 		FROM chat_members
@@ -1340,9 +1272,13 @@ func (r *ChatsRepo) DefMember(memberId int) (defMember models.DefMember, err err
 		&defMember.UserID,
 		&defMember.ChatID,
 	)
-	if err != nil {
-		println("DefMember:", err.Error()) // debug
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
 	return
 }
 
@@ -1380,8 +1316,7 @@ func (r *ChatsRepo) FindChats(inp *model.FindChats, params *model.Params) (*mode
 		params.Offset,
 	)
 	if err != nil {
-		println("FindChats:", err.Error()) // debug
-		return chats, err
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -1389,8 +1324,7 @@ func (r *ChatsRepo) FindChats(inp *model.FindChats, params *model.Params) (*mode
 			Unit: &model.Unit{},
 		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.CountMembers, &m.Private); err != nil {
-			println("rows:Scan:", err.Error()) // debug
-			return chats, err
+			return nil, err
 		}
 		chats.Chats = append(chats.Chats, m)
 	}
@@ -1417,14 +1351,12 @@ func (r *ChatsRepo) UpdateMember(memberID int, inp *model.UpdateMemberInput) (*m
 		&member.Char,
 		&member.Muted,
 	)
-	if err != nil {
-		println("UpdateMember:", err.Error()) // debug
-	}
+
 	return member, err
 }
 
-func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bool) {
-	err := r.db.QueryRow(`
+func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT NOT exists(
 		    SELECT 1
 		    FROM unnest($2::findallow[]) elem (act,gr,val)
@@ -1442,14 +1374,10 @@ func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bo
 		pq.Array(allows.Allows),
 	).Scan(&valid)
 
-	if err != nil {
-		println("ValidAllows:", err.Error()) // debug
-	}
-
-	return valid
+	return valid, err
 }
 
-func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*models.SubUser, yes bool) {
+func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*models.SubUser, yes bool, err error) {
 	rows, err := r.db.Query(`
 	    SELECT cm.id, cm.chat_id
 	    FROM unnest($2::BIGINT[]) elem
@@ -1459,7 +1387,6 @@ func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*m
 		pq.Array(*chats),
 	)
 	if err != nil {
-		println("UserHasAccessToChats:", err.Error()) // debug
 		return
 	}
 	defer rows.Close()
@@ -1467,13 +1394,13 @@ func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*m
 	for rows.Next() {
 		member := &models.SubUser{}
 		if err = rows.Scan(&member.MemberID, &member.ChatID); err != nil {
-			println("UserHasAccessToChats, scan:", err)
 			return
+
 		}
 		if member.MemberID == nil {
 			return
 		}
 		members = append(members, member)
 	}
-	return members, true
+	return members, true, nil
 }

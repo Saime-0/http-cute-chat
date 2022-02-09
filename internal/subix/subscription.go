@@ -27,7 +27,6 @@ func (s *Subix) Sub(userID int, sessionKey Key, expAt int64, submembers []*model
 		delete(s.clients, sessionKey)
 		return nil, errors.New("не удалось создать сессию")
 	}
-	println("Создан клиент", sessionKey) // debug
 
 	// user
 	user := s.CreateUserIfNotExists(userID)

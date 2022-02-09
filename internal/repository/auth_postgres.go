@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -30,13 +31,12 @@ func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.Refresh
 		&id,
 	)
 	if err != nil {
-		println("CreateRefreshSession:", err.Error()) // debug
 		return
 	}
+
 	if overflowDelete {
 		err = r.OverflowDelete(userId, rules.MaxRefreshSession)
 		if err != nil {
-			println("CreateRefreshSession:", err.Error()) // debug
 			return
 		}
 	}
@@ -54,9 +54,6 @@ func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.Refr
 		sessionModel.UserAgent,
 		sessionModel.ExpAt,
 	).Err()
-	if err != nil {
-		println("UpdateRefreshSession:", err.Error()) // debug
-	}
 
 	return
 }
@@ -82,8 +79,9 @@ func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
 		limit,
 	).Err()
 	if err != nil {
-		println(err.Error()) // debug
+		return errors.Wrap(err, "не удалось удалить лишние сессии")
 	}
+
 	return
 }
 

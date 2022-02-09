@@ -6,11 +6,11 @@ package resolver
 import (
 	"context"
 	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/res"
-	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
@@ -29,8 +29,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 
 	sessionID, clientID, err := r.Services.Repos.Auth.FindSessionByComparedToken(refreshToken)
 	if err != nil {
-		println("RefreshTokens:", err.Error()) // debug
-		return resp.Error(resp.ErrInternalServerError, "не удалось обрабработать токен"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	var (
@@ -46,7 +46,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 
 	err = r.Services.Repos.Auth.UpdateRefreshSession(sessionID, session)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалось обновить сессию"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	tokenExpiresAt := kit.After(rules.AccessTokenLiftime)
@@ -58,7 +59,8 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 		r.Config.SecretKey,
 	)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	if sessionKey != nil {

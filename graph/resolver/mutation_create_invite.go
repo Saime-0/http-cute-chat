@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/res"
@@ -34,7 +35,8 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 
 	eventReadyInvite, err := r.Services.Repos.Chats.CreateInvite(&input)
 	if err != nil {
-		return resp.Error(resp.ErrInternalServerError, "не удалось создать инвайт"), nil
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 	go r.Subix.NotifyChatMembers(
 		input.ChatID,
@@ -42,7 +44,10 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 	)
 
 	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); eventReadyInvite.ExpiresAt != nil && ok && *eventReadyInvite.ExpiresAt < runAt.(int64) {
-		r.CreateScheduledInvite(input.ChatID, eventReadyInvite.Code, eventReadyInvite.ExpiresAt)
+		err := r.CreateScheduledInvite(input.ChatID, eventReadyInvite.Code, eventReadyInvite.ExpiresAt)
+		if err != nil {
+			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		}
 	}
 
 	return resp.Success("инвайт создан"), nil

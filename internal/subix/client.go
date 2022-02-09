@@ -37,7 +37,6 @@ func (s *Subix) CreateUserIfNotExists(userID int) *User {
 			clients:   Clients{},
 		}
 		s.users[userID] = user
-		println("Создан user", userID) // debug
 	}
 	return user
 }
@@ -54,8 +53,7 @@ func (s *Subix) deleteUser(userID int) {
 		for _, member := range user.membering { // а здесь определяем мемберов, к которые относятся к пользователю
 			s.DeleteMember(member.ID) // удаляем по отдельности через функцию
 		}
-		user.membering = nil                    // на всякий случай заnullяем мапу
-		println("удален пользователь ", userID) // debug
+		user.membering = nil // на всякий случай заnullяем мапу
 		// теперь на этого пользователя не должно остаться ссылок как и на его клиентов
 	}
 

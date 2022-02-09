@@ -24,7 +24,6 @@ func (s *Subix) CreateChatIfNotExists(chatID int) *Chat {
 			members: Members{},
 		}
 		s.chats[chatID] = chat
-		println("Создан chat", chat.ID) // debug
 	}
 	return chat
 }
@@ -54,7 +53,6 @@ func (s *Subix) deleteChat(chatID int) {
 			s.DeleteMember(member.ID)
 		}
 		delete(s.chats, chatID)
-		println("удален чат", chatID) // debug
 	}
 }
 
@@ -79,6 +77,5 @@ func (s *Subix) DeleteMember(memberID int) {
 				s.deleteChat(chat.ID)
 			}
 		}
-		println("удален мембер", memberID) // debug
 	}
 }

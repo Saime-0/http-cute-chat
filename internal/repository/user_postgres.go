@@ -386,8 +386,8 @@ func (r *UsersRepo) CreateRegistrationSession(userModel *models.RegisterData, ex
 	return
 }
 
-func (r *UsersRepo) EmailIsFree(email string) (free bool) {
-	err := r.db.QueryRow(`
+func (r *UsersRepo) EmailIsFree(email string) (free bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT 
 		EXISTS (
 			SELECT 1 
@@ -402,8 +402,6 @@ func (r *UsersRepo) EmailIsFree(email string) (free bool) {
 		)`,
 		email,
 	).Scan(&free)
-	if err != nil {
-		println("EmailIsFree:", err.Error()) // debug
-	}
-	return !free
+
+	return !free, err
 }
