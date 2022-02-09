@@ -1,8 +1,7 @@
 package subix
 
 import (
-	"errors"
-	"fmt"
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -62,14 +61,13 @@ func (s *Subix) deleteUser(userID int) {
 
 }
 
-func (s *Subix) deleteClient(sessionKey Key) {
+func (s *Subix) deleteClient(sessionKey Key) error {
 	client, ok := s.clients[sessionKey]
 	if ok {
 		delete(s.clients, client.sessionKey)
 		err := s.sched.DropTask(&client.task)
 		if err != nil {
-			println("deleteClient:", err.Error()) // debug
-			return
+			return errors.Wrap(err, "не удалось удалить клиента")
 		}
 		close(client.Ch)
 
@@ -88,8 +86,8 @@ func (s *Subix) deleteClient(sessionKey Key) {
 			}
 		}
 	}
-
-	println("удален клиент", client.sessionKey) // debug
+	//println("удален клиент", client.sessionKey)
+	return nil
 }
 
 func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
@@ -105,8 +103,8 @@ func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
 					Body:  eventBody,
 				},
 			)
-			client.marked = true                                    // теперь будем знать что этому клиенту не надо отправлять события
-			println("токен клиента истек, помечаю клиента", client) // debug
+			client.marked = true // теперь будем знать что этому клиенту не надо отправлять события
+			//println("токен клиента истек, помечаю клиента", client)
 			err := s.scheduleExpiredClient(client)
 			if err != nil {
 				panic(err)
@@ -115,23 +113,19 @@ func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
 		},
 		expAt,
 	)
-	if err != nil {
-		println("scheduleMarkClient", err) // debug
-	}
+
 	return err
 }
 
 func (s *Subix) scheduleExpiredClient(client *Client) (err error) {
 	client.task, err = s.sched.AddTask(
 		func() {
-			fmt.Printf("клиент %s не обновил токен, удаляю", client.sessionKey) // debug
+			//fmt.Printf("клиент %s не обновил токен, удаляю", client.sessionKey)
 			s.deleteClient(client.sessionKey)
 		},
 		time.Now().Unix()+rules.LifetimeOfMarkedClient,
 	)
-	if err != nil {
-		println("scheduleMarkClient", err) // debug
-	}
+
 	return err
 }
 
@@ -142,16 +136,14 @@ func (s *Subix) ExtendClientSession(sessionKey Key, expAt int64) (err error) {
 	}
 	err = s.sched.DropTask(&client.task)
 	if err != nil {
-		println("extendlientSession", err) // debug
 		return err
 	}
 	err = s.scheduleMarkClient(client, expAt)
 	if err != nil {
-		println("extendlientSession", err) // debug
 		return err
 	}
 	client.marked = false
-	println("сессия продлена клиента", client) // debug
+	//println("сессия продлена клиента", client)
 	return nil
 }
 
@@ -172,7 +164,7 @@ func (s *Subix) AddListenChat(sessionKey Key, sm *models.SubUser) (err error) {
 		user.ID,
 	)
 	member.clients[sessionKey] = client
-	fmt.Printf("клиент %s подписался на прослушивание чата %d\n", sessionKey, member.ChatID) // debug
+	//fmt.Printf("клиент %s подписался на прослушивание чата %d\n", sessionKey, member.ChatID)
 	return nil
 }
 
@@ -184,7 +176,7 @@ func (s *Subix) DeleteChatFromListenCollection(sessionKey Key, memberID int) (er
 		if len(member.clients) == 0 {
 			s.DeleteMember(memberID)
 		}
-		fmt.Printf("клиент %s перестал прослушивать чат %d\n", sessionKey, member.ChatID) // debug
+		//fmt.Printf("клиент %s перестал прослушивать чат %d\n", sessionKey, member.ChatID)
 	}
 
 	return nil

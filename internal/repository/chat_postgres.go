@@ -38,9 +38,7 @@ func (r *ChatsRepo) CreateChat(ownerId int, inp *model.CreateChatInput) (id int,
 		ownerId,
 		inp.Private,
 	).Scan(&id)
-	if err != nil {
-		println("CreateChat:", err.Error()) // debug
-	}
+
 	return
 }
 
@@ -90,9 +88,7 @@ func (r *ChatsRepo) ChatIDByRoleID(roleId int) (chatId int, err error) {
 		`,
 		roleId,
 	).Scan(&chatId)
-	if err != nil {
-		println("ChatIDByRoleID:", err.Error()) // debug
-	}
+
 	return
 }
 func (r *ChatsRepo) ChatIDByInvite(code string) (chatId int, err error) {

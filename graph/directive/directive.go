@@ -22,8 +22,6 @@ func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res in
 }
 
 func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-	//println("InputUnion directive start!") // debug
-
 	v := reflect.ValueOf(obj)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
@@ -34,7 +32,6 @@ func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (re
 	for i := 0; i < v.NumField(); i++ {
 		if !v.Field(i).IsNil() {
 			if valueFound {
-				println("InputUnion:", err.Error()) // debug
 				return obj, errors.New("only one field of the input union should have a value")
 			}
 
@@ -43,7 +40,6 @@ func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (re
 	}
 
 	if !valueFound {
-		println("InputUnion:", err.Error()) // debug
 		return obj, errors.New("one of the input union fields must have a value")
 	}
 
@@ -52,8 +48,7 @@ func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (re
 }
 
 func InputLeastOne(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
-	//println("InputLeastOne directive start!") // debug
-	fmt.Printf("%#v %T\n", obj, obj)
+
 	input, ok := obj.(map[string]interface{})
 	if !ok {
 		panic("InputLeastOne: can not convert external map")
@@ -66,10 +61,6 @@ func InputLeastOne(ctx context.Context, obj interface{}, next graphql.Resolver) 
 			input = val.(map[string]interface{})
 			break
 		}
-		//input, ok = val.(map[string]interface{})
-		//if !ok {
-		//	panic(err)
-		//}
 	}
 	if !finded {
 		panic("InputLeastOne: union input field not found")

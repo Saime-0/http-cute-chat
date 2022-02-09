@@ -16,6 +16,7 @@ func NewUnitsRepo(db *sql.DB) *UnitsRepo {
 	}
 }
 
+// deprecated
 func (r *UnitsRepo) UnitExistsByID(unitId int, unitType res.UnitType) (exists bool) {
 	err := r.db.QueryRow(
 		`SELECT EXISTS(
@@ -27,13 +28,13 @@ func (r *UnitsRepo) UnitExistsByID(unitId int, unitType res.UnitType) (exists bo
 		unitType,
 	).Scan(&exists)
 	if err != nil {
-		println("UnitExistsByID:", err.Error()) // debug
+		println("UnitExistsByID:", err.Error())
 	}
 	return
 }
 
-func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
-	err := r.db.QueryRow(`
+func (r *UnitsRepo) DomainIsFree(domain string) (free bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT 
 		EXISTS (
 			SELECT 1 
@@ -48,13 +49,11 @@ func (r *UnitsRepo) DomainIsFree(domain string) (free bool) {
 		)`,
 		domain,
 	).Scan(&free)
-	if err != nil {
-		println("DomainIsFree:", err.Error()) // debug
-	}
-	return !free
+
+	return !free, err
 }
 
-func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) *model.Units {
+func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) (*model.Units, error) {
 	units := &model.Units{
 		Units: []*model.Unit{},
 	}
@@ -92,17 +91,15 @@ func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) *model
 		params.Offset,
 	)
 	defer rows.Close()
-	if err != nil {
-		println("FindUnits:", err.Error()) // debug
-		return units
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
 	for rows.Next() {
 		m := &model.Unit{}
 		if err = rows.Scan(&m.ID, &m.Domain, &m.Name, &m.Type); err != nil {
-			println("rows:Scan:", err.Error()) // debug
-			return units
+			return nil, err
 		}
 		units.Units = append(units.Units, m)
 	}
-	return units
+	return units, nil
 }

@@ -1,7 +1,7 @@
 package subix
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 )
@@ -34,35 +34,9 @@ func (s *Subix) Sub(userID int, sessionKey Key, expAt int64, submembers []*model
 	user.clients[sessionKey] = client
 
 	for _, sm := range submembers {
-		// member
-		//member := func(memberID, chatID int) *Member {
-		//	member, ok := s.members[memberID]
-		//	if !ok {
-		//		member = &Member{
-		//			ID:     memberID,
-		//			ChatID: chatID,
-		//			UserID: userID,
-		//		}
-		//		s.members[memberID] = member
-		//	}
-		//	return member
-		//}(*sm.MemberID, *sm.ChatID)
 		member := s.CreateMemberIfNotExists(*sm.MemberID, *sm.ChatID, user.ID)
 		member.clients[sessionKey] = client
 
-		// chat
-		//chat := func(chatID int) *Chat {
-		//	chat, ok := s.chats[chatID]
-		//	if !ok {
-		//		chat = &Chat{
-		//			ID:      0,
-		//			members: Members{},
-		//		}
-		//		s.chats[chatID] = chat
-		//		println("Создан chat id", chat.ID) // debug
-		//	}
-		//	return chat
-		//}(*sm.ChatID)
 		chat := s.CreateChatIfNotExists(*sm.ChatID)
 		chat.members[*sm.MemberID] = member
 
@@ -72,7 +46,10 @@ func (s *Subix) Sub(userID int, sessionKey Key, expAt int64, submembers []*model
 	return client, nil
 }
 
-func (s *Subix) Unsub(sessionKey Key) {
-	println("Клиент хочет удалиться", sessionKey) // debug
-	s.deleteClient(sessionKey)
+func (s *Subix) Unsub(sessionKey Key) error {
+	err := s.deleteClient(sessionKey)
+	if err != nil {
+		return errors.Wrap(err, "не удалось отписаться")
+	}
+	return nil
 }

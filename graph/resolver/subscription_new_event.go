@@ -5,7 +5,7 @@ package resolver
 
 import (
 	"context"
-	"errors"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -30,6 +30,7 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, 
 	)
 
 	if authData == nil { // тк @isAuth  вебсокетинге не отрабатывает
+		node.Debug("не аутентифицирован")
 		return nil, errors.New("не аутентифицирован")
 	}
 
@@ -49,11 +50,14 @@ func (r *subscriptionResolver) NewEvent(ctx context.Context, sessionKey string, 
 		return nil, err
 	}
 
-	println("New client", sessionKey) // debug
+	// New client
 	go func() {
 		<-ctx.Done()
-		println("client", sessionKey, "is down.") // debug
-		r.Subix.Unsub(sessionKey)
+		// client is down
+		err = r.Subix.Unsub(sessionKey)
+		if err != nil {
+			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		}
 	}()
 
 	return client.Ch, nil

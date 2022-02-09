@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -29,7 +30,10 @@ func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.Use
 		node.IsMember(clientID, chatID) {
 		return node.GetError(), nil
 	}
-	role, _ := r.Dataloader.MemberRole(memberID)
+	role, err := r.Dataloader.MemberRole(memberID)
+	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos())) // debug
+	}
 
 	return role, nil
 }

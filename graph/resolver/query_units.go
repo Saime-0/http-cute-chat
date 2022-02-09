@@ -5,6 +5,9 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/resp"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -29,6 +32,11 @@ func (r *queryResolver) Units(ctx context.Context, find model.FindUnits, params 
 		return node.GetError(), nil
 	}
 
-	units = r.Services.Repos.Units.FindUnits(&find, params)
+	units, err := r.Services.Repos.Units.FindUnits(&find, params)
+	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		return resp.Error(resp.ErrBadRequest, "ошибка при обработке данных"), nil
+	}
+
 	return units, nil
 }

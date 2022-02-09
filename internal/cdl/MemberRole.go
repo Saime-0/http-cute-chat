@@ -56,7 +56,7 @@ func (c *parentCategory) memberRole() {
 		pq.Array(memberIDs),
 	)
 	if err != nil {
-		println("memberRole:", err.Error()) // debug
+		//c.Dataloader.healer.Alert("memberRole:" + err.Error()) // debug
 		c.Error = err
 		return
 	}
@@ -69,6 +69,7 @@ func (c *parentCategory) memberRole() {
 		m := new(model.Role)
 
 		if err = rows.Scan(&ptr, &m.ID, &m.Name, &m.Color); err != nil {
+			//c.Dataloader.healer.Alert("memberRole (scan rows):" + err.Error()) // debug
 			c.Error = err
 			return
 		}

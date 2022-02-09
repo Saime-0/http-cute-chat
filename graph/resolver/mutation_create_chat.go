@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -33,6 +34,7 @@ func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateCha
 
 	chatID, err := r.Services.Repos.Chats.CreateChat(clientID, &input)
 	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать чат"), nil
 	}
 

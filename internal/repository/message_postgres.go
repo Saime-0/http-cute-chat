@@ -101,14 +101,11 @@ func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (*model.Ne
 		&message.MsgType,
 		&message.CreatedAt,
 	)
-	if err != nil {
-		println("CreateMessageInRoom:", err.Error()) // debug
-		return message, err
-	}
-	return message, nil
+
+	return message, err
 }
 
-func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMessagesInRoom) *model.Messages {
+func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMessagesInRoom) (*model.Messages, error) {
 	messages := &model.Messages{
 		Messages: []*model.Message{},
 	}
@@ -138,9 +135,8 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 		find.Count,
 		direction,
 	)
-	if err != nil {
-		println("MessagesFromRoom:", err.Error()) // debug
-		return messages
+	if err != nil && err != sql.ErrNoRows {
+		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -156,8 +152,7 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 			_userID *int
 		)
 		if err = rows.Scan(&m.ID, &_replid, &_userID, &m.Room.RoomID, &m.Body, &m.Type, &m.CreatedAt); err != nil {
-			println("rows.scan:", err.Error()) // debug
-			return messages
+			return nil, err
 		}
 		if _replid != nil {
 			m.ReplyTo = &model.Message{
@@ -172,5 +167,5 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 		messages.Messages = append(messages.Messages, m)
 	}
 
-	return messages
+	return messages, nil
 }

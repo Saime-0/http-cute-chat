@@ -18,6 +18,7 @@ type (
 )
 
 func (d *Dataloader) RoomExistsByID(roomID int) (bool, error) {
+	d.healer.Debug("Dataloader: новый запрос RoomExistsByID")
 	res := <-d.categories.RoomExistsByID.addBaseRequest(
 		&roomExistsByIDInp{
 			RoomID: roomID,
@@ -51,7 +52,7 @@ func (c *parentCategory) roomExistsByID() {
 		pq.Array(roomIDs),
 	)
 	if err != nil {
-		println("roomExistsByID:", err.Error()) // debug
+		//c.Dataloader.healer.Alert("roomExistsByID:" + err.Error()) // debug
 		c.Error = err
 		return
 	}
@@ -64,6 +65,7 @@ func (c *parentCategory) roomExistsByID() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &exists); err != nil {
+			//c.Dataloader.healer.Alert("roomExistsByID (scan rows):" + err.Error()) // debug
 			c.Error = err
 			return
 		}

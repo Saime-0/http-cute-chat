@@ -61,7 +61,7 @@ func (c *parentCategory) rooms() {
 		pq.Array(chatIDs),
 	)
 	if err != nil {
-		println("Rooms:", err.Error()) // debug
+		//c.Dataloader.healer.Alert("rooms:" + err.Error()) // debug
 		c.Error = err
 		return
 	}
@@ -76,6 +76,7 @@ func (c *parentCategory) rooms() {
 		}
 
 		if err = rows.Scan(&ptr, &m.RoomID, &m.Chat.Unit.ID, &m.ParentID, &m.Name, &m.Note); err != nil {
+			//c.Dataloader.healer.Alert("rooms (scan rows):" + err.Error()) // debug
 			c.Error = err
 			return
 		}

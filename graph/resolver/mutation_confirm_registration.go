@@ -5,6 +5,8 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/utils"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -29,6 +31,7 @@ func (r *mutationResolver) ConfirmRegistration(ctx context.Context, email string
 	}
 	err := r.Services.Repos.Users.CreateUser(regi)
 	if err != nil {
+		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удлось создать пользователя"), nil
 	}
 

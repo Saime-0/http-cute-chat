@@ -32,12 +32,11 @@ func (r *UsersRepo) CreateUser(userModel *models.RegisterData) (err error) {
 		userModel.HashPassword,
 		userModel.Email,
 	).Err()
-	if err != nil {
-		println("CreateUser:", err.Error()) // debug
-	}
+
 	return
 }
 
+// deprecated
 func (r *UsersRepo) User(userID int) (*model.User, error) {
 	user := &model.User{
 		Unit: &model.Unit{},
@@ -53,14 +52,12 @@ func (r *UsersRepo) User(userID int) (*model.User, error) {
 		&user.Unit.Name,
 		&user.Unit.Type,
 	)
-	if err != nil {
-		println("User:", err.Error()) // debug
-	}
+
 	return user, err
 }
 
-func (r *UsersRepo) UserExistsByRequisites(inp *models.LoginRequisites) (exists bool) {
-	err := r.db.QueryRow(`
+func (r *UsersRepo) UserExistsByRequisites(inp *models.LoginRequisites) (exists bool, err error) {
+	err = r.db.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1
 			FROM users
@@ -69,9 +66,6 @@ func (r *UsersRepo) UserExistsByRequisites(inp *models.LoginRequisites) (exists 
 		inp.Email,
 		inp.HashedPasswd,
 	).Scan(&exists)
-	if err != nil {
-		println("UserExistsByRequisites:", err.Error()) // debug
-	}
 
 	return
 
@@ -86,9 +80,7 @@ func (r *UsersRepo) GetUserIdByRequisites(inp *models.LoginRequisites) (id int, 
 		inp.Email,
 		inp.HashedPasswd,
 	).Scan(&id)
-	if err != nil {
-		println("GetUserIdByInput:", err.Error()) // debug
-	}
+
 	return
 }
 

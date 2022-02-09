@@ -57,7 +57,7 @@ func (c *parentCategory) unitExistsByID() {
 		pq.Array(unitTypes),
 	)
 	if err != nil {
-		println("unitExistsByID:", err.Error()) // debug
+		//c.Dataloader.healer.Alert("unitExistsByID:" + err.Error()) // debug
 		c.Error = err
 		return
 	}
@@ -70,6 +70,7 @@ func (c *parentCategory) unitExistsByID() {
 	for rows.Next() {
 
 		if err = rows.Scan(&ptr, &exists); err != nil {
+			//c.Dataloader.healer.Alert("unitExistsByID (scan rows):" + err.Error()) // debug
 			c.Error = err
 			return
 		}

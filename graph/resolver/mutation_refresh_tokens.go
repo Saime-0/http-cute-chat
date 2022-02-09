@@ -5,6 +5,7 @@ package resolver
 
 import (
 	"context"
+	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -63,7 +64,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 	if sessionKey != nil {
 		err = r.Subix.ExtendClientSession(*sessionKey, tokenExpiresAt)
 		if err != nil {
-			println("RefreshTokens:", err) // debug
+			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		}
 	}
 
