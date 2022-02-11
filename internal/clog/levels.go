@@ -2,10 +2,10 @@ package clog
 
 import "github.com/pkg/errors"
 
-type LogLevel int8
+type LogLevel uint8
 
 const (
-	_         LogLevel = iota - 1
+	_         LogLevel = iota
 	Emergency          // system is unusable
 	Alert              // action must be taken immediately
 	Critical           // critical conditions
@@ -39,4 +39,11 @@ func GetLogLevel(str string) (lvl LogLevel, err error) {
 		}
 	}
 	return 0, LogLevelNotExists
+}
+
+func Exists(lvl LogLevel) bool {
+	if lvl < 1 || int(lvl) >= len(lvlNames) {
+		return false
+	}
+	return true
 }

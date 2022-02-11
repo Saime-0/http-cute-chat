@@ -14,7 +14,7 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 type Resolver struct {
 	Services   *service.Services
-	Config     *config.Config
+	Config     *config.Config2
 	Piper      *piper.Pipeline
 	Healer     *healer.Healer
 	Subix      *subix.Subix

@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"errors"
+	"log"
 	"time"
 )
 
@@ -34,7 +35,7 @@ func (s *Scheduler) RunTask(task **Task) error {
 func (s *Scheduler) runNextTask() {
 	s.mu.Lock()
 	task := s.root.next
-	println("runNextTask: запускаю задачу..") // debug
+	log.Println("runNextTask: запускаю задачу..") // debug
 	go (*task).taskFunc()
 	*task = *(*task).next
 	s.mu.Unlock()

@@ -56,7 +56,7 @@ func (r *mutationResolver) RefreshTokens(ctx context.Context, sessionKey *string
 			UserID:    clientID,
 			ExpiresAt: tokenExpiresAt,
 		},
-		r.Config.SecretKey,
+		r.Config.SecretSigningKey,
 	)
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))

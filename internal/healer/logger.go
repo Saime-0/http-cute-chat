@@ -16,32 +16,23 @@ const (
 	ConnectionTimeout   = time.Millisecond * 1500
 )
 
-func (h *Healer) PrepareLogging(cfg *config.Config) (err error) {
+func (h *Healer) PrepareLogging(cfg *config.Config2) (err error) {
 
-	lvl, err := clog.GetLogLevel(cfg.Logger.Level)
-	if err != nil {
-		return errors.Wrap(err, "не удалось определить уровень логирования")
-	}
-
-	h.Level = lvl
-	h.Output = cfg.Logger.Output
+	h.Level = clog.LogLevel(*cfg.Logging.LoggingLevel)
+	h.Output = clog.Output(*cfg.Logging.LoggingOutput)
 
 	if h.Output < clog.Multiple {
 		return nil
 	} // don't creating db connection
 
-	clientOptions := options.Client().ApplyURI("mongodb+srv://" +
-		cfg.Logger.MongoDBUser +
-		":" + cfg.Logger.MongoDBPassword +
-		"@" + cfg.Logger.MongoDBCluster,
-	)
+	clientOptions := options.Client().ApplyURI(cfg.MongoDBUri)
 
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
 		return errors.Wrap(err, CouldNotConnectToDb)
 	}
 
-	db := client.Database(cfg.Logger.DBName)
+	db := client.Database(*cfg.Logging.LoggingDBName)
 
 	if err != nil {
 		return err

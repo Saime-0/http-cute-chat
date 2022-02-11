@@ -30,7 +30,7 @@ func (r *mutationResolver) UpdateMeData(ctx context.Context, input model.UpdateM
 		input.Password != nil && (node.ValidPassword(*input.Password) || func() bool {
 			// the function in the condition is the best possible solution, as I believe. I'm sorry if this makes it difficult to read the code
 			var err error
-			*input.Password, err = utils.HashPassword(*input.Password, r.Config.PasswordSalt)
+			*input.Password, err = utils.HashPassword(*input.Password, r.Config.GlobalPasswordSalt)
 			if err != nil {
 				node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 				node.SetError(resp.ErrInternalServerError, res.UnexpectedError)

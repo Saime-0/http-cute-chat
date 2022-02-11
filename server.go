@@ -40,7 +40,10 @@ func init() {
 func main() {
 	var err error
 	flag.Parse()
-	cfg := config.NewConfig(configpath)
+	cfg, err := config.NewConfig2(configpath)
+	if err != nil {
+		panic(err)
+	}
 
 	newSched := scheduler.NewScheduler()
 	newCache := cache.NewCache()
@@ -61,11 +64,11 @@ func main() {
 
 	// init smtp
 	newSMTPSender, err := email.NewSMTPSender(
-		cfg.SMTP.Author,
-		cfg.SMTP.From,
-		cfg.SMTP.Passwd,
-		cfg.SMTP.Host,
-		cfg.SMTP.Port,
+		*cfg.SMTPing.SMTPAuthor,
+		cfg.SmtpEmailLogin,
+		cfg.SmtpEmailPasswd,
+		cfg.SmtpHost,
+		*cfg.SMTPing.SMTPPort,
 	)
 	if err != nil {
 		hlr.Emergency(err.Error())
@@ -137,14 +140,14 @@ func main() {
 
 	// server capabilities
 	srv.Use(extension.Introspection{})
-	srv.Use(extension.FixedComplexityLimit(cfg.QueryComplexityLimit))
+	srv.Use(extension.FixedComplexityLimit(*cfg.QueryComplexityLimit))
 
 	// handlers
 	router.Handle("/", graphiql.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 
-	hlr.Info(fmt.Sprintf("Server started on %s port", cfg.AppPort))
-	err = http.ListenAndServe(":"+cfg.AppPort, router)
+	hlr.Info(fmt.Sprintf("Server started on %s port", *cfg.ApplicationPort))
+	err = http.ListenAndServe(":"+*cfg.ApplicationPort, router)
 	if err != nil {
 		hlr.Alert(err.Error())
 	}

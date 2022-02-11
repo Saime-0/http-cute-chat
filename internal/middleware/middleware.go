@@ -19,11 +19,11 @@ import (
 
 type chain struct {
 	r   *http.Request
-	cfg *config.Config
+	cfg *config.Config2
 	hlr *healer.Healer
 }
 
-func ChainShip(cfg *config.Config, hlr *healer.Healer) func(http.Handler) http.Handler {
+func ChainShip(cfg *config.Config2, hlr *healer.Healer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			c := &chain{
@@ -122,7 +122,7 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	return h.Hijack()
 }
 
-func WebsocketInitFunc(cfg *config.Config) func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
+func WebsocketInitFunc(cfg *config.Config2) func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
 
 	return func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
 
@@ -135,7 +135,7 @@ func WebsocketInitFunc(cfg *config.Config) func(ctx context.Context, initPayload
 	}
 }
 
-func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.Context, error) {
+func auth(ctx context.Context, cfg *config.Config2, authHeader string) (context.Context, error) {
 	var (
 		err  error
 		data *utils.TokenData
@@ -144,7 +144,7 @@ func auth(ctx context.Context, cfg *config.Config, authHeader string) (context.C
 	if len(token) == 2 {
 		data, err = utils.ParseToken(
 			token[1],
-			cfg.SecretKey,
+			cfg.SecretSigningKey,
 		)
 	}
 	return context.WithValue(ctx, res.CtxAuthData, data), err

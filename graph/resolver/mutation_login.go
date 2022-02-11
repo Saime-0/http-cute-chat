@@ -32,7 +32,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		requisites = &models.LoginRequisites{
 			Email: input.Email,
 			HashedPasswd: func() string {
-				hpasswd, err := utils.HashPassword(input.Password, r.Config.PasswordSalt)
+				hpasswd, err := utils.HashPassword(input.Password, r.Config.GlobalPasswordSalt)
 				if err != nil {
 					panic(err)
 				}
@@ -66,7 +66,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 			UserID:    clientID,
 			ExpiresAt: time.Now().Unix() + rules.AccessTokenLiftime,
 		},
-		r.Config.SecretKey,
+		r.Config.SecretSigningKey,
 	)
 	if err != nil {
 		return resp.Error(resp.ErrInternalServerError, "ошибка при обработке токена"), nil

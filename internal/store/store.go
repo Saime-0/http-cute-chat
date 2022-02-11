@@ -2,22 +2,14 @@ package store
 
 import (
 	"database/sql"
-	"fmt"
 	"github.com/saime-0/http-cute-chat/internal/config"
 )
 
-func InitDB(cfg *config.Config) (*sql.DB, error) {
+func InitDB(cfg *config.Config2) (*sql.DB, error) {
 	// connection string
-	psqlconn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		cfg.Database.Host,
-		cfg.Database.Port,
-		cfg.Database.User,
-		cfg.Database.Password,
-		cfg.Database.DbName,
-	)
 
 	// open database
-	db, err := sql.Open("postgres", psqlconn)
+	db, err := sql.Open("postgres", cfg.PostgresConnection)
 	if err != nil {
 		return nil, err
 	}

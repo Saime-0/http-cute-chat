@@ -39,7 +39,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 			Name:   input.Name,
 			Email:  input.Email,
 			HashPassword: func() string {
-				hpasswd, err := utils.HashPassword(input.Password, r.Config.PasswordSalt)
+				hpasswd, err := utils.HashPassword(input.Password, r.Config.GlobalPasswordSalt)
 				if err != nil {
 					panic(err)
 				}
