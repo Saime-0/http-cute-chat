@@ -8,8 +8,8 @@ MONGODB_URI=mongodb://mongodb:27017
 
 SECRET_SIGNING_KEY=<random string>
 
-SMTP_HOST=
-SMTP_EMAIL_LOGIN=
-SMTP_EMAIL_PASSWD=
+SMTP_HOST=smtp.yandex.ru
+SMTP_EMAIL_LOGIN=chatix@cute-chat.dot
+SMTP_EMAIL_PASSWD=<password>
 
 ```
