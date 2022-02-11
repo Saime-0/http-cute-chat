@@ -20,7 +20,6 @@ import (
 	"github.com/saime-0/http-cute-chat/internal/middleware"
 	"github.com/saime-0/http-cute-chat/internal/piper"
 	"github.com/saime-0/http-cute-chat/internal/repository"
-	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/service"
 	"github.com/saime-0/http-cute-chat/internal/store"
 	"github.com/saime-0/http-cute-chat/internal/subix"
@@ -92,12 +91,12 @@ func main() {
 	myResolver := &resolver.Resolver{
 		Services:   services,
 		Config:     cfg,
-		Piper:      piper.NewPipeline(services.Repos, hlr, dataloader),
+		Piper:      piper.NewPipeline(cfg, services.Repos, hlr, dataloader),
 		Healer:     hlr,
 		Subix:      sbx,
 		Dataloader: dataloader,
 	}
-	err = myResolver.RegularSchedule(rules.DurationOfScheduleInterval)
+	err = myResolver.RegularSchedule(*cfg.DurationOfScheduleInterval)
 	if err != nil {
 		hlr.Emergency(err.Error())
 		return

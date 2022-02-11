@@ -50,7 +50,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 		session *models.RefreshSession
 	)
 	newRefreshToken := kit.RandomSecret(rules.RefreshTokenLength)
-	expAt := kit.After(rules.RefreshTokenLiftime)
+	expAt := kit.After(*r.Config.RefreshTokenLiftime)
 	session = &models.RefreshSession{
 		RefreshToken: newRefreshToken,
 		UserAgent:    ctx.Value(res.CtxUserAgent).(string),
@@ -64,7 +64,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 	token, err := utils.GenerateToken(
 		&utils.TokenData{
 			UserID:    clientID,
-			ExpiresAt: time.Now().Unix() + rules.AccessTokenLiftime,
+			ExpiresAt: time.Now().Unix() + *r.Config.AccessTokenLiftime,
 		},
 		r.Config.SecretSigningKey,
 	)

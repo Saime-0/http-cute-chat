@@ -4,6 +4,7 @@ import (
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/cdl"
 	"github.com/saime-0/http-cute-chat/internal/clog"
+	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/repository"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -44,6 +45,8 @@ type Node struct {
 	RootContainer interface{}
 	scope         *Rows
 	ScopeMethod   *Method
+
+	cfg *config.Config2
 }
 
 func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
@@ -66,6 +69,8 @@ func (p *Pipeline) CreateNode(id string) (*Node, *Request) {
 			"Request": request,
 		},
 		scope: scope,
+
+		cfg: p.cfg,
 	}
 	p.Nodes[id] = n
 	return n, request

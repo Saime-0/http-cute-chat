@@ -1,11 +1,38 @@
 application_port = "8080"
-query_complexity_limit = 81
+query_complexity_limit = 81 # the weight of the fields is indicated in the code, here is the amount for one request
+
+# The duration is specified in SECONDS.
+# With negative values occurs undefined behavior.
+# <key> = <seconds>
+duration_of_schedule_interval = 36000 # erases expired sessions, invites
+refresh_token_liftime = 5184000 # the normal value is 30-90 days
+access_token_liftime = 864000 # the normal value is 5-15 minutes
+
+maximum_number_of_messages_per_request = 100
+max_count_rooms = 128
+max_user_chats = 128
+max_count_owned_chats = 128
+max_members_on_chat = 2097152
+max_roles_in_chat = 128
 
 [smtp]
 smtp_author = "http-cute-chat"
 smtp_port = 587
 
 [log]
+# 1 - Only console
+# 2 - Console + MongoDB
+# 3 - Only MongoDB
 logging_output = 2
+
+# Emergency  -  system is unusable
+# Alert      -  action must be taken immediately
+# Critical   -  critical conditions
+# Error      -  error conditions
+# Warning    -  warning conditions
+# Notice     -  normal but significant condition
+# Info       -  informational messages
+# Debug      -  debug-level messages
 logging_level = 8
+
 logging_db_name = "logs"

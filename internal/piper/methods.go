@@ -171,7 +171,7 @@ func (n Node) ValidFindMessagesInRoom(find *model.FindMessagesInRoom) (fail bool
 	defer n.MethodTiming()
 
 	if find.Count <= 0 ||
-		find.Count > rules.MaxMessagesCount ||
+		find.Count > *n.cfg.MaximumNumberOfMessagesPerRequest ||
 		find.Created == model.MessagesCreatedBefore && find.StartMessageID-find.Count < 0 {
 		n.SetError(resp.ErrBadRequest, "неверное значение количества сообщений")
 		return true
@@ -240,7 +240,7 @@ func (n Node) ChatsLimit(userId int) (fail bool) {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if count >= rules.MaxUserChats {
+	if count >= *n.cfg.MaxUserChats {
 		n.SetError(resp.ErrBadRequest, "достигнут лимит количества чатов в которых пользователь может состоять")
 		return true
 	}
@@ -401,7 +401,7 @@ func (n Node) RolesLimit(chatId int) (fail bool) {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if count >= rules.MaxRolesInChat {
+	if count >= *n.cfg.MaxRolesInChat {
 		n.SetError(resp.ErrBadRequest, "достигнут лимит количества ролей в чате")
 		return true
 	}
@@ -420,7 +420,7 @@ func (n Node) RoomsLimit(chatId int) (fail bool) {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if count >= rules.MaxCountRooms {
+	if count >= *n.cfg.MaxCountRooms {
 		n.SetError(resp.ErrBadRequest, "достигнут лимит количества комнат в чате")
 		return true
 	}
@@ -579,7 +579,7 @@ func (n Node) MembersLimit(chatId int) (fail bool) {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if count >= rules.MaxMembersOnChat {
+	if count >= *n.cfg.MaxMembersOnChat {
 		n.SetError(resp.ErrBadRequest, "достигнут лимит количества участников в чате")
 		return true
 	}
