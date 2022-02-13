@@ -33,6 +33,6 @@ logging_output = 2
 # Notice     -  normal but significant condition
 # Info       -  informational messages
 # Debug      -  debug-level messages
-logging_level = 8
+logging_level = 7
 
 logging_db_name = "logs"

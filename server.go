@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/directive"
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/resolver"
@@ -27,6 +28,7 @@ import (
 	"github.com/saime-0/http-cute-chat/pkg/graphiql"
 	"github.com/saime-0/http-cute-chat/pkg/scheduler"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -50,14 +52,15 @@ func main() {
 	// init healer
 	hlr, err := healer.NewHealer(cfg, newSched, newCache)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "ошибка инициализации компонента восстановления"))
 	}
+	//hlr.Emergency("test emegrency")
 
 	// init database
 	db, err := store.InitDB(cfg)
 	if err != nil {
-		hlr.Emergency(err.Error())
-		return
+		hlr.Emergency(errors.Wrap(err, "ошибка соединения с бд").Error())
+		os.Exit(69)
 	}
 	defer db.Close()
 
@@ -70,8 +73,8 @@ func main() {
 		*cfg.SMTPing.SMTPPort,
 	)
 	if err != nil {
-		hlr.Emergency(err.Error())
-		return
+		hlr.Emergency(errors.Wrap(err, "ошибка создания компонента SMTP").Error())
+		os.Exit(69)
 	}
 	// init services
 	services := &service.Services{
@@ -98,8 +101,8 @@ func main() {
 	}
 	err = myResolver.RegularSchedule(*cfg.DurationOfScheduleInterval)
 	if err != nil {
-		hlr.Emergency(err.Error())
-		return
+		hlr.Emergency(errors.Wrap(err, "ошибка компонента очистки неактуальных записей базы данных").Error())
+		os.Exit(69)
 	}
 
 	// server handler
@@ -148,6 +151,7 @@ func main() {
 	hlr.Info(fmt.Sprintf("Server started on %s port", *cfg.ApplicationPort))
 	err = http.ListenAndServe(":"+*cfg.ApplicationPort, router)
 	if err != nil {
-		hlr.Alert(err.Error())
+		hlr.Emergency(errors.Wrap(err, "ListenAndServe failure").Error())
+		os.Exit(69)
 	}
 }

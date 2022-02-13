@@ -38,10 +38,10 @@ func NewHealer(cfg *config.Config2, sched *scheduler.Scheduler, cache *cache.Cac
 		cache:        cache,
 	}
 
-	if h.prepareHealer() != nil {
+	if err := h.prepareHealer(); err != nil {
 		return nil, errors.Wrap(err, res.FailedToPrepareHealer)
 	}
-	if h.PrepareLogging(cfg) != nil {
+	if err := h.PrepareLogging(cfg); err != nil {
 		return nil, errors.Wrap(err, "не удалось настроить логирование")
 	}
 	return h, nil

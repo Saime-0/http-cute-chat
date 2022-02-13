@@ -2,7 +2,7 @@
 build: 
 	go build -v .\server.go
 
-	
+
 .PHONY: bandr
 go:
 	go build -v .\server.go

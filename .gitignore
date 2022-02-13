@@ -1,7 +1,11 @@
-.env
-/.idea
-/.repl
+graph/generated
+graph/model/models_gen.go
+
+.database
+.idea
+.repl
+
 server.exe
-/graph/generated
-/graph/model/models_gen.go
-*.*.*
+server
+
+*.env

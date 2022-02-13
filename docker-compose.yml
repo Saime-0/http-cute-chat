@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+
+
+  db:
+    image: postgres:13.4-alpine
+    container_name: postgres
+    restart: unless-stopped
+    env_file: docker.env
+    volumes:
+      - ./.database/postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+
+  server:
+    build: ./
+    container_name: chatix
+    command: ./scripts/prepare-database.sh ./migrations ./scripts/_init.sql db ./server
+    depends_on:
+      - db
+    env_file: docker.env
+    ports:
+      - "8080:8080"

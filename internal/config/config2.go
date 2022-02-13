@@ -22,9 +22,8 @@ func NewConfig2(pathToCfgFile string) (*Config2, error) {
 	if !fromFile.validate() {
 		return nil, errors.New("в файле конфигурации заполнены не все поля")
 	}
-
-	if clog.Exists(clog.LogLevel(*fromFile.Logging.LoggingLevel)) {
-
+	if !clog.Exists(clog.LogLevel(*fromFile.Logging.LoggingLevel)) {
+		return nil, errors.New("указан несуществующий уровень лога")
 	}
 
 	fromEnv := &FromEnv{

@@ -24,6 +24,13 @@ create table if not exists schema_migrations
     dirty boolean not null
 );
 
+create or replace function generate_secret(len bigint) returns text
+    language sql
+as $$
+SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
+FROM generate_series(1, len)
+$$;
+
 create table if not exists units
 (
     id bigserial
@@ -108,6 +115,12 @@ create table if not exists roles
     name varchar(32) not null,
     color varchar(7) not null
 );
+
+create or replace function unix_utc_now(bigint DEFAULT 0) returns bigint
+    language sql
+as $$
+SELECT (date_part('epoch'::text, now()))::bigint + $1
+$$;
 
 create table if not exists chat_members
 (
@@ -209,6 +222,14 @@ create table if not exists count_members
     count_value integer default 0 not null
 );
 
+
+create or replace function generate_num_secret(len bigint) returns text
+    language sql
+as $$
+SELECT string_agg (substr('0123456789', ceil (random() * 10)::integer, 1), '')
+FROM generate_series(1, len)
+$$;
+
 create table if not exists registration_session
 (
     id bigserial,
@@ -227,12 +248,6 @@ create or replace function generate_invite_code() returns text
 as $$
 SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
 FROM generate_series(1, 16)
-$$;
-
-create or replace function unix_utc_now(bigint DEFAULT 0) returns bigint
-    language sql
-as $$
-SELECT (date_part('epoch'::text, now()))::bigint + $1
 $$;
 
 create or replace function delete_allow() returns trigger
@@ -311,17 +326,4 @@ create trigger on_create_chat
     for each row
 execute procedure create_or_delete_count_members_row();
 
-create or replace function generate_secret(len bigint) returns text
-    language sql
-as $$
-SELECT string_agg (substr('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', ceil (random() * 62)::integer, 1), '')
-FROM generate_series(1, len)
-$$;
-
-create or replace function generate_num_secret(len bigint) returns text
-    language sql
-as $$
-SELECT string_agg (substr('0123456789', ceil (random() * 10)::integer, 1), '')
-FROM generate_series(1, len)
-$$;
 

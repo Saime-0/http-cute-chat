@@ -20,7 +20,6 @@ func (h *Healer) PrepareLogging(cfg *config.Config2) (err error) {
 
 	h.Level = clog.LogLevel(*cfg.Logging.LoggingLevel)
 	h.Output = clog.Output(*cfg.Logging.LoggingOutput)
-
 	if h.Output < clog.Multiple {
 		return nil
 	} // don't creating db connection
@@ -40,6 +39,9 @@ func (h *Healer) PrepareLogging(cfg *config.Config2) (err error) {
 
 	h.db = db
 	h.client = client
+	if err := h.PingDB(); err != nil {
+		return errors.Wrap(err, "неудачное подключение mongodb")
+	}
 
 	return nil
 }
