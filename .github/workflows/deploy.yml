@@ -1,0 +1,67 @@
+name: Go
+
+on:
+  push:
+    branches:
+      - deploy
+
+env:
+  DEPLOY_PATH: /home/${{ secrets.USERNAME }}/server/www/http-cute-chat
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: ssh-scp-ssh-pipelines
+      uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSHKEY }}
+        source: "./*, !instruction"
+        target: ${{ env.DEPLOY_PATH }}
+        
+    - name: SSH Remote Commands
+      uses: appleboy/ssh-action@v0.1.4
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSHKEY }}
+
+        script: |
+          cd ${{ env.DEPLOY_PATH }}
+          
+          mkdir -p .backup
+          docker-compose down
+          
+          cp ./ .backup       
+          
+          touch docker.env
+          cat > docker.env << EOF
+          POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          GLOBAL_PASSWORD_SALT=${{ secrets.GLOBAL_PASSWORD_SALT }}
+          MONGODB_URI=${{ secrets.MONGODB_URI }}
+          SECRET_SIGNING_KEY=${{ secrets.SECRET_SIGNING_KEY }}
+          SMTP_HOST=${{ SMTP_HOST }}
+          SMTP_EMAIL_LOGIN=${{ secrets.SMTP_EMAIL_LOGIN }}
+          SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}
+          EOF
+          
+          docker-compose build server --no-cache
+          docker-compose up -d
+          
+          rm -rf .backup
+    
+        script_stop: |
+          cp -u .backup ./
+          docker-compose up -d
+
+        debug: true
+
+    - name: Print Info
+      run: echo "Succesful"
