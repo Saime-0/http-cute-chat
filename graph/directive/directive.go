@@ -2,9 +2,9 @@ package directive
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"reflect"
 )

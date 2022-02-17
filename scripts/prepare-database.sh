@@ -1,5 +1,8 @@
 #!/bin/sh
-
+echo "echo \$PATH:"
+echo $PATH
+echo "echo \$GOPATH:"
+echo $GOPATH
 set -e
 
 pathToMigrations="$1"
@@ -39,17 +42,20 @@ then
 else
     echo "Database 'chat_db' does not exist"
     echo "Run the init script"
-#    PGPASSWORD=$POSTGRES_PASSWORD
-#  PGPASSWORD=$POSTGRES_PASSWORD psql -U "$POSTGRES_USER -c "CREATE DATABASE chat_db"
    PGPASSWORD=$POSTGRES_PASSWORD psql -h "$host" -U "$POSTGRES_USER" -a -f "$dbInitScript"
 fi
 
 # 3 ===
 echo -e "\n${Cyan}[STAGE 3] Apply Migrations${White}"
+migrate -path "$pathToMigrations" -database "$POSTGRES_CONNECTION" up
 
-mkdir -p ./temp/migrator \
-&& wget https://github.com/golang-migrate/migrate/releases/download/v4.15.1/migrate.linux-amd64.tar.gz -O ./temp/migrator/migrator.tar.gz \
-&& tar -xzf ./temp/migrator/migrator.tar.gz -C ./temp/migrator \
-&& ./temp/migrator/migrate -path "$pathToMigrations" -database "$POSTGRES_CONNECTION" up
+# 4 ===
+#echo -e "\n${Cyan}[STAGE 4] Go Generate${White}"
+##gqlgen
+#echo "skip..."
+
+# 5 ===
+#echo -e "\n${Cyan}[STAGE 5] Build project${White}"
+#go build -v ./server.go
 
 exec $cmd
