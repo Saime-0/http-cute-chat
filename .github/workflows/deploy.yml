@@ -47,7 +47,7 @@ jobs:
             GLOBAL_PASSWORD_SALT=${{ secrets.GLOBAL_PASSWORD_SALT }}
             MONGODB_URI=${{ secrets.MONGODB_URI }}
             SECRET_SIGNING_KEY=${{ secrets.SECRET_SIGNING_KEY }}
-            SMTP_HOST=${{ SMTP_HOST }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
             SMTP_EMAIL_LOGIN=${{ secrets.SMTP_EMAIL_LOGIN }}
             SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}
             EOF
