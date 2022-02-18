@@ -37,7 +37,7 @@ jobs:
             backup=../.backup
 
             mkdir -p $backup
-            wsl_docker_compose stop
+            $wsl_docker_compose stop
 
             cp ./ $backup
 
@@ -54,7 +54,7 @@ jobs:
             SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}
             EOF
 
-            wsl_docker_compose up -d --build server
+            $wsl_docker_compose up -d --build server
 
             rm -rf $backup
 
