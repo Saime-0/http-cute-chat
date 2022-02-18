@@ -15,12 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: ssh-scp-ssh-pipelines
-        uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
+      - name: copy file via ssh password
+        uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSHKEY }}
+
           source: "./*, !instruction"
           target: ${{ env.DEPLOY_PATH }}
 
