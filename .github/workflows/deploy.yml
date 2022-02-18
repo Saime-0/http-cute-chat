@@ -36,7 +36,7 @@ jobs:
             backup=../.backup
 
             mkdir -p $backup
-            docker-compose stop
+            docker-compose stop || docker-compose.exe stop
 
             cp ./ $backup
 
@@ -53,7 +53,7 @@ jobs:
             SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}
             EOF
 
-            docker-compose up -d --build server
+            docker-compose up -d --build server || docker-compose.exe up -d --build server
 
             rm -rf $backup
 
