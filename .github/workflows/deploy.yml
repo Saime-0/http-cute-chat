@@ -37,8 +37,6 @@ jobs:
             backup=../.backup
 
             mkdir -p $backup
-            "/mnt/c/Program Files/Docker/cli-plugins/docker-compose.exe" stop
-
             cp ./ $backup
 
             touch docker.env
@@ -53,6 +51,10 @@ jobs:
             SMTP_EMAIL_LOGIN=${{ secrets.SMTP_EMAIL_LOGIN }}
             SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}
             EOF
+
+            "/mnt/c/Program Files/Docker/cli-plugins/docker-compose.exe" stop
+
+
 
             "/mnt/c/Program Files/Docker/cli-plugins/docker-compose.exe" up -d --build server
 
