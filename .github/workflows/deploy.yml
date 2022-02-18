@@ -41,6 +41,7 @@ jobs:
             cp -r ./ $backup
 
             touch docker.env
+            echo "" > docker.env
             echo "POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}" >> docker.env
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> docker.env
             echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> docker.env
