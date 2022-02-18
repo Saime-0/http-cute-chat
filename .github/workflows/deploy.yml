@@ -32,11 +32,12 @@ jobs:
           key: ${{ secrets.SSHKEY }}
 
           script: |
+            wsl_docker_compose=/mnt/c/Program\ Files/Docker/cli-plugins/docker-compose.exe
             cd ${{ env.DEPLOY_PATH }}
             backup=../.backup
 
             mkdir -p $backup
-            docker-compose stop || docker-compose.exe stop
+            wsl_docker_compose stop
 
             cp ./ $backup
 
@@ -53,7 +54,7 @@ jobs:
             SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}
             EOF
 
-            docker-compose up -d --build server || docker-compose.exe up -d --build server
+            wsl_docker_compose up -d --build server
 
             rm -rf $backup
 
