@@ -33,12 +33,13 @@ jobs:
 
           script: |
             cd ${{ env.DEPLOY_PATH }}
-            
-            mkdir -p .backup
-            docker-compose down
-            
-            cp ./ .backup       
-            
+            backup=../.backup
+
+            mkdir -p $backup
+            docker-compose stop
+
+            cp ./ $backup
+
             touch docker.env
             cat > docker.env << EOF
             POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}
@@ -51,15 +52,12 @@ jobs:
             SMTP_EMAIL_LOGIN=${{ secrets.SMTP_EMAIL_LOGIN }}
             SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}
             EOF
-            
-            docker-compose build server --no-cache
-            docker-compose up -d
-            
-            rm -rf .backup
 
-          script_stop: |
-            cp -u .backup ./
-            docker-compose up -d
+            docker-compose up -d --build server
+
+            rm -rf $backup
+
+          script_stop: true
 
           debug: true
 
