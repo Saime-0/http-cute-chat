@@ -17,8 +17,8 @@ ENV PATH=/usr/local/go/bin:$GOPATH/bin:$PATH
 
 # install migrator
 RUN ./scripts/install-migrator.sh
-#ENV PATH="/usr/local/migrator:${PATH}"
-ENV PATH=./.tmp/migrator:$PATH
+ENV PATH="/usr/local/migrator:${PATH}"
+#ENV PATH=./.tmp/migrator:$PATH
 
 # build server
 RUN go build -v ./server.go

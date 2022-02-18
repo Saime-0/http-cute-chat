@@ -1,4 +1,6 @@
-return
+#exit 0
+set -e
+
 export folder="/usr/local/migrator"
 mkdir -p $folder
 
