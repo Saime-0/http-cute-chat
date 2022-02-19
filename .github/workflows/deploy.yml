@@ -52,7 +52,7 @@ jobs:
             echo "SMTP_EMAIL_LOGIN=${{ secrets.SMTP_EMAIL_LOGIN }}" >> docker.env
             echo "SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}" >> docker.env
 
-            "/mnt/c/Program Files/Docker/cli-plugins/docker-compose.exe" up -d --build server
+            docker-compose up -d --build server
 
             rm -rf $backup
 
