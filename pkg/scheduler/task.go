@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"log"
 	"time"
 )

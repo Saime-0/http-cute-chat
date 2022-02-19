@@ -1,0 +1,64 @@
+name: deploy
+
+on:
+  push:
+    branches:
+      - deploy
+
+env:
+  DEPLOY_PATH: /home/${{ secrets.USERNAME }}/www/http-cute-chat
+
+jobs:
+
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: copy file via ssh password
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSHKEY }}
+
+          source: "./*, !instruction"
+          target: ${{ env.DEPLOY_PATH }}
+
+      - name: SSH Remote Commands
+        uses: appleboy/ssh-action@v0.1.4
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSHKEY }}
+
+          script: |
+            cd ${{ env.DEPLOY_PATH }}
+
+            backup=../.backup
+            mkdir -p $backup
+
+            cp -r ./ $backup
+
+            touch docker.env
+            echo "" > docker.env
+            echo "POSTGRES_CONNECTION=${{ secrets.POSTGRES_CONNECTION }}" >> docker.env
+            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" >> docker.env
+            echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" >> docker.env
+            echo "GLOBAL_PASSWORD_SALT=${{ secrets.GLOBAL_PASSWORD_SALT }}" >> docker.env
+            echo "MONGODB_URI=${{ secrets.MONGODB_URI }}" >> docker.env
+            echo "SECRET_SIGNING_KEY=${{ secrets.SECRET_SIGNING_KEY }}" >> docker.env
+            echo "SMTP_HOST=${{ secrets.SMTP_HOST }}" >> docker.env
+            echo "SMTP_EMAIL_LOGIN=${{ secrets.SMTP_EMAIL_LOGIN }}" >> docker.env
+            echo "SMTP_EMAIL_PASSWD=${{ secrets.SMTP_EMAIL_PASSWD }}" >> docker.env
+
+            sudo docker-compose up -d --build server
+
+            rm -rf $backup
+
+          script_stop: true
+
+          debug: true
+
+      - name: Print Info
+        run: echo "Succesful"

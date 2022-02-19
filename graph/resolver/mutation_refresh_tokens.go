@@ -6,11 +6,11 @@ package resolver
 import (
 	"context"
 	"github.com/pkg/errors"
-	"github.com/saime-0/http-cute-chat/internal/resp"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/res"
+	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/pkg/kit"

@@ -3,8 +3,8 @@ package middleware
 import (
 	"bufio"
 	"context"
-	"errors"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/piper"
