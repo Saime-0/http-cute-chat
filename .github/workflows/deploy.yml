@@ -38,7 +38,7 @@ jobs:
             backup=../.backup
             mkdir -p $backup
 
-            cp -r ./ $backup
+            sudo cp -r ./ $backup
 
             touch docker.env
             echo "" > docker.env
