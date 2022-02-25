@@ -27,11 +27,10 @@ const (
 	MaxFormFields                = 16
 	MaxFielditems                = 16
 	RefreshTokenLiftime          = int64(60 * 60 * 24 * 60) // 60 days
-	AccessTokenLiftime           = int64(60 * 60 * 24 * 10) // 10 days
 	MaxRefreshSession            = 5
-	LifetimeOfMarkedClient       = int64(60) // s.
-	LiftimeOfRegistrationSession = int64(30) // 1 hour
-	DurationOfScheduleInterval   = int64(60) // 1 hour
+	LifetimeOfMarkedClient       = int64(60)      // s.
+	LiftimeOfRegistrationSession = int64(60 * 60) // 1 hour
+	DurationOfScheduleInterval   = int64(60)      // 1 hour
 
 	AllowedConnectionShutdownDuration = 120
 )

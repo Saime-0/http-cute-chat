@@ -6,9 +6,29 @@ import (
 	"strings"
 )
 
-func (s *Subix) writeToChats(chats []int, body model.EventResult) {
+func (s *Subix) writeToMembers(membersID []int, body model.EventResult) {
 	eventType := getEventType(body)
-	for _, chatID := range chats {
+	for _, memberID := range membersID {
+		member, ok := s.members[memberID]
+		if !ok {
+			continue
+		}
+		for _, client := range member.clients {
+			s.writeToClient(
+				client,
+				&model.SubscriptionBody{
+					Event: eventType,
+					Body:  body,
+				},
+			)
+		}
+
+	}
+}
+
+func (s *Subix) writeToChats(chatsID []int, body model.EventResult) {
+	eventType := getEventType(body)
+	for _, chatID := range chatsID {
 		chat, ok := s.chats[chatID]
 		if !ok {
 			continue
@@ -31,9 +51,9 @@ func (s *Subix) writeToChats(chats []int, body model.EventResult) {
 	}
 }
 
-func (s *Subix) writeToUsers(users []int, body model.EventResult) {
+func (s *Subix) writeToUsers(usersID []int, body model.EventResult) {
 	eventType := getEventType(body)
-	for _, userID := range users {
+	for _, userID := range usersID {
 		user, ok := s.users[userID]
 		if !ok {
 			continue

@@ -186,8 +186,8 @@ func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
 	chats := &model.Chats{
 		Chats: []*model.Chat{},
 	}
-	rows, err := r.db.Query(
-		`SELECT units.id, units.domain, units.name, units.type, chats.private
+	rows, err := r.db.Query(`
+		SELECT units.id, units.domain, units.name, units.type, chats.private
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
 		WHERE chats.owner_id = $1`,
@@ -198,7 +198,9 @@ func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := &model.Chat{}
+		m := &model.Chat{
+			Unit: &model.Unit{},
+		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
 			return nil, err
 		}

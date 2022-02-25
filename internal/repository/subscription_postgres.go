@@ -55,16 +55,16 @@ func (r *SubscribersRepo) initFuncs() {
 		return users, nil
 	}
 
-	r.RoomReaders = func(roomIDs []int) (users []int, err error) {
+	r.RoomReaders = func(roomIDs []int) (members []int, err error) {
 		//language=PostgreSQL
 		rows, err := r.db.Query(`
-			SELECT user_id
+			SELECT m.id
 			FROM chat_members m
-		    
+
 			JOIN chats c on m.chat_id = c.id
 			JOIN rooms r on m.chat_id = r.chat_id
 			LEFT JOIN allows a on r.id = a.room_id
-		
+
 			WHERE r.id = ANY ($1)
 		  		AND (
 				    action_type IS NULL 
@@ -76,7 +76,7 @@ func (r *SubscribersRepo) initFuncs() {
 						)
 				   	OR m.user_id = c.owner_id
 				)
-			GROUP BY user_id`,
+			GROUP BY m.id`,
 			pq.Array(roomIDs),
 		)
 		if err != nil {
@@ -84,11 +84,11 @@ func (r *SubscribersRepo) initFuncs() {
 		}
 		defer rows.Close()
 
-		users, err = completeIntArray(rows)
+		members, err = completeIntArray(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		return users, nil
+		return members, nil
 	}
 }

@@ -41,7 +41,6 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 		r.Services.Repos.Rooms.FormIsSet(roomID) && node.HandleChoice(input.Body, roomID, &input.Body) {
 		return node.GetError(), nil
 	}
-	println(clientID, "clientID\n", memberID, "memberID\n", chatID, "chatID\n")
 	// todo if message is anonimus or room
 	// todo все allow.group.user заменить на member
 	message := &models.CreateMessage{
