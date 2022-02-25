@@ -160,5 +160,5 @@ func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 }
 
 func ValidateSessionKey(sessionKey string) (valid bool) {
-	return len(sessionKey) == 20
+	return regexp.MustCompile(`^[a-zA-Z0-9\-\=]{20}$`).MatchString(sessionKey)
 }

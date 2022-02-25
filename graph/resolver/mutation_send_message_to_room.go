@@ -6,6 +6,7 @@ package resolver
 import (
 	"context"
 	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/piper"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -45,22 +46,40 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 	// todo все allow.group.user заменить на member
 	message := &models.CreateMessage{
 		ReplyTo: input.ReplyTo,
-		UserID:  &memberID,
+		UserID:  &clientID,
 		RoomID:  roomID,
 		Body:    input.Body,
 		Type:    model.MessageTypeUser,
 	}
-	eventReadyMessage, err := r.Services.Repos.Messages.CreateMessageInRoom(message)
+
+	eventReadyMessage, err := func(n piper.Node) (*model.NewMessage, error) {
+		n.SwitchMethod("CreateMessageInRoom", &bson.M{
+			"ReplyTo": message.ReplyTo,
+			"UserID":  message.UserID,
+			"RoomID":  message.RoomID,
+			"Body":    message.Body,
+			"Type":    message.Type,
+		})
+		defer n.MethodTiming()
+
+		return r.Services.Repos.Messages.CreateMessageInRoom(message)
+	}(node)
+
 	if err != nil {
 		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}
 
 	//r.Services.Events.NewMessage(roomID, &model.Message{ID:      msgID, ReplyTo: _replyTo, UserID:  &model.Member{ID: memberID}, Type:    message.Type, Body:    input.Body})
-	go r.Subix.NotifyRoomReaders(
-		roomID,
-		eventReadyMessage,
-	)
+	go func() {
+		err := r.Subix.NotifyRoomReaders(
+			roomID,
+			eventReadyMessage,
+		)
+		if err != nil {
+			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		}
+	}()
 
 	return resp.Success("сообщение успешно создано"), nil
 }

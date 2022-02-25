@@ -1073,7 +1073,7 @@ func (n Node) ValidSessionKey(sessionKey string) (fail bool) {
 	defer n.MethodTiming()
 
 	if !validator.ValidateSessionKey(sessionKey) {
-		n.SetError(resp.ErrBadRequest, "не валидный ключ сессии")
+		n.SetError(resp.ErrBadRequest, "невалидный ключ сессии. Требования: Length 20 characters & (Upper or lower case letters | Special symbols (-.=)")
 		return true
 	}
 	return
@@ -1086,7 +1086,7 @@ func (n Node) ValidEmail(email string) (fail bool) {
 	defer n.MethodTiming()
 
 	if !validator.ValidateEmail(email) {
-		n.SetError(resp.ErrBadRequest, "не валидный email")
+		n.SetError(resp.ErrBadRequest, "невалидный email")
 		return true
 	}
 	return

@@ -514,8 +514,8 @@ func (r *ChatsRepo) AddUserByCode(code string, userId int) (*model.CreateMember,
 }
 
 func (r *ChatsRepo) ChatIsPrivate(chatId int) (private bool) {
-	r.db.QueryRow(
-		`SELECT private
+	r.db.QueryRow(`
+		SELECT private
 		FROM chats
 		WHERE id = $1`,
 		chatId,
@@ -540,8 +540,8 @@ func (r *ChatsRepo) BanUserInChat(userId int, chatId int) (*model.DeleteMember, 
 		)
 		SELECT m.id FROM m
 		`,
-		chatId,
 		userId,
+		chatId,
 	).Scan(
 		&member.ID,
 	)
@@ -975,51 +975,50 @@ func (r *ChatsRepo) FindMessages(inp *model.FindMessages, params *model.Params, 
 		*inp.TextFragment = "%" + *inp.TextFragment + "%"
 	}
 
-	// language=PostgreSQL
 	var rows, err = r.db.Query(`
-			SELECT messages.id, reply_to, user_id, messages.room_id, body, messages.type, created_at
-			FROM messages 
-			LEFT JOIN allows
-				ON messages.room_id = allows.room_id
-			WHERE messages.room_id IN (
-			    SELECT rooms.id 
-			    FROM chats
-			    JOIN rooms
-			        ON chats.id = rooms.chat_id
-			    LEFT JOIN allows 
-				    ON rooms.id = allows.room_id 
-			    WHERE chats.id = $1 
-				AND (
-				    $2::BIGINT IS NULL 
-				    OR rooms.id = $2
-				)
-			    AND (
-			        action_type IS NULL 
-			        OR action_type = 'READ'
-			            AND (
-							group_type = 'ROLES' AND value = $3::VARCHAR 
-							OR group_type = 'CHARS' AND value = $4::VARCHAR  
-							OR group_type = 'USERS' AND value = $5::VARCHAR
-						)
-			        OR owner_id = $5::BIGINT 
-		        )
-			)
+		SELECT messages.id, reply_to, user_id, messages.room_id, body, messages.type, created_at
+		FROM messages 
+		LEFT JOIN allows
+			ON messages.room_id = allows.room_id
+		WHERE messages.room_id IN (
+		    SELECT rooms.id 
+		    FROM chats
+		    JOIN rooms
+		        ON chats.id = rooms.chat_id
+		    LEFT JOIN allows 
+			    ON rooms.id = allows.room_id 
+		    WHERE chats.id = $1 
 			AND (
-			    $6::BIGINT IS NULL 
-			    OR user_id = $6 
+			    $2::BIGINT IS NULL 
+			    OR rooms.id = $2
 			)
-			AND (
-			    $7::VARCHAR IS NULL 
-			    OR body ILIKE $7
-			)
-			LIMIT $8
-			OFFSET $9
-			`,
+		    AND (
+		        action_type IS NULL 
+		        OR action_type = 'READ'
+		            AND (
+						group_type = 'ROLE' AND value = $3::VARCHAR
+						OR group_type = 'CHAR' AND value = $4::VARCHAR
+						OR group_type = 'MEMBER' AND value = $5::VARCHAR
+					)
+		        OR owner_id = $5::BIGINT 
+	        )
+		)
+		AND (
+		    $6::BIGINT IS NULL 
+		    OR user_id = $6 
+		)
+		AND (
+		    $7::VARCHAR IS NULL 
+		    OR body ILIKE $7
+		)
+		LIMIT $8
+		OFFSET $9
+		`,
 		inp.ChatID,
 		inp.RoomID,
 		holder.RoleID,
 		holder.Char,
-		holder.UserID,
+		holder.MemberID,
 		inp.UserID,
 		inp.TextFragment,
 		params.Limit,
@@ -1160,7 +1159,11 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) (*model.Members, error) 
 
 }
 
-// DemoMembers selectType: 0 is filter by users, 1 - by members and chatid is not count
+// DemoMembers
+//
+// SelectType: 0 is filter by users, 1 - by members and chatid is not count.
+//
+// Если ids[0] и ids[1] равно, то вернутся array [&DemoMember, nil].
 func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.DemoMember { // todo selectType to rules.SelectType
 	var (
 		demoMembers [2]*models.DemoMember
@@ -1172,7 +1175,6 @@ func (r *ChatsRepo) DemoMembers(chatId, selectType int, ids ...int) [2]*models.D
 		return demoMembers
 	}
 
-	//language=PostgreSQL
 	rows, err := r.db.Query(`
 		SELECT user_id, chat_members.id, owner_id = user_id as is_owner, char, muted
 		FROM chat_members 
@@ -1261,25 +1263,27 @@ func (r *ChatsRepo) UpdateChat(chatId int, inp *model.UpdateChatInput) (*model.U
 	return chat, err
 }
 
-func (r *ChatsRepo) DefMember(memberId int) (defMember *models.DefMember, err error) {
-	err = r.db.QueryRow(`
-		SELECT user_id, chat_id
-		FROM chat_members
-		WHERE id = $1
+func (r *ChatsRepo) DefMember(memberId int) (*models.DefMember, error) {
+	defMember := new(models.DefMember)
+	err := r.db.QueryRow(`
+		SELECT coalesce(user_id, 0) userID,
+	       	   coalesce(chat_id, 0) chatID
+		FROM (SELECT 1) x
+		LEFT JOIN chat_members m ON id = $1
 		`,
 		memberId,
 	).Scan(
 		&defMember.UserID,
 		&defMember.ChatID,
 	)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil {
 		return nil, err
 	}
-	if err == sql.ErrNoRows {
+	if defMember.UserID == 0 {
 		return nil, nil
 	}
 
-	return
+	return defMember, nil
 }
 
 func (r *ChatsRepo) FindChats(inp *model.FindChats, params *model.Params) (*model.Chats, error) {

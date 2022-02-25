@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"time"
 	"unicode/utf8"
@@ -97,3 +98,5 @@ func After(offset int64) int64 {
 func Err(v interface{}, err error) error {
 	return err
 }
+
+var IsLetter = regexp.MustCompile(`^[a-zA-Z0-9\-\=]{20}$`).MatchString

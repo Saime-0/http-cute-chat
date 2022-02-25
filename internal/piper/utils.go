@@ -26,7 +26,7 @@ const (
 
 func (n *Node) diffLevelCheck(applyToOwner, applyToSelfChar bool, minCharLevel mlevel, master, slave *models.DemoMember) (bad bool) {
 	if master == nil || slave == nil {
-		n.SetError(resp.ErrBadRequest, "мемберса не существует")
+		n.SetError(resp.ErrBadRequest, "invalid memberID value")
 		return true
 	}
 	if !applyToOwner && slave.IsOwner {
@@ -37,11 +37,11 @@ func (n *Node) diffLevelCheck(applyToOwner, applyToSelfChar bool, minCharLevel m
 		return false
 	}
 	if !applyToSelfChar && (charLevels[master.Char] == charLevels[slave.Char]) {
-		n.SetError(resp.ErrBadRequest, "недостотачный уровень")
+		n.SetError(resp.ErrBadRequest, "недостаточно прав")
 		return true
 	}
 	if charLevels[master.Char] < charLevels[charPtr(minCharLevel)] && charLevels[master.Char] < charLevels[slave.Char] {
-		n.SetError(resp.ErrBadRequest, "недостотачный уровень")
+		n.SetError(resp.ErrBadRequest, "недостаточно прав")
 		return true
 	}
 	return false

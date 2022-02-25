@@ -1,6 +1,7 @@
 package subix
 
 import (
+	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/repository"
 )
@@ -11,28 +12,38 @@ type (
 )
 
 func (s *Subix) NotifyChatMembers(chat ID, body model.EventResult) {
-	s.spam(
+	err := s.spam(
 		[]ID{chat},
 		s.repo.Subscribers.Members,
 		body,
 	)
+	if err != nil {
+		panic(err)
+	}
 }
 func (s *Subix) NotifyChats(chats []ID, body model.EventResult) {
-	s.spam(
+	err := s.spam(
 		chats,
 		s.repo.Subscribers.Members,
 		body,
 	)
+	if err != nil {
+		panic(err)
+	}
 }
-func (s *Subix) NotifyRoomReaders(room ID, body model.EventResult) {
-	s.spam(
+func (s *Subix) NotifyRoomReaders(room ID, body model.EventResult) error {
+	err := s.spam(
 		[]ID{room},
 		s.repo.Subscribers.RoomReaders,
 		body,
 	)
+	if err != nil {
+		return errors.Wrap(err, "ивент небыл разослан")
+	}
+	return nil
 }
 
-func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interface{}) {
+func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interface{}) error {
 	//users, err := meth(objects)
 	//if err != nil {
 	//	panic(err)
@@ -51,9 +62,14 @@ func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interfac
 		s.DeleteMember(body.(*model.DeleteMember).ID)
 
 	case *model.NewMessage: // ожидается что в objects будут ID комнат
-		s.writeToMembers(objects, body.(model.EventResult))
-		return
+		readers, err := s.repo.Subscribers.RoomReaders(objects)
+		if err != nil {
+			return errors.Wrap(err, "не найдены участники комнаты")
+		}
+		s.writeToMembers(readers, body.(model.EventResult))
+		return nil
 	}
 
 	s.writeToChats(objects, body.(model.EventResult))
+	return nil
 }

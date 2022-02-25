@@ -56,7 +56,6 @@ func (r *SubscribersRepo) initFuncs() {
 	}
 
 	r.RoomReaders = func(roomIDs []int) (members []int, err error) {
-		//language=PostgreSQL
 		rows, err := r.db.Query(`
 			SELECT m.id
 			FROM chat_members m
