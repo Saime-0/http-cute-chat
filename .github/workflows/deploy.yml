@@ -56,6 +56,8 @@ jobs:
 
             sudo rm -rf $backup
 
+            docker image rm $(docker image ls -f dangling=true -q)
+
           script_stop: true
 
           debug: true
