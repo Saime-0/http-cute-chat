@@ -1,0 +1,12 @@
+type CreatedRoom {
+	roomId: ID!
+}
+type CreatedRole {
+	roleId: ID!
+}
+type CreatedChat {
+	chatId: ID!
+}
+type CreatedInvite {
+	inviteCode: String!
+}

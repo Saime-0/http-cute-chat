@@ -14,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateInviteInput) (model.MutationResult, error) {
+func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateInviteInput) (model.CreateInviteResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
@@ -50,5 +50,5 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 		}
 	}
 
-	return resp.Success("инвайт создан"), nil
+	return &model.CreatedInvite{InviteCode: eventReadyInvite.Code}, nil
 }

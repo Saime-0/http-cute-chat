@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.MutationResult, error) {
+func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoomInput) (model.CreateRoomResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
@@ -43,5 +43,5 @@ func (r *mutationResolver) CreateRoom(ctx context.Context, input model.CreateRoo
 		input.ChatID,
 		eventReadyRoom,
 	)
-	return resp.Success("комната создана"), nil
+	return &model.CreatedRoom{RoomID: eventReadyRoom.ID}, nil
 }

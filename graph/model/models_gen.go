@@ -24,6 +24,22 @@ type ChatsResult interface {
 	IsChatsResult()
 }
 
+type CreateChatResult interface {
+	IsCreateChatResult()
+}
+
+type CreateInviteResult interface {
+	IsCreateInviteResult()
+}
+
+type CreateRoleResult interface {
+	IsCreateRoleResult()
+}
+
+type CreateRoomResult interface {
+	IsCreateRoomResult()
+}
+
 type EventResult interface {
 	IsEventResult()
 }
@@ -150,6 +166,10 @@ func (AdvancedError) IsLoginResult()                {}
 func (AdvancedError) IsRefreshTokensResult()        {}
 func (AdvancedError) IsRegisterResult()             {}
 func (AdvancedError) IsSendMessageToRoomResult()    {}
+func (AdvancedError) IsCreateInviteResult()         {}
+func (AdvancedError) IsCreateRoomResult()           {}
+func (AdvancedError) IsCreateRoleResult()           {}
+func (AdvancedError) IsCreateChatResult()           {}
 func (AdvancedError) IsChatRolesResult()            {}
 func (AdvancedError) IsChatsResult()                {}
 func (AdvancedError) IsInviteInfoResult()           {}
@@ -294,6 +314,30 @@ type CreateRoomInput struct {
 	Form   *UpdateFormInput `json:"form"`
 	Allows *AllowsInput     `json:"allows"`
 }
+
+type CreatedChat struct {
+	ChatID int `json:"chatId"`
+}
+
+func (CreatedChat) IsCreateChatResult() {}
+
+type CreatedInvite struct {
+	InviteCode string `json:"inviteCode"`
+}
+
+func (CreatedInvite) IsCreateInviteResult() {}
+
+type CreatedRole struct {
+	RoleID int `json:"roleId"`
+}
+
+func (CreatedRole) IsCreateRoleResult() {}
+
+type CreatedRoom struct {
+	RoomID int `json:"roomId"`
+}
+
+func (CreatedRoom) IsCreateRoomResult() {}
 
 type DeleteAllow struct {
 	AllowID *int `json:"allowId"`

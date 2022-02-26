@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRoleInput) (model.MutationResult, error) {
+func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRoleInput) (model.CreateRoleResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
@@ -42,5 +42,5 @@ func (r *mutationResolver) CreateRole(ctx context.Context, input model.CreateRol
 		eventReadyRole,
 	)
 
-	return resp.Success("роль создана"), nil
+	return &model.CreatedRole{RoleID: eventReadyRole.ID}, nil
 }

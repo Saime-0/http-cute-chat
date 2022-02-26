@@ -13,7 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateChatInput) (model.MutationResult, error) {
+func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateChatInput) (model.CreateChatResult, error) {
 	node := *r.Piper.NodeFromContext(ctx)
 	defer r.Piper.DeleteNode(*node.ID)
 
@@ -44,5 +44,5 @@ func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateCha
 		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться к чату"), nil
 	}
 
-	return resp.Success("чат успешно создан"), nil
+	return &model.CreatedChat{ChatID: chatID}, nil
 }
