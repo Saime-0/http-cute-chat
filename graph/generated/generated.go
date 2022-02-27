@@ -194,6 +194,10 @@ type ComplexityRoot struct {
 		Invites func(childComplexity int) int
 	}
 
+	JoinedToChat struct {
+		ChadID func(childComplexity int) int
+	}
+
 	Me struct {
 		Chats      func(childComplexity int) int
 		Data       func(childComplexity int) int
@@ -930,6 +934,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Invites.Invites(childComplexity), true
+
+	case "JoinedToChat.chadId":
+		if e.complexity.JoinedToChat.ChadID == nil {
+			break
+		}
+
+		return e.complexity.JoinedToChat.ChadID(childComplexity), true
 
 	case "Me.chats":
 		if e.complexity.Me.Chats == nil {
@@ -2489,7 +2500,6 @@ input UpdateMemberInput {
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/mutation_join_to_chat.graphql", Input: `extend type Mutation {
     joinToChat(chatId: ID!): JoinToChatResult! @goField(forceResolver: true) @isAuth
-
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/mutation/mutation_leave_from_chat.graphql", Input: `extend type Mutation {
     leaveFromChat(chatId: ID!): MutationResult! @goField(forceResolver: true) @isAuth
@@ -2649,11 +2659,11 @@ union AllowsResult =
 
 union JoinByInviteResult =
     | AdvancedError
-    | Successful
+    | JoinedToChat
 
 union JoinToChatResult =
     | AdvancedError
-    | Successful
+    | JoinedToChat
 
 union LoginResult =
     | AdvancedError
@@ -2923,6 +2933,9 @@ type CreatedChat {
 }
 type CreatedInvite {
 	inviteCode: String!
+}
+type JoinedToChat {
+	chadId: ID!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -6039,6 +6052,41 @@ func (ec *executionContext) _Invites_invites(ctx context.Context, field graphql.
 	res := resTmp.([]*model.Invite)
 	fc.Result = res
 	return ec.marshalOInvite2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐInviteᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _JoinedToChat_chadId(ctx context.Context, field graphql.CollectedField, obj *model.JoinedToChat) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "JoinedToChat",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ChadID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Me_user(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
@@ -13678,13 +13726,13 @@ func (ec *executionContext) _JoinByInviteResult(ctx context.Context, sel ast.Sel
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
-	case model.Successful:
-		return ec._Successful(ctx, sel, &obj)
-	case *model.Successful:
+	case model.JoinedToChat:
+		return ec._JoinedToChat(ctx, sel, &obj)
+	case *model.JoinedToChat:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._Successful(ctx, sel, obj)
+		return ec._JoinedToChat(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -13701,13 +13749,13 @@ func (ec *executionContext) _JoinToChatResult(ctx context.Context, sel ast.Selec
 			return graphql.Null
 		}
 		return ec._AdvancedError(ctx, sel, obj)
-	case model.Successful:
-		return ec._Successful(ctx, sel, &obj)
-	case *model.Successful:
+	case model.JoinedToChat:
+		return ec._JoinedToChat(ctx, sel, &obj)
+	case *model.JoinedToChat:
 		if obj == nil {
 			return graphql.Null
 		}
-		return ec._Successful(ctx, sel, obj)
+		return ec._JoinedToChat(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -15397,6 +15445,37 @@ func (ec *executionContext) _Invites(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var joinedToChatImplementors = []string{"JoinedToChat", "JoinByInviteResult", "JoinToChatResult"}
+
+func (ec *executionContext) _JoinedToChat(ctx context.Context, sel ast.SelectionSet, obj *model.JoinedToChat) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, joinedToChatImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("JoinedToChat")
+		case "chadId":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._JoinedToChat_chadId(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var meImplementors = []string{"Me", "MeResult"}
 
 func (ec *executionContext) _Me(ctx context.Context, sel ast.SelectionSet, obj *model.Me) graphql.Marshaler {
@@ -16801,7 +16880,7 @@ func (ec *executionContext) _SubscriptionBody(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var successfulImplementors = []string{"Successful", "MutationResult", "JoinByInviteResult", "JoinToChatResult", "RegisterResult", "SendMessageToRoomResult"}
+var successfulImplementors = []string{"Successful", "MutationResult", "RegisterResult", "SendMessageToRoomResult"}
 
 func (ec *executionContext) _Successful(ctx context.Context, sel ast.SelectionSet, obj *model.Successful) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, successfulImplementors)

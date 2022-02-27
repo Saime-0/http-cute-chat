@@ -47,5 +47,5 @@ func (r *mutationResolver) JoinByInvite(ctx context.Context, code string) (model
 		eventReadyMember,
 	)
 
-	return resp.Success("успешно присоединился к чату"), nil
+	return &model.JoinedToChat{ChadID: chatID}, nil
 }

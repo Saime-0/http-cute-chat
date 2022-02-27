@@ -10,3 +10,6 @@ type CreatedChat {
 type CreatedInvite {
 	inviteCode: String!
 }
+type JoinedToChat {
+	chadId: ID!
+}

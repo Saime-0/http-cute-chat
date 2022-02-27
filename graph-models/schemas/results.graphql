@@ -40,11 +40,11 @@ union AllowsResult =
 
 union JoinByInviteResult =
     | AdvancedError
-    | Successful
+    | JoinedToChat
 
 union JoinToChatResult =
     | AdvancedError
-    | Successful
+    | JoinedToChat
 
 union LoginResult =
     | AdvancedError

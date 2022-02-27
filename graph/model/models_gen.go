@@ -461,6 +461,13 @@ type Invites struct {
 
 func (Invites) IsInvitesResult() {}
 
+type JoinedToChat struct {
+	ChadID int `json:"chadId"`
+}
+
+func (JoinedToChat) IsJoinByInviteResult() {}
+func (JoinedToChat) IsJoinToChatResult()   {}
+
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -592,8 +599,6 @@ type Successful struct {
 }
 
 func (Successful) IsMutationResult()          {}
-func (Successful) IsJoinByInviteResult()      {}
-func (Successful) IsJoinToChatResult()        {}
 func (Successful) IsRegisterResult()          {}
 func (Successful) IsSendMessageToRoomResult() {}
 
