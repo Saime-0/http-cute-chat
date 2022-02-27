@@ -2,6 +2,7 @@ package piper
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -1052,14 +1053,14 @@ func (n Node) UserHasAccessToChats(userID int, chats *[]int, submembers **[]*mod
 		n.SetError(resp.ErrBadRequest, "невалидный id")
 		return true
 	}
-	members, yes, err := n.repos.Chats.UserHasAccessToChats(userID, chats)
+	members, noAccessTo, err := n.repos.Chats.UserHasAccessToChats(userID, chats)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if !yes {
-		n.SetError(resp.ErrBadRequest, "нет доступа к одному из чатов")
+	if noAccessTo != 0 {
+		n.SetError(resp.ErrBadRequest, fmt.Sprint("нет доступа к чату ", noAccessTo))
 		return true
 	}
 	*submembers = &members

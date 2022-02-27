@@ -1381,9 +1381,10 @@ func (r *ChatsRepo) ValidAllows(chatID int, allows *model.AllowsInput) (valid bo
 	return valid, err
 }
 
-func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*models.SubUser, yes bool, err error) {
+// if noAccessTo = 0 then acces allow to all chats
+func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*models.SubUser, noAccessTo int, err error) {
 	rows, err := r.db.Query(`
-	    SELECT cm.id, cm.chat_id
+	    SELECT cm.id, elem
 	    FROM unnest($2::BIGINT[]) elem
 	    LEFT JOIN chats c ON c.id = elem
 	    LEFT JOIN chat_members cm ON cm.chat_id = c.id AND cm.user_id = $1`,
@@ -1391,7 +1392,7 @@ func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*m
 		pq.Array(*chats),
 	)
 	if err != nil {
-		return
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -1399,12 +1400,11 @@ func (r *ChatsRepo) UserHasAccessToChats(userID int, chats *[]int) (members []*m
 		member := &models.SubUser{}
 		if err = rows.Scan(&member.MemberID, &member.ChatID); err != nil {
 			return
-
 		}
 		if member.MemberID == nil {
-			return
+			return nil, *member.ChatID, nil
 		}
 		members = append(members, member)
 	}
-	return members, true, nil
+	return members, 0, nil
 }

@@ -43,6 +43,7 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 		member.ChatID,
 		eventReadyMember,
 	)
+	r.Subix.DeleteMember(memberID)
 
 	return resp.Success("пользователь успешно забанен"), nil
 }
