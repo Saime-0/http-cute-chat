@@ -1,3 +1,3 @@
 extend type Mutation {
-    banMember(memberId: ID!): MutationResult! @goField(forceResolver: true) @isAuth
+    banMember(memberID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
 }

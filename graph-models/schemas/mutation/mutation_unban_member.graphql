@@ -1,0 +1,3 @@
+extend type Mutation {
+	unbanMember(userID: ID!, chatID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
+}

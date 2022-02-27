@@ -1,4 +1,4 @@
 extend type Query {
-    chatRoles(chatId: ID!): ChatRolesResult! @goField(forceResolver: true) @isAuth
+    chatRoles(chatID: ID!): ChatRolesResult! @goField(forceResolver: true) @isAuth
 }
 

@@ -4,13 +4,13 @@ input CreateChatInput {
     private: Boolean!
 }
 input CreateInviteInput {
-    chatId: ID!
+    chatID: ID!
 #    code: String!
     aliens: Int
     duration: Int64
 }
 input CreateRoleInput {
-    chatId: ID!
+    chatID: ID!
     name: String!
     color: HexColor!
 }
@@ -69,19 +69,19 @@ input FormFieldInput {
 }
 
 input FindMembers {
-    chatId: ID!
-    userId: ID
-    memberId: ID
+    chatID: ID!
+    userID: ID
+    memberID: ID
     char: CharType
-    roleId: ID
+    roleID: ID
     muted: Boolean
 }
 
 # возвращает в обратном хронологическом порядке
 input FindMessages {
-    chatId: ID!
-    roomId: ID
-    userId: ID
+    chatID: ID!
+    roomID: ID
+    userID: ID
     textFragment: String
 }
 
@@ -98,8 +98,8 @@ enum MessagesCreated {
 }
 
 input FindRooms {
-    chatId: ID!
-    roomId: ID
+    chatID: ID!
+    roomID: ID
     nameFragment: String
     parentId: ID
     isChild: FetchType = NEUTRAL
@@ -128,7 +128,7 @@ input FindChats {
 }
 
 input CreateRoomInput {
-    chatId: ID!
+    chatID: ID!
     name: String!
     parent: ID
     note: String
@@ -148,7 +148,7 @@ input AllowInput {
 
 
 input UpdateMemberInput {
-    roleId: ID
+    roleID: ID
     char: CharType
     muted: Boolean
 }

@@ -7,9 +7,9 @@ type SubscriptionBody {
 
 type NewMessage { # todo rename
 	id: ID!
-	roomId: ID!
+	roomID: ID!
 	replyToId: ID
-	userId: ID
+	userID: ID
 	body: String!
 	msgType: MessageType!
 	createdAt: Int64!
@@ -23,13 +23,13 @@ type UpdateUser {
 
 type CreateMember {
 	id: ID!
-	chatId: ID!
+	chatID: ID!
 	unit: Unit!
 }
 
 type UpdateMember {
 	id: ID!
-	roleId: ID
+	roleID: ID
 	char: CharType
 	muted: Boolean!
 }
@@ -39,7 +39,7 @@ type DeleteMember {
 }
 
 type CreateRole {
-	chatId: ID!
+	chatID: ID!
 	id: ID!
 	name: String!
 	color: HexColor!
@@ -57,7 +57,7 @@ type DeleteRole {
 
 type UpdateRoom {
 	id: ID!
-#	chatId: ID!
+#	chatID: ID!
 	name: String!
 	parentId: ID
 	note: String
@@ -65,7 +65,7 @@ type UpdateRoom {
 
 type CreateRoom {
 	id: ID!
-	chatId: ID!
+	chatID: ID!
 	name: String!
 	parentId: ID
 	note: String
@@ -76,12 +76,12 @@ type DeleteRoom {
 }
 
 type UpdateForm {
-	roomId: ID!
+	roomID: ID!
 	form: Form
 }
 
 type CreateAllows {
-	roomId: ID!
+	roomID: ID!
 	allows: [Allow!]!
 }
 type DeleteAllow {

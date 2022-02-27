@@ -1,4 +1,4 @@
 extend type Mutation {
-    deleteInvite(chatId: ID!, code: String!): MutationResult! @goField(forceResolver: true) @isAuth
+    deleteInvite(chatID: ID!, code: String!): MutationResult! @goField(forceResolver: true) @isAuth
 }
 

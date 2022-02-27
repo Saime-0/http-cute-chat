@@ -88,7 +88,7 @@ type Chats {
 }
 
 type Room {
-    roomId: ID!
+    roomID: ID!
     chat: Chat! @goField(forceResolver: true)
     name: String!
     parentId: ID

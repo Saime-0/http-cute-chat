@@ -28,7 +28,7 @@ func (n Node) ChatExists(chatID int) (fail bool) {
 		return true
 	}
 	if !exists {
-		n.SetError(resp.ErrBadRequest, "такого чата не существует")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("chat(id:%d) is not exists", chatID))
 		return true
 	}
 	return
@@ -47,7 +47,7 @@ func (n Node) UserExists(userID int) (fail bool) {
 		return true
 	}
 	if !exists {
-		n.SetError(resp.ErrBadRequest, "пользователь не найден")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) is not exists", userID))
 		return true
 	}
 	return
@@ -212,37 +212,37 @@ func (n Node) ValidForm(form *model.UpdateFormInput) (fail bool) {
 	return
 }
 
-func (n Node) OwnedLimit(userId int) (fail bool) {
+func (n Node) OwnedLimit(userID int) (fail bool) {
 	n.SwitchMethod("OwnedLimit", &bson.M{
-		"userId": userId,
+		"userID": userID,
 	})
 	defer n.MethodTiming()
 
-	count, err := n.repos.Users.GetCountUserOwnedChats(userId)
+	count, err := n.repos.Users.GetCountUserOwnedChats(userID)
 	if err != nil {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if count >= rules.MaxCountOwnedChats {
-		n.SetError(resp.ErrBadRequest, "достигнут лимит созднных чатов")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("limit of created chats has been reached (MaxCountOwnedChats = %d)", rules.MaxCountOwnedChats))
 		return true
 	}
 	return
 }
 
-func (n Node) ChatsLimit(userId int) (fail bool) {
+func (n Node) ChatsLimit(userID int) (fail bool) {
 	n.SwitchMethod("ChatsLimit", &bson.M{
-		"userId": userId,
+		"userID": userID,
 	})
 	defer n.MethodTiming()
 
-	count, err := n.repos.Users.GetCountUserOwnedChats(userId)
+	count, err := n.repos.Users.GetCountUserOwnedChats(userID)
 	if err != nil {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if count >= *n.cfg.MaxUserChats {
-		n.SetError(resp.ErrBadRequest, "достигнут лимит количества чатов в которых пользователь может состоять")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("limit of the number of chats in which the user is a member has been reached (MaxUserChats = %d)", *n.cfg.MaxUserChats))
 		return true
 	}
 	return
@@ -312,20 +312,20 @@ func (n Node) EmailIsFree(email string) (fail bool) {
 	return
 }
 
-func (n Node) InvitesLimit(chatId int) (fail bool) {
+func (n Node) InvitesLimit(chatID int) (fail bool) {
 	n.SwitchMethod("InvitesLimit", &bson.M{
-		"chatId": chatId,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	count, err := n.repos.Chats.GetCountLinks(chatId)
+	count, err := n.repos.Chats.GetCountLinks(chatID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if count >= rules.MaxInviteLinks {
-		n.SetError(resp.ErrBadRequest, "достигнут лимит количества инвайтов")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("limit of the number of invites in the chat has been reached (MaxInviteLinks = %d)", rules.MaxInviteLinks))
 		return true
 	}
 	return
@@ -349,80 +349,80 @@ func (n Node) ValidInviteInput(inp model.CreateInviteInput) (fail bool) {
 }
 
 // IsMember does not need if the Can method is used..
-func (n Node) IsMember(userId, chatId int) (fail bool) {
+func (n Node) IsMember(userID, chatID int) (fail bool) {
 	n.SwitchMethod("IsMember", &bson.M{
-		"userId": userId,
-		"chatId": chatId,
+		"userID": userID,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	isMember, err := n.Dataloader.UserIsChatMember(userId, chatId)
+	isMember, err := n.Dataloader.UserIsChatMember(userID, chatID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if !isMember {
-		n.SetError(resp.ErrBadRequest, "пользователь не является участником чата")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) is not member of chat(id:%d)", userID, chatID))
 		return true
 	}
 
 	return
 }
 
-func (n Node) IsNotMember(userId, chatId int) (fail bool) {
+func (n Node) IsNotMember(userID, chatID int) (fail bool) {
 	n.SwitchMethod("IsNotMember", &bson.M{
-		"userId": userId,
-		"chatId": chatId,
+		"userID": userID,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	isMember, err := n.Dataloader.UserIsChatMember(userId, chatId)
+	isMember, err := n.Dataloader.UserIsChatMember(userID, chatID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if isMember {
-		n.SetError(resp.ErrBadRequest, "пользователь является участником чата")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) is member of chat(id:%d)", userID, chatID))
 		return true
 	}
 	return
 }
 
-func (n Node) RolesLimit(chatId int) (fail bool) {
+func (n Node) RolesLimit(chatID int) (fail bool) {
 	n.SwitchMethod("RolesLimit", &bson.M{
-		"chatId": chatId,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	count, err := n.repos.Chats.GetCountChatRoles(chatId)
+	count, err := n.repos.Chats.GetCountChatRoles(chatID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if count >= *n.cfg.MaxRolesInChat {
-		n.SetError(resp.ErrBadRequest, "достигнут лимит количества ролей в чате")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("limit on the number of chat roles has been reached (MaxRolesInChat = %d)", *n.cfg.MaxRolesInChat))
 		return true
 	}
 	return
 }
 
-func (n Node) RoomsLimit(chatId int) (fail bool) {
+func (n Node) RoomsLimit(chatID int) (fail bool) {
 	n.SwitchMethod("RoomsLimit", &bson.M{
-		"chatId": chatId,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	count, err := n.repos.Chats.GetCountRooms(chatId)
+	count, err := n.repos.Chats.GetCountRooms(chatID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if count >= *n.cfg.MaxCountRooms {
-		n.SetError(resp.ErrBadRequest, "достигнут лимит количества комнат в чате")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("limit of the number of rooms in the chat has been reached (MaxCountRooms = %d)", *n.cfg.MaxCountRooms))
 		return true
 	}
 	return
@@ -442,40 +442,40 @@ func (n Node) RoomExists(roomID int) (fail bool) {
 		return true
 	}
 	if !exists {
-		n.SetError(resp.ErrBadRequest, "такой комнаты не существует")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("room(id:%d) is not exists", roomID))
 		return true
 	}
 	return
 }
 
-func (n Node) IsNotChild(roomId int) (fail bool) {
+func (n Node) IsNotChild(roomID int) (fail bool) {
 	n.SwitchMethod("IsNotChild", &bson.M{
-		"roomId": roomId,
+		"roomID": roomID,
 	})
 	defer n.MethodTiming()
 
-	if n.repos.Rooms.HasParent(roomId) {
-		n.SetError(resp.ErrBadRequest, "комната является веткой")
+	if n.repos.Rooms.HasParent(roomID) {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("room(id:%d) is a child room", roomID))
 		return true
 	}
 	return
 }
 
-func (n Node) HasInvite(chatId int, code string) (fail bool) {
+func (n Node) HasInvite(chatID int, code string) (fail bool) {
 	n.SwitchMethod("HasInvite", &bson.M{
-		"chatId": chatId,
+		"chatID": chatID,
 		"code":   code,
 	})
 	defer n.MethodTiming()
 
-	has, err := n.repos.Chats.HasInvite(chatId, code)
+	has, err := n.repos.Chats.HasInvite(chatID, code)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if !has {
-		n.SetError(resp.ErrBadRequest, "такого кода не существует")
+		n.SetError(resp.ErrBadRequest, "there is no invite for the requested code")
 		return true
 	}
 	return
@@ -494,7 +494,7 @@ func (n Node) InviteIsRelevant(code string) (fail bool) {
 		return true
 	}
 	if !relevant {
-		n.SetError(resp.ErrBadRequest, "инвайт неактуален")
+		n.SetError(resp.ErrBadRequest, "invite is not relevant")
 		return true
 	}
 	return
@@ -514,11 +514,13 @@ func (n Node) RoleExists(chatID, roleID int) (fail bool) {
 		return true
 	}
 	if !exists {
-		n.SetError(resp.ErrBadRequest, "такой роли не существует")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("role(id:%d) is not exists", roleID))
 		return true
 	}
 	return
 }
+
+// deprecated
 func (n Node) InviteIsExists(code string) (fail bool) {
 	n.SwitchMethod("InviteIsExists", &bson.M{
 		"code": code,
@@ -537,26 +539,27 @@ func (n Node) InviteIsExists(code string) (fail bool) {
 	}
 	return
 }
-func (n Node) GetChatIDByRole(roleId int, chatId *int) (fail bool) {
+
+func (n Node) GetChatIDByRole(roleID int, chatID *int) (fail bool) {
 	n.SwitchMethod("GetChatIDByRole", &bson.M{
-		"roleId": roleId,
-		"chatId": chatId,
+		"roleID": roleID,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	_chatId, err := n.repos.Chats.ChatIDByRoleID(roleId)
+	_chatID, err := n.repos.Chats.ChatIDByRoleID(roleID)
 	if err != nil {
-		n.SetError(resp.ErrInternalServerError, "не удалось определить чат")
+		n.SetError(resp.ErrInternalServerError, fmt.Sprintf("role(id:%d) does not apply to any chat", roleID))
 		return true
 	}
-	*chatId = _chatId
+	*chatID = _chatID
 	return
 }
 
-func (n Node) GetChatByInvite(code string, chatId *int) (fail bool) {
+func (n Node) GetChatByInvite(code string, chatID *int) (fail bool) {
 	n.SwitchMethod("GetChatByInvite", &bson.M{
 		"code":   code,
-		"chatId": chatId,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
@@ -565,36 +568,36 @@ func (n Node) GetChatByInvite(code string, chatId *int) (fail bool) {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	*chatId = _id
+	*chatID = _id
 	return
 }
 
-func (n Node) MembersLimit(chatId int) (fail bool) {
+func (n Node) MembersLimit(chatID int) (fail bool) {
 	n.SwitchMethod("MembersLimit", &bson.M{
-		"chatId": chatId,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	count, err := n.repos.Chats.CountMembers(chatId)
+	count, err := n.repos.Chats.CountMembers(chatID)
 	if err != nil {
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if count >= *n.cfg.MaxMembersOnChat {
-		n.SetError(resp.ErrBadRequest, "достигнут лимит количества участников в чате")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("limit of the number of participants in the chat has been reached (MaxMembersOnChat = %d)", *n.cfg.MaxMembersOnChat))
 		return true
 	}
 	return
 }
 
-func (n Node) ChatIsNotPrivate(chatId int) (fail bool) {
+func (n Node) ChatIsNotPrivate(chatID int) (fail bool) {
 	n.SwitchMethod("ChatIsNotPrivate", &bson.M{
-		"chatId": chatId,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	if n.repos.Chats.ChatIsPrivate(chatId) {
-		n.SetError(resp.ErrBadRequest, "этот чат запривачин")
+	if n.repos.Chats.ChatIsPrivate(chatID) {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("chat(id:%d) is private", chatID))
 		return true
 	}
 	return
@@ -619,10 +622,10 @@ func (n Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) 
 	return
 }
 
-func (n Node) GetUserIDByRequisites(input *models.LoginRequisites, userId *int) (fail bool) {
+func (n Node) GetUserIDByRequisites(input *models.LoginRequisites, userID *int) (fail bool) {
 	n.SwitchMethod("GetUserIDByRequisites", &bson.M{
 		"input":  input,
-		"userId": userId,
+		"userID": userID,
 	})
 	defer n.MethodTiming()
 
@@ -632,25 +635,47 @@ func (n Node) GetUserIDByRequisites(input *models.LoginRequisites, userId *int) 
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	*userId = _uid
+	*userID = _uid
 	return
 }
 
-func (n Node) IsNotBanned(userId, chatId int) (fail bool) {
+func (n Node) IsNotBanned(userID, chatID int) (fail bool) {
 	n.SwitchMethod("IsNotBanned", &bson.M{
-		"userId": userId,
-		"chatId": chatId,
+		"userID": userID,
+		"chatID": chatID,
 	})
 	defer n.MethodTiming()
 
-	banned, err := n.repos.Chats.UserIsBanned(userId, chatId)
+	banned, err := n.repos.Chats.UserIsBanned(userID, chatID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
+
 	if banned {
-		n.SetError(resp.ErrBadRequest, "вы забанены в этом чате")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) is banned in chat(id:%d)", userID, chatID))
+		return true
+	}
+	return
+}
+
+func (n Node) IsBanned(userID, chatID int) (fail bool) {
+	n.SwitchMethod("IsBanned", &bson.M{
+		"userID": userID,
+		"chatID": chatID,
+	})
+	defer n.MethodTiming()
+
+	banned, err := n.repos.Chats.UserIsBanned(userID, chatID)
+	if err != nil {
+		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
+		return true
+	}
+
+	if !banned {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) is not banned in chat(id:%d)", userID, chatID))
 		return true
 	}
 	return
@@ -663,77 +688,79 @@ func (n Node) GetChatIDByRoom(roomID int, chatID *int) (fail bool) {
 	})
 	defer n.MethodTiming()
 
-	_chatId, err := n.repos.Rooms.GetChatIDByRoomID(roomID)
+	_chatID, err := n.repos.Rooms.GetChatIDByRoomID(roomID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrInternalServerError, "не удалось найти комнату")
+		n.SetError(resp.ErrInternalServerError, fmt.Sprintf("room(id:%d) does not apply to any chat", roomID))
 		return true
 	}
-	*chatID = _chatId
+	*chatID = _chatID
 	return
 }
-func (n Node) GetChatIDByAllow(allowID int, chatId *int) (fail bool) {
+
+func (n Node) GetChatIDByAllow(allowID int, chatID *int) (fail bool) {
 	n.SwitchMethod("GetChatIDByAllow", &bson.M{
 		"allowID": allowID,
-		"chatId":  chatId,
+		"chatID":  chatID,
 	})
 	defer n.MethodTiming()
 
-	_chatId, err := n.repos.Rooms.GetChatIDByAllowID(allowID)
+	_chatID, err := n.repos.Rooms.GetChatIDByAllowID(allowID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
-	if _chatId == 0 {
-		n.SetError(resp.ErrInternalServerError, "такого разрешения не существует")
+	if _chatID == 0 {
+		n.SetError(resp.ErrInternalServerError, fmt.Sprintf("allow(id:%d) does not apply to any chat", allowID))
 		return true
 	}
-	*chatId = _chatId
+	*chatID = _chatID
 	return
 }
 
 // todo *delete message*
-func (n Node) MessageAvailable(msgId, roomId int) (fail bool) {
+// deprecated
+func (n Node) MessageAvailable(msgId, roomID int) (fail bool) {
 	n.SwitchMethod("MessageAvailable", &bson.M{
 		"msgId":  msgId,
-		"roomId": roomId,
+		"roomID": roomID,
 	})
 	defer n.MethodTiming()
 
-	if !n.repos.Messages.MessageAvailableOnRoom(msgId, roomId) {
-		n.SetError(resp.ErrBadRequest, "сообщение не найдено")
+	if !n.repos.Messages.MessageAvailableOnRoom(msgId, roomID) {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("message(id:%d) is not exists", msgId))
 		return true
 	}
 	return
 }
 
-func (n Node) IsAllowedTo(action model.ActionType, roomId int, holder *models.AllowHolder) (fail bool) {
+func (n Node) IsAllowedTo(action model.ActionType, roomID int, holder *models.AllowHolder) (fail bool) {
 	n.SwitchMethod("IsAllowedTo", &bson.M{
 		"action": action,
-		"roomId": roomId,
+		"roomID": roomID,
 		"holder": holder,
 	})
 	defer n.MethodTiming()
 
-	if !n.repos.Rooms.Allowed(action, roomId, holder) {
-		n.SetError(resp.ErrBadRequest, "недостаточно прав на это действие")
+	if !n.repos.Rooms.Allowed(action, roomID, holder) {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("no %s rights", action.String()))
 		return true
 	}
 	return
 }
 
-func (n Node) GetAllowHolder(userId, chatId int, holder *models.AllowHolder) (fail bool) {
+func (n Node) GetAllowHolder(userID, chatID int, holder *models.AllowHolder) (fail bool) {
 	n.SwitchMethod("GetAllowHolder", &bson.M{
-		"userId": userId,
-		"chatId": chatId,
+		"userID": userID,
+		"chatID": chatID,
 		"holder": holder,
 	})
 	defer n.MethodTiming()
 
-	_holder, err := n.repos.Rooms.AllowHolder(userId, chatId)
+	_holder, err := n.repos.Rooms.AllowHolder(userID, chatID)
 	if err != nil {
-		n.SetError(resp.ErrInternalServerError, "не удалось связать пользователя с чатом")
+		n.SetError(resp.ErrInternalServerError, fmt.Sprintf("user(id:%d) is not member of chat(id:%d)", userID, chatID))
 		return true
 	}
 	*holder = *_holder
@@ -741,19 +768,20 @@ func (n Node) GetAllowHolder(userId, chatId int, holder *models.AllowHolder) (fa
 }
 
 // deprecated
-func (n Node) IsAllowsSet(roomId int) (fail bool) {
+func (n Node) IsAllowsSet(roomID int) (fail bool) {
 	n.SwitchMethod("IsAllowsSet", &bson.M{
-		"roomId": roomId,
+		"roomID": roomID,
 	})
 	defer n.MethodTiming()
 
-	if !n.repos.Rooms.AllowsIsSet(roomId) {
-		n.SetError(resp.ErrBadRequest, "в комнате не установлены ограничения")
+	if !n.repos.Rooms.AllowsIsSet(roomID) {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("room(id:%d) does not have allows installed", roomID))
 		return true
 	}
 	return
 }
 
+// !! deprecated
 // deprecated
 func (n *Node) GetMessageByID(msgId int, message *model.Message) (fail bool) {
 	n.SwitchMethod("GetMessageByID", &bson.M{
@@ -765,64 +793,64 @@ func (n *Node) GetMessageByID(msgId int, message *model.Message) (fail bool) {
 	_message, err := n.Dataloader.Message(msgId)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		n.SetError(resp.ErrBadRequest, "сообщение не найдено")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("message(id:%d) is not exists", msgId))
 		return true
 	}
 	*message = *_message
 	return
 }
 
-func (n Node) GetChatIDByMember(memberId int, chatId *int) (fail bool) {
+func (n Node) GetChatIDByMember(memberID int, chatID *int) (fail bool) {
 	n.SwitchMethod("GetChatIDByMember", &bson.M{
-		"memberId": memberId,
-		"chatId":   chatId,
+		"memberID": memberID,
+		"chatID":   chatID,
 	})
 	defer n.MethodTiming()
 
 	var err error
-	*chatId, err = n.Dataloader.ChatIDByMemberID(memberId)
+	*chatID, err = n.Dataloader.ChatIDByMemberID(memberID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
-	if *chatId < 1 {
-		n.SetError(resp.ErrBadRequest, "участник не найден")
+	if *chatID < 1 {
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("member(id:%d) does not apply to any chat", memberID))
 		return true
 	}
 
 	return
 }
 
-func (n Node) GetMemberBy(userId, chatId int, memberId *int) (fail bool) {
+func (n Node) GetMemberBy(userID, chatID int, memberID *int) (fail bool) {
 	n.SwitchMethod("GetMemberBy", &bson.M{
-		"userId":   userId,
-		"chatId":   chatId,
-		"memberId": memberId,
+		"userID":   userID,
+		"chatID":   chatID,
+		"memberID": memberID,
 	})
 	defer n.MethodTiming()
 
-	by, err := n.Dataloader.FindMemberBy(userId, chatId)
+	by, err := n.Dataloader.FindMemberBy(userID, chatID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
 	if by == nil || *by == 0 {
-		n.SetError(resp.ErrBadRequest, "мембер не найден")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) is not member of chat(id:%d)", userID, chatID))
 		return true
 	}
-	*memberId = *by
+	*memberID = *by
 	return
 }
 
-func (n Node) IsNotMuted(memberId int) (fail bool) {
+func (n Node) IsNotMuted(memberID int) (fail bool) {
 	n.SwitchMethod("IsNotMuted", &bson.M{
-		"memberId": memberId,
+		"memberID": memberID,
 	})
 	defer n.MethodTiming()
 
-	muted, err := n.repos.Chats.MemberIsMuted(memberId)
+	muted, err := n.repos.Chats.MemberIsMuted(memberID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
@@ -835,10 +863,10 @@ func (n Node) IsNotMuted(memberId int) (fail bool) {
 	return
 }
 
-func (n Node) HandleChoice(choiceString string, roomId int, handledChoice *string) (fail bool) {
+func (n Node) HandleChoice(choiceString string, roomID int, handledChoice *string) (fail bool) {
 	n.SwitchMethod("HandleChoice", &bson.M{
 		"choiceString":  choiceString,
-		"roomId":        roomId,
+		"roomID":        roomID,
 		"handledChoice": handledChoice,
 	})
 	defer n.MethodTiming()
@@ -850,7 +878,7 @@ func (n Node) HandleChoice(choiceString string, roomId int, handledChoice *strin
 		n.SetError(resp.ErrBadRequest, "невалидное тело запроса")
 		return true
 	}
-	form, err := n.repos.Rooms.RoomForm(roomId)
+	form, err := n.repos.Rooms.RoomForm(roomID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
@@ -948,21 +976,21 @@ func matchMessageType(input *model.UserChoice, sample *model.Form) (*model.UserC
 	return form, nil
 }
 
-func (n Node) GetDefMember(memberId int, defMember *models.DefMember) (fail bool) {
+func (n Node) GetDefMember(memberID int, defMember *models.DefMember) (fail bool) {
 	n.SwitchMethod("GetDefMember", &bson.M{
-		"memberId":  memberId,
+		"memberID":  memberID,
 		"defMember": defMember,
 	})
 	defer n.MethodTiming()
 
-	_defMember, err := n.repos.Chats.DefMember(memberId)
+	_defMember, err := n.repos.Chats.DefMember(memberID)
 	if err != nil {
 		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if _defMember == nil {
-		n.SetError(resp.ErrBadRequest, "участник не найден")
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("member(id:%d) is not exists", memberID))
 		return true
 	}
 	*defMember = *_defMember
@@ -1019,7 +1047,7 @@ func (n Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 		}
 		if _chatID < 1 || _chatID != chatID {
 			println("ValidAllowInput:", err.Error())
-			n.SetError(resp.ErrBadRequest, "не является участником чата")
+			n.SetError(resp.ErrBadRequest, fmt.Sprintf("member(id:%d) does not apply to chat(%d)", intVal, _chatID))
 			return true
 		}
 
@@ -1031,7 +1059,7 @@ func (n Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 		_chatID, err := n.repos.Chats.ChatIDByRoleID(intVal)
 		if err != nil || _chatID != chatID {
 			println("ValidAllowInput:", err.Error())
-			n.SetError(resp.ErrBadRequest, "не удалось определить роль")
+			n.SetError(resp.ErrBadRequest, fmt.Sprintf("role(id:%d) does not apply to chat(%d)", intVal, _chatID))
 			return true
 		}
 
@@ -1050,7 +1078,7 @@ func (n Node) UserHasAccessToChats(userID int, chats *[]int, submembers **[]*mod
 	defer n.MethodTiming()
 
 	if !validator.ValidateIDs(*chats) {
-		n.SetError(resp.ErrBadRequest, "невалидный id")
+		n.SetError(resp.ErrBadRequest, "chatID is not valid")
 		return true
 	}
 	members, noAccessTo, err := n.repos.Chats.UserHasAccessToChats(userID, chats)
@@ -1060,7 +1088,7 @@ func (n Node) UserHasAccessToChats(userID int, chats *[]int, submembers **[]*mod
 		return true
 	}
 	if noAccessTo != 0 {
-		n.SetError(resp.ErrBadRequest, fmt.Sprint("нет доступа к чату ", noAccessTo))
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) does not have access to chat(%d)", userID, noAccessTo))
 		return true
 	}
 	*submembers = &members

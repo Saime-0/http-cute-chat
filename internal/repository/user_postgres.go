@@ -120,24 +120,24 @@ func (r *UsersRepo) GetUserByID(id int) (user models.UserInfo, err error) {
 	return
 }
 
-func (r *UsersRepo) GetCountUserOwnedChats(userId int) (count int, err error) {
+func (r *UsersRepo) GetCountUserOwnedChats(userID int) (count int, err error) {
 	err = r.db.QueryRow(
 		`SELECT count(*)
 		FROM chats 
 		WHERE owner_id = $1`,
-		userId,
+		userID,
 	).Scan(&count)
 	return
 }
 
-func (r *UsersRepo) UserExistsByID(userId int) (exists bool) {
+func (r *UsersRepo) UserExistsByID(userID int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
 			FROM users
 			WHERE id = $1
 		)`,
-		userId,
+		userID,
 	).Scan(&exists)
 
 	return
@@ -182,7 +182,7 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 	return me, err
 }
 
-func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
+func (r *UsersRepo) OwnedChats(userID int) (*model.Chats, error) {
 	chats := &model.Chats{
 		Chats: []*model.Chat{},
 	}
@@ -191,7 +191,7 @@ func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
 		FROM units INNER JOIN chats 
 		ON units.id = chats.id 
 		WHERE chats.owner_id = $1`,
-		userId,
+		userID,
 	)
 	if err != nil && err != sql.ErrNoRows {
 		return nil, err
@@ -211,7 +211,7 @@ func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
 	return chats, nil
 }
 
-func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
+func (r *UsersRepo) Chats(userID int) (*model.Chats, error) {
 	chats := &model.Chats{
 		Chats: []*model.Chat{},
 	}
@@ -223,7 +223,7 @@ func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
 		INNER JOIN chat_members
 			ON units.id = chat_members.chat_id
 		WHERE chat_members.user_id = $1`,
-		userId,
+		userID,
 	)
 	if err != nil {
 		return nil, err
@@ -242,12 +242,12 @@ func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
 
 	return chats, nil
 }
-func (r *UsersRepo) ChatsID(userId int) ([]int, error) {
+func (r *UsersRepo) ChatsID(userID int) ([]int, error) {
 	rows, err := r.db.Query(
 		`SELECT chat_id
 		FROM chat_members
 		WHERE user_id = $1`,
-		userId,
+		userID,
 	)
 	if err != nil {
 		return nil, err
@@ -291,7 +291,7 @@ func (r *UsersRepo) FindUsers(inp *model.FindUsers) (*model.Users, error) {
 	return users, nil
 }
 
-func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (*model.UpdateUser, error) {
+func (r UsersRepo) UpdateMe(userID int, inp *model.UpdateMeDataInput) (*model.UpdateUser, error) {
 	unit := &model.UpdateUser{}
 	err := r.db.QueryRow(`
 		WITH u AS (
@@ -310,7 +310,7 @@ func (r UsersRepo) UpdateMe(userId int, inp *model.UpdateMeDataInput) (*model.Up
 		WHERE id = $1
 		RETURNING id, u.domain, u.name
 		`,
-		userId,
+		userID,
 		inp.Name,
 		inp.Domain,
 		inp.Password,

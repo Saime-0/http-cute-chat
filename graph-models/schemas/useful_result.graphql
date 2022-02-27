@@ -1,11 +1,11 @@
 type CreatedRoom {
-	roomId: ID!
+	roomID: ID!
 }
 type CreatedRole {
-	roleId: ID!
+	roleID: ID!
 }
 type CreatedChat {
-	chatId: ID!
+	chatID: ID!
 }
 type CreatedInvite {
 	inviteCode: String!

@@ -1,3 +1,3 @@
 extend type Mutation {
-    takeRole(memberId: ID!): MutationResult! @goField(forceResolver: true) @isAuth
+    takeRole(memberID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
 }

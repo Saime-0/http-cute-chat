@@ -1,3 +1,3 @@
 extend type Mutation {
-    updateRoom(roomId: ID!, input: UpdateRoomInput! @inputLeastOne): MutationResult! @goField(forceResolver: true) @isAuth
+    updateRoom(roomID: ID!, input: UpdateRoomInput! @inputLeastOne): MutationResult! @goField(forceResolver: true) @isAuth
 }

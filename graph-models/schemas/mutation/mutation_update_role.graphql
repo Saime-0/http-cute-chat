@@ -1,5 +1,5 @@
 extend type Mutation {
-    updateRole(roleId: ID!, input: UpdateRoleInput! @inputLeastOne): MutationResult! @goField(forceResolver: true) @isAuth
+    updateRole(roleID: ID!, input: UpdateRoleInput! @inputLeastOne): MutationResult! @goField(forceResolver: true) @isAuth
 }
 
 

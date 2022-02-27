@@ -242,7 +242,7 @@ type Chats struct {
 func (Chats) IsChatsResult() {}
 
 type CreateAllows struct {
-	RoomID int      `json:"roomId"`
+	RoomID int      `json:"roomID"`
 	Allows []*Allow `json:"allows"`
 }
 
@@ -263,14 +263,14 @@ type CreateInvite struct {
 func (CreateInvite) IsEventResult() {}
 
 type CreateInviteInput struct {
-	ChatID   int    `json:"chatId"`
+	ChatID   int    `json:"chatID"`
 	Aliens   *int   `json:"aliens"`
 	Duration *int64 `json:"duration"`
 }
 
 type CreateMember struct {
 	ID     int   `json:"id"`
-	ChatID int   `json:"chatId"`
+	ChatID int   `json:"chatID"`
 	Unit   *Unit `json:"unit"`
 }
 
@@ -282,7 +282,7 @@ type CreateMessageInput struct {
 }
 
 type CreateRole struct {
-	ChatID int      `json:"chatId"`
+	ChatID int      `json:"chatID"`
 	ID     int      `json:"id"`
 	Name   string   `json:"name"`
 	Color  HexColor `json:"color"`
@@ -291,14 +291,14 @@ type CreateRole struct {
 func (CreateRole) IsEventResult() {}
 
 type CreateRoleInput struct {
-	ChatID int      `json:"chatId"`
+	ChatID int      `json:"chatID"`
 	Name   string   `json:"name"`
 	Color  HexColor `json:"color"`
 }
 
 type CreateRoom struct {
 	ID       int     `json:"id"`
-	ChatID   int     `json:"chatId"`
+	ChatID   int     `json:"chatID"`
 	Name     string  `json:"name"`
 	ParentID *int    `json:"parentId"`
 	Note     *string `json:"note"`
@@ -307,7 +307,7 @@ type CreateRoom struct {
 func (CreateRoom) IsEventResult() {}
 
 type CreateRoomInput struct {
-	ChatID int              `json:"chatId"`
+	ChatID int              `json:"chatID"`
 	Name   string           `json:"name"`
 	Parent *int             `json:"parent"`
 	Note   *string          `json:"note"`
@@ -316,7 +316,7 @@ type CreateRoomInput struct {
 }
 
 type CreatedChat struct {
-	ChatID int `json:"chatId"`
+	ChatID int `json:"chatID"`
 }
 
 func (CreatedChat) IsCreateChatResult() {}
@@ -328,13 +328,13 @@ type CreatedInvite struct {
 func (CreatedInvite) IsCreateInviteResult() {}
 
 type CreatedRole struct {
-	RoleID int `json:"roleId"`
+	RoleID int `json:"roleID"`
 }
 
 func (CreatedRole) IsCreateRoleResult() {}
 
 type CreatedRoom struct {
-	RoomID int `json:"roomId"`
+	RoomID int `json:"roomID"`
 }
 
 func (CreatedRoom) IsCreateRoomResult() {}
@@ -377,18 +377,18 @@ type FindChats struct {
 }
 
 type FindMembers struct {
-	ChatID   int       `json:"chatId"`
-	UserID   *int      `json:"userId"`
-	MemberID *int      `json:"memberId"`
+	ChatID   int       `json:"chatID"`
+	UserID   *int      `json:"userID"`
+	MemberID *int      `json:"memberID"`
 	Char     *CharType `json:"char"`
-	RoleID   *int      `json:"roleId"`
+	RoleID   *int      `json:"roleID"`
 	Muted    *bool     `json:"muted"`
 }
 
 type FindMessages struct {
-	ChatID       int     `json:"chatId"`
-	RoomID       *int    `json:"roomId"`
-	UserID       *int    `json:"userId"`
+	ChatID       int     `json:"chatID"`
+	RoomID       *int    `json:"roomID"`
+	UserID       *int    `json:"userID"`
 	TextFragment *string `json:"textFragment"`
 }
 
@@ -399,8 +399,8 @@ type FindMessagesInRoom struct {
 }
 
 type FindRooms struct {
-	ChatID       int        `json:"chatId"`
-	RoomID       *int       `json:"roomId"`
+	ChatID       int        `json:"chatID"`
+	RoomID       *int       `json:"roomID"`
 	NameFragment *string    `json:"nameFragment"`
 	ParentID     *int       `json:"parentId"`
 	IsChild      *FetchType `json:"isChild"`
@@ -521,9 +521,9 @@ func (Messages) IsMessagesResult() {}
 
 type NewMessage struct {
 	ID        int         `json:"id"`
-	RoomID    int         `json:"roomId"`
+	RoomID    int         `json:"roomID"`
 	ReplyToID *int        `json:"replyToId"`
-	UserID    *int        `json:"userId"`
+	UserID    *int        `json:"userID"`
 	Body      string      `json:"body"`
 	MsgType   MessageType `json:"msgType"`
 	CreatedAt int64       `json:"createdAt"`
@@ -566,7 +566,7 @@ func (Roles) IsRolesResult()     {}
 func (Roles) IsChatRolesResult() {}
 
 type Room struct {
-	RoomID   int            `json:"roomId"`
+	RoomID   int            `json:"roomID"`
 	Chat     *Chat          `json:"chat"`
 	Name     string         `json:"name"`
 	ParentID *int           `json:"parentId"`
@@ -647,7 +647,7 @@ type UpdateChatInput struct {
 }
 
 type UpdateForm struct {
-	RoomID int   `json:"roomId"`
+	RoomID int   `json:"roomID"`
 	Form   *Form `json:"form"`
 }
 
@@ -666,7 +666,7 @@ type UpdateMeDataInput struct {
 
 type UpdateMember struct {
 	ID     int       `json:"id"`
-	RoleID *int      `json:"roleId"`
+	RoleID *int      `json:"roleID"`
 	Char   *CharType `json:"char"`
 	Muted  bool      `json:"muted"`
 }
@@ -674,7 +674,7 @@ type UpdateMember struct {
 func (UpdateMember) IsEventResult() {}
 
 type UpdateMemberInput struct {
-	RoleID *int      `json:"roleId"`
+	RoleID *int      `json:"roleID"`
 	Char   *CharType `json:"char"`
 	Muted  *bool     `json:"muted"`
 }

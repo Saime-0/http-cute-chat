@@ -18,12 +18,12 @@ func NewAuthRepo(db *sql.DB) *AuthRepo {
 	}
 }
 
-func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.RefreshSession, overflowDelete bool) (id int, err error) {
+func (r *AuthRepo) CreateRefreshSession(userID int, sessionModel *models.RefreshSession, overflowDelete bool) (id int, err error) {
 	err = r.db.QueryRow(`
 		INSERT INTO refresh_sessions (user_id, refresh_token, user_agent, expires_at)
 		VALUES ($1, $2, $3, $4)
 		RETURNING id`,
-		userId,
+		userID,
 		sessionModel.RefreshToken,
 		sessionModel.UserAgent,
 		sessionModel.ExpAt,
@@ -35,7 +35,7 @@ func (r *AuthRepo) CreateRefreshSession(userId int, sessionModel *models.Refresh
 	}
 
 	if overflowDelete {
-		err = r.OverflowDelete(userId, rules.MaxRefreshSession)
+		err = r.OverflowDelete(userID, rules.MaxRefreshSession)
 		if err != nil {
 			return
 		}
@@ -58,7 +58,7 @@ func (r *AuthRepo) UpdateRefreshSession(sessionID int, sessionModel *models.Refr
 	return
 }
 
-func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
+func (r *AuthRepo) OverflowDelete(userID, limit int) (err error) {
 	err = r.db.QueryRow(`
 		DELETE FROM refresh_sessions 
 		WHERE id IN(                 
@@ -75,7 +75,7 @@ func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
 		    LIMIT abs((select val from session_count) - $2)
 		    
 		    )`,
-		userId,
+		userID,
 		limit,
 	).Err()
 	if err != nil {
@@ -85,7 +85,7 @@ func (r *AuthRepo) OverflowDelete(userId, limit int) (err error) {
 	return
 }
 
-func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, userId int, err error) {
+func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, userID int, err error) {
 	err = r.db.QueryRow(`
 		SELECT id, user_id
 		FROM refresh_sessions
@@ -93,7 +93,7 @@ func (r *AuthRepo) FindSessionByComparedToken(token string) (sessionId int, user
 		token,
 	).Scan(
 		&sessionId,
-		&userId,
+		&userID,
 	)
 
 	return

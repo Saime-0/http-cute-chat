@@ -20,7 +20,7 @@ func NewRoomsRepo(db *sql.DB) *RoomsRepo {
 	}
 }
 
-func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
+func (r *RoomsRepo) RoomExistsByID(roomID int) (isExists bool) {
 	err := r.db.QueryRow(`
 		SELECT EXISTS (
     		SELECT 1 
@@ -28,7 +28,7 @@ func (r *RoomsRepo) RoomExistsByID(roomId int) (isExists bool) {
     		WHERE id=$1
 		)
 		`,
-		roomId,
+		roomID,
 	).Scan(&isExists)
 	if err != nil || !isExists {
 		return
@@ -93,7 +93,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 	return room, nil
 }
 
-func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
+func (r *RoomsRepo) Room(roomID int) (*model.Room, error) {
 	room := &model.Room{
 		Chat: &model.Chat{
 			Unit: new(model.Unit),
@@ -104,7 +104,7 @@ func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
 		FROM rooms
 		WHERE id = $1
 		`,
-		roomId,
+		roomID,
 	).Scan(
 		&room.RoomID,
 		&room.Chat.Unit.ID,
@@ -116,7 +116,7 @@ func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
 	return room, err
 }
 
-func (r *RoomsRepo) UpdateRoom(roomId int, inp *model.UpdateRoomInput) (*model.UpdateRoom, error) {
+func (r *RoomsRepo) UpdateRoom(roomID int, inp *model.UpdateRoomInput) (*model.UpdateRoom, error) {
 	room := &model.UpdateRoom{}
 	err := r.db.QueryRow(`
 		UPDATE rooms
@@ -126,7 +126,7 @@ func (r *RoomsRepo) UpdateRoom(roomId int, inp *model.UpdateRoomInput) (*model.U
 		    note = COALESCE($4::VARCHAR,note)
 		WHERE id = $1
 		RETURNING id, name, parent_id, note`,
-		roomId,
+		roomID,
 		inp.Name,
 		inp.ParentID,
 		inp.Note,
@@ -213,17 +213,17 @@ func (r *RoomsRepo) CreateAllows(roomID int, inp *model.AllowsInput) (*model.Cre
 	return allows, err
 }
 
-func (r *RoomsRepo) GetChatIDByRoomID(roomId int) (chatId int, err error) {
+func (r *RoomsRepo) GetChatIDByRoomID(roomID int) (chatID int, err error) {
 	err = r.db.QueryRow(
 		`SELECT chat_id
 		FROM rooms
 		WHERE id = $1`,
-		roomId,
-	).Scan(&chatId)
+		roomID,
+	).Scan(&chatID)
 
 	return
 }
-func (r *RoomsRepo) GetChatIDByAllowID(allowID int) (chatId int, err error) {
+func (r *RoomsRepo) GetChatIDByAllowID(allowID int) (chatID int, err error) {
 	err = r.db.QueryRow(`
 		SELECT coalesce((
 		    SELECT chat_id
@@ -232,12 +232,12 @@ func (r *RoomsRepo) GetChatIDByAllowID(allowID int) (chatId int, err error) {
 			WHERE a.id = $1
 		), 0)`,
 		allowID,
-	).Scan(&chatId)
+	).Scan(&chatID)
 
 	return
 }
 
-func (r *RoomsRepo) RoomForm(roomId int) (*model.Form, error) {
+func (r *RoomsRepo) RoomForm(roomID int) (*model.Form, error) {
 	var (
 		format *string
 		form   *model.Form
@@ -246,7 +246,7 @@ func (r *RoomsRepo) RoomForm(roomId int) (*model.Form, error) {
 		`SELECT msg_format
 		FROM rooms
 		WHERE id = $1`,
-		roomId,
+		roomID,
 	).Scan(&format)
 	if err != nil {
 		return nil, err
@@ -263,26 +263,26 @@ func (r *RoomsRepo) RoomForm(roomId int) (*model.Form, error) {
 	return form, err
 }
 
-func (r *RoomsRepo) UpdateRoomForm(roomId int, form *string) (err error) {
+func (r *RoomsRepo) UpdateRoomForm(roomID int, form *string) (err error) {
 	err = r.db.QueryRow(`
 		UPDATE rooms
 		SET msg_format = $2
 		WHERE id = $1`,
-		roomId,
+		roomID,
 		form,
 	).Err()
 
 	return
 }
 
-func (r *RoomsRepo) FormIsSet(roomId int) (have bool) {
+func (r *RoomsRepo) FormIsSet(roomID int) (have bool) {
 	err := r.db.QueryRow(`
 		SELECT EXISTS(
 			SELECT 1
 			FROM rooms
 			WHERE id = $1 AND msg_format IS NOT NULL
 		)`,
-		roomId,
+		roomID,
 	).Scan(&have)
 	if err != nil {
 		println("FormIsSet:", err.Error())
@@ -320,20 +320,20 @@ func (r *RoomsRepo) Allows(roomID int) (*model.Allows, error) {
 	return allows, nil
 }
 
-func (r *RoomsRepo) HasParent(roomId int) (has bool) {
+func (r *RoomsRepo) HasParent(roomID int) (has bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1 
 			FROM rooms
 			WHERE id = $1 AND parent_id IS NOT NULL 
 		)`,
-		roomId,
+		roomID,
 	).Scan(&has)
 
 	return
 }
 
-func (r *RoomsRepo) Allowed(action model.ActionType, roomId int, holder *models.AllowHolder) (yes bool) {
+func (r *RoomsRepo) Allowed(action model.ActionType, roomID int, holder *models.AllowHolder) (yes bool) {
 	err := r.db.QueryRow(`
 		SELECT EXISTS(
 		    SELECT 1 
@@ -356,7 +356,7 @@ func (r *RoomsRepo) Allowed(action model.ActionType, roomId int, holder *models.
 		    	)
 	    )`,
 		action,
-		roomId,
+		roomID,
 		holder.RoleID,
 		holder.Char,
 		holder.UserID,
@@ -369,15 +369,15 @@ func (r *RoomsRepo) Allowed(action model.ActionType, roomId int, holder *models.
 	return
 }
 
-func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error) {
+func (r *RoomsRepo) AllowHolder(userID, chatID int) (*models.AllowHolder, error) {
 
 	holder := &models.AllowHolder{}
 	err := r.db.QueryRow(
 		`SELECT id, role_id, char
 		FROM chat_members
 		WHERE user_id = $1 AND chat_id = $2`,
-		userId,
-		chatId,
+		userID,
+		chatID,
 	).Scan(
 		&holder.MemberID,
 		&holder.RoleID,
@@ -387,19 +387,19 @@ func (r *RoomsRepo) AllowHolder(userId, chatId int) (*models.AllowHolder, error)
 		println("AllowsHolder:", err.Error()) //debug
 		return nil, err
 	}
-	holder.UserID = userId
+	holder.UserID = userID
 
 	return holder, err
 }
 
-func (r *RoomsRepo) AllowsIsSet(roomId int) (have bool) {
+func (r *RoomsRepo) AllowsIsSet(roomID int) (have bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
     		SELECT 1 
     		FROM allows
     		WHERE room_id = $1
 		)`,
-		roomId,
+		roomID,
 	).Scan(&have)
 
 	return

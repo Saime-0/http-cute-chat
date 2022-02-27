@@ -30,7 +30,7 @@ func (r *MessagesRepo) MessageExistsByID(messageId int) (exists bool) {
 	return
 }
 
-func (r *MessagesRepo) MessageAvailableOnRoom(messageId int, roomId int) (exists bool) {
+func (r *MessagesRepo) MessageAvailableOnRoom(messageId int, roomID int) (exists bool) {
 	r.db.QueryRow(
 		`SELECT EXISTS(
 			SELECT 1
@@ -38,7 +38,7 @@ func (r *MessagesRepo) MessageAvailableOnRoom(messageId int, roomId int) (exists
 			WHERE id = $1 AND room_id = $2
 			)`,
 		messageId,
-		roomId,
+		roomID,
 	).Scan(&exists)
 
 	return
@@ -105,7 +105,7 @@ func (r *MessagesRepo) CreateMessageInRoom(inp *models.CreateMessage) (*model.Ne
 	return message, err
 }
 
-func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMessagesInRoom) (*model.Messages, error) {
+func (r *MessagesRepo) MessagesFromRoom(roomID, chatID int, find *model.FindMessagesInRoom) (*model.Messages, error) {
 	messages := &model.Messages{
 		Messages: []*model.Message{},
 	}
@@ -130,7 +130,7 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 		OFFSET 0
 		LIMIT $3
 		`,
-		roomId,
+		roomID,
 		find.StartMessageID,
 		find.Count,
 		direction,
@@ -143,7 +143,7 @@ func (r *MessagesRepo) MessagesFromRoom(roomId, chatId int, find *model.FindMess
 		m := &model.Message{
 			Room: &model.Room{
 				Chat: &model.Chat{
-					Unit: &model.Unit{ID: chatId},
+					Unit: &model.Unit{ID: chatID},
 				},
 			},
 		}

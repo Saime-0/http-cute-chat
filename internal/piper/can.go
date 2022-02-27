@@ -31,6 +31,13 @@ func (n *Node) CanBan(userID, targetID, chatID int) (fail bool) {
 	)
 }
 
+func (n *Node) CanUnban(uid, cid int) (fail bool) {
+	return n.levelCheck(
+		admin,
+		n.repos.Chats.DemoMembers(cid, 0, uid)[0],
+	)
+}
+
 func (n *Node) CanCreateRole(uid, cid int) (fail bool) {
 	return n.levelCheck(
 		admin,
