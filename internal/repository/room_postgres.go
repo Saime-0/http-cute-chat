@@ -96,7 +96,7 @@ func (r *RoomsRepo) CreateRoom(inp *model.CreateRoomInput) (*model.CreateRoom, e
 func (r *RoomsRepo) Room(roomId int) (*model.Room, error) {
 	room := &model.Room{
 		Chat: &model.Chat{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		},
 	}
 	err := r.db.QueryRow(`
@@ -454,7 +454,7 @@ func (r *RoomsRepo) FindRooms(inp *model.FindRooms, params *model.Params) (*mode
 	for rows.Next() {
 		m := &model.Room{
 			Chat: &model.Chat{
-				Unit: &model.Unit{},
+				Unit: new(model.Unit),
 			},
 		}
 		if err = rows.Scan(&m.RoomID, &m.Chat.Unit.ID, &m.Name, &m.ParentID, &m.Note); err != nil {

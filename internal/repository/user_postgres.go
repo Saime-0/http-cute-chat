@@ -39,7 +39,7 @@ func (r *UsersRepo) CreateUser(userModel *models.RegisterData) (err error) {
 // deprecated
 func (r *UsersRepo) User(userID int) (*model.User, error) {
 	user := &model.User{
-		Unit: &model.Unit{},
+		Unit: new(model.Unit),
 	}
 	err := r.db.QueryRow(`
 		SELECT id, domain, name, type
@@ -161,7 +161,7 @@ func (r *UsersRepo) UserExistsByDomain(userDomain string) (exists bool) {
 func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 	me := &model.Me{
 		User: &model.User{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		},
 		Data: &model.UserData{},
 	}
@@ -199,7 +199,7 @@ func (r *UsersRepo) OwnedChats(userId int) (*model.Chats, error) {
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Chat{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
 			return nil, err
@@ -231,7 +231,7 @@ func (r *UsersRepo) Chats(userId int) (*model.Chats, error) {
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Chat{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.Private); err != nil {
 			return nil, err
@@ -280,7 +280,7 @@ func (r *UsersRepo) FindUsers(inp *model.FindUsers) (*model.Users, error) {
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.User{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
 			return nil, err

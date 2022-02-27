@@ -95,7 +95,7 @@ func (r *UnitsRepo) FindUnits(inp *model.FindUnits, params *model.Params) (*mode
 		return nil, err
 	}
 	for rows.Next() {
-		m := &model.Unit{}
+		m := new(model.Unit)
 		if err = rows.Scan(&m.ID, &m.Domain, &m.Name, &m.Type); err != nil {
 			return nil, err
 		}

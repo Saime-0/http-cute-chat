@@ -60,7 +60,7 @@ func (r *ChatsRepo) GetChatByID(chatId int) (chat models.Chat, err error) {
 }
 func (r *ChatsRepo) Chat(chatId int) (*model.Chat, error) {
 	chat := &model.Chat{
-		Unit: &model.Unit{},
+		Unit: new(model.Unit),
 	}
 	err := r.db.QueryRow(
 		`SELECT units.id, units.domain, units.name, units.type, cm.count_value, chats.private
@@ -157,10 +157,10 @@ func (r *ChatsRepo) Members(chatId int) (*model.Members, error) {
 	for rows.Next() {
 		m := &model.Member{
 			User: &model.User{
-				Unit: &model.Unit{},
+				Unit: new(model.Unit),
 			},
 			Chat: &model.Chat{
-				Unit: &model.Unit{},
+				Unit: new(model.Unit),
 			},
 		}
 		if err = rows.Scan(
@@ -197,10 +197,10 @@ func (r *RoomsRepo) MembersByArray(chatId int, memberIds *[]int) (*model.Members
 	for rows.Next() {
 		m := &model.Member{
 			User: &model.User{
-				Unit: &model.Unit{},
+				Unit: new(model.Unit),
 			},
 			Chat: &model.Chat{
-				Unit: &model.Unit{},
+				Unit: new(model.Unit),
 			},
 		}
 		if err = rows.Scan(
@@ -264,7 +264,7 @@ func (r *ChatsRepo) FindMemberBy(userId int, chatId int) *int {
 }
 func (r *ChatsRepo) AddUserToChat(userId int, chatId int) (*model.CreateMember, error) {
 	member := &model.CreateMember{
-		Unit: &model.Unit{},
+		Unit: new(model.Unit),
 	}
 	err := r.db.QueryRow(`		
 		WITH member AS (
@@ -483,7 +483,7 @@ func (r *ChatsRepo) InviteIsRelevant(code string) (relevant bool, err error) {
 
 func (r *ChatsRepo) AddUserByCode(code string, userId int) (*model.CreateMember, error) {
 	member := &model.CreateMember{
-		Unit: &model.Unit{},
+		Unit: new(model.Unit),
 	}
 	err := r.db.QueryRow(`
         WITH inv AS (
@@ -592,7 +592,9 @@ func (r *ChatsRepo) Banlist(chatId int) (*model.Users, error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		m := &model.User{}
+		m := &model.User{
+			Unit: new(model.Unit),
+		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type); err != nil {
 			return nil, err
 		}
@@ -795,7 +797,7 @@ func (r *ChatsRepo) RoleExistsByID(chatId, roleId int) (exists bool, err error) 
 
 func (r *ChatsRepo) InviteInfo(code string) (info *model.InviteInfo, err error) {
 	info = &model.InviteInfo{
-		Unit: &model.Unit{},
+		Unit: new(model.Unit),
 	}
 	err = r.db.QueryRow(`
 		SELECT units.id, units.domain, units.name, units.type, cm.count_value, chats.private
@@ -821,7 +823,7 @@ func (r *ChatsRepo) InviteInfo(code string) (info *model.InviteInfo, err error) 
 
 func (r *ChatsRepo) Owner(chatId int) (*model.User, error) {
 	owner := &model.User{
-		Unit: &model.Unit{},
+		Unit: new(model.Unit),
 	}
 	err := r.db.QueryRow(
 		`SELECT units.id, units.domain, units.name, units.type
@@ -853,7 +855,7 @@ func (r *ChatsRepo) UserIsBanned(userId int, chatId int) (banned bool, err error
 func (r *ChatsRepo) MemberBy(userId, chatId int) (*model.Member, error) {
 	member := &model.Member{
 		User: &model.User{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		},
 		Chat: &model.Chat{
 			Unit: &model.Unit{ID: chatId},
@@ -884,10 +886,10 @@ func (r *ChatsRepo) MemberBy(userId, chatId int) (*model.Member, error) {
 func (r *ChatsRepo) Member(memberId int) (*model.Member, error) {
 	member := &model.Member{
 		User: &model.User{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		},
 		Chat: &model.Chat{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		},
 	}
 	err := r.db.QueryRow(
@@ -1135,10 +1137,10 @@ func (r *ChatsRepo) FindMembers(inp *model.FindMembers) (*model.Members, error) 
 	for rows.Next() {
 		m := &model.Member{
 			User: &model.User{
-				Unit: &model.Unit{},
+				Unit: new(model.Unit),
 			},
 			Chat: &model.Chat{
-				Unit: &model.Unit{},
+				Unit: new(model.Unit),
 			},
 		}
 		var (
@@ -1325,7 +1327,7 @@ func (r *ChatsRepo) FindChats(inp *model.FindChats, params *model.Params) (*mode
 	defer rows.Close()
 	for rows.Next() {
 		m := &model.Chat{
-			Unit: &model.Unit{},
+			Unit: new(model.Unit),
 		}
 		if err = rows.Scan(&m.Unit.ID, &m.Unit.Domain, &m.Unit.Name, &m.Unit.Type, &m.CountMembers, &m.Private); err != nil {
 			return nil, err
