@@ -104,41 +104,41 @@ func getEventType(body model.EventResult) string {
 
 func getEventTypeByEventResult(body model.EventResult) model.EventType {
 	switch body.(type) {
-	case model.NewMessage:
+	case *model.NewMessage:
 		return model.EventTypeNewMessage
-	case model.UpdateUser:
+	case *model.UpdateUser:
 		return model.EventTypeUpdateUser
-	case model.CreateMember:
+	case *model.CreateMember:
 		return model.EventTypeCreateMember
-	case model.UpdateMember:
+	case *model.UpdateMember:
 		return model.EventTypeUpdateMember
-	case model.DeleteMember:
+	case *model.DeleteMember:
 		return model.EventTypeDeleteMember
-	case model.CreateRole:
+	case *model.CreateRole:
 		return model.EventTypeCreateRole
-	case model.UpdateRole:
+	case *model.UpdateRole:
 		return model.EventTypeUpdateRole
-	case model.DeleteRole:
+	case *model.DeleteRole:
 		return model.EventTypeDeleteRole
-	case model.UpdateForm:
+	case *model.UpdateForm:
 		return model.EventTypeUpdateForm
-	case model.CreateAllows:
+	case *model.CreateAllows:
 		return model.EventTypeCreateAllows
-	case model.DeleteAllow:
+	case *model.DeleteAllow:
 		return model.EventTypeDeleteAllow
-	case model.UpdateChat:
+	case *model.UpdateChat:
 		return model.EventTypeUpdateChat
-	case model.CreateRoom:
+	case *model.CreateRoom:
 		return model.EventTypeCreateRoom
-	case model.UpdateRoom:
+	case *model.UpdateRoom:
 		return model.EventTypeUpdateRoom
-	case model.DeleteRoom:
+	case *model.DeleteRoom:
 		return model.EventTypeDeleteRoom
-	case model.CreateInvite:
+	case *model.CreateInvite:
 		return model.EventTypeCreateInvite
-	case model.DeleteInvite:
+	case *model.DeleteInvite:
 		return model.EventTypeDeleteInvite
-	case model.TokenExpired:
+	case *model.TokenExpired:
 		return model.EventTypeTokenExpired
 	default:
 		panic("not implemented")
