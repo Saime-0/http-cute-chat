@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/piper"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -66,7 +66,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 	}(node)
 
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать сообщение"), nil
 	}
 
@@ -77,7 +77,7 @@ func (r *mutationResolver) SendMessageToRoom(ctx context.Context, roomID int, in
 			eventReadyMessage,
 		)
 		if err != nil {
-			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		}
 	}()
 

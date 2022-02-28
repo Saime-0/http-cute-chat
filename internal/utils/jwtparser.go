@@ -2,8 +2,8 @@ package utils
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"github.com/robbert229/jwt"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/res"
 )
 
@@ -49,12 +49,12 @@ func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 
 	fuserID, ok = _userID.(float64)
 	if !ok {
-		err = errors.New("token not contain userid")
+		err = cerrors.New("token not contain userid")
 		goto handleError
 	}
 	fexpiresAt, ok = _expiresAt.(float64)
 	if !ok {
-		err = errors.New("token not contain exp")
+		err = cerrors.New("token not contain exp")
 		goto handleError
 	}
 
@@ -69,7 +69,7 @@ func ParseToken(tokenString string, secretKey string) (*TokenData, error) {
 	return data, nil
 
 handleError:
-	return nil, errors.Wrap(err, "не удалось распарсить токен")
+	return nil, cerrors.Wrap(err, "не удалось распарсить токен")
 }
 
 func GenerateToken(data *TokenData, secretKey string) (string, error) {
@@ -82,7 +82,7 @@ func GenerateToken(data *TokenData, secretKey string) (string, error) {
 	token, err := algorithm.Encode(claims)
 
 	if err != nil {
-		return "", errors.Wrap(err, "не удалось сгенерировать токен")
+		return "", cerrors.Wrap(err, "не удалось сгенерировать токен")
 	}
 
 	return token, nil

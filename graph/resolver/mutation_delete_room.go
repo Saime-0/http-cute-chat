@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -36,7 +36,7 @@ func (r *mutationResolver) DeleteRoom(ctx context.Context, roomID int) (model.Mu
 
 	eventReadyRoom, err := r.Services.Repos.Rooms.DeleteRoom(roomID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось удалить комнату"), nil
 	}
 	go r.Subix.NotifyChatMembers(

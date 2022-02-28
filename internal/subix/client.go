@@ -1,9 +1,8 @@
 package subix
 
 import (
-	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
-	"github.com/saime-0/http-cute-chat/internal/models"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"github.com/saime-0/http-cute-chat/pkg/scheduler"
 	"time"
@@ -18,14 +17,22 @@ type User struct {
 }
 
 type Clients map[Key]*Client
+type ClientsWithEvents map[Key]*ClientWithEvents
 
 type Client struct {
-	UserID           int
+	UserID int
+	//ExpectedEvents   map[model.EventType]bool
 	Ch               chan *model.SubscriptionBody
 	task             *scheduler.Task
 	sessionExpiresAt int64
 	sessionKey       Key
 	marked           bool
+}
+
+type EventCollection map[model.EventType]bool
+type ClientWithEvents struct {
+	Client *Client
+	Events EventCollection
 }
 
 func (s *Subix) CreateUserIfNotExists(userID int) *User {
@@ -65,7 +72,7 @@ func (s *Subix) deleteClient(sessionKey Key) error {
 		delete(s.clients, client.sessionKey)
 		err := s.sched.DropTask(&client.task)
 		if err != nil {
-			return errors.Wrap(err, "не удалось удалить клиента")
+			return cerrors.Wrap(err, "не удалось удалить клиента")
 		}
 		close(client.Ch)
 
@@ -78,8 +85,8 @@ func (s *Subix) deleteClient(sessionKey Key) error {
 		}
 
 		for _, member := range user.membering {
-			delete(member.clients, client.sessionKey)
-			if len(member.clients) == 0 {
+			delete(member.clientsWithEvents, client.sessionKey)
+			if len(member.clientsWithEvents) == 0 {
 				s.DeleteMember(member.ID)
 			}
 		}
@@ -97,7 +104,7 @@ func (s *Subix) scheduleMarkClient(client *Client, expAt int64) (err error) {
 			s.writeToClient(
 				client,
 				&model.SubscriptionBody{
-					Event: getEventType(eventBody),
+					Event: getEventTypeByEventResult(eventBody),
 					Body:  eventBody,
 				},
 			)
@@ -130,7 +137,7 @@ func (s *Subix) scheduleExpiredClient(client *Client) (err error) {
 func (s *Subix) ExtendClientSession(sessionKey Key, expAt int64) (err error) {
 	client, ok := s.clients[sessionKey]
 	if !ok {
-		return errors.New("не удалось продлить сессию, клиент не найден")
+		return cerrors.New("не удалось продлить сессию, клиент не найден")
 	}
 	err = s.sched.DropTask(&client.task)
 	if err != nil {
@@ -145,37 +152,14 @@ func (s *Subix) ExtendClientSession(sessionKey Key, expAt int64) (err error) {
 	return nil
 }
 
-func (s *Subix) AddListenChat(sessionKey Key, sm *models.SubUser) (err error) {
-	client, ok := s.clients[sessionKey]
-	if !ok {
-		return errors.New("не удалось найти клиента, чат не добавлен")
-	}
-
-	user, ok := s.users[client.UserID]
-	if !ok {
-		panic("AddListenChat: user not found")
-	}
-
-	member := s.CreateMemberIfNotExists(
-		*sm.MemberID,
-		*sm.ChatID,
-		user.ID,
-	)
-	member.clients[sessionKey] = client
-	//fmt.Printf("клиент %s подписался на прослушивание чата %d\n", sessionKey, member.ChatID)
-	return nil
-}
-
-func (s *Subix) DeleteChatFromListenCollection(sessionKey Key, memberID int) (err error) {
-
-	member, ok := s.members[memberID]
-	if ok {
-		delete(member.clients, sessionKey)
-		if len(member.clients) == 0 {
-			s.DeleteMember(memberID)
+func (s Subix) ClientCollection(sessionKey Key) (collection []*model.ListenedChat) {
+	client, _ := s.clients[sessionKey]                        // предполагается что сессия с таким ключем существует
+	for _, member := range s.users[client.UserID].membering { // по мемберсам пользователя
+		listenedChat := &model.ListenedChat{ID: member.ChatID}
+		for event, _ := range member.clientsWithEvents[sessionKey].Events {
+			listenedChat.Events = append(listenedChat.Events, event)
 		}
-		//fmt.Printf("клиент %s перестал прослушивать чат %d\n", sessionKey, member.ChatID)
+		collection = append(collection, listenedChat)
 	}
-
-	return nil
+	return collection
 }

@@ -1,7 +1,7 @@
 package fsm
 
 import (
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"time"
 )
 
@@ -20,11 +20,11 @@ type Indicator struct {
 
 func (m *Machine) AddIndicator(name Any, defaultState T, states States) (*Indicator, error) {
 	if len(states) < 2 {
-		return nil, errors.New(StatesMapNotValid)
+		return nil, cerrors.New(StatesMapNotValid)
 	}
 	_, ok := states[defaultState]
 	if !ok {
-		return nil, errors.New(DefaultStateNotFound)
+		return nil, cerrors.New(DefaultStateNotFound)
 	}
 	indicator := &Indicator{
 		states: states,
@@ -43,7 +43,7 @@ func (i *Indicator) SetState(key T) error {
 
 	state, ok := i.states[key]
 	if !ok {
-		return errors.New(StateNotFound)
+		return cerrors.New(StateNotFound)
 	}
 
 	err := state.Onset(i)

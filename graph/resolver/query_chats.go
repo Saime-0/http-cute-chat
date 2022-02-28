@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +23,7 @@ func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params 
 	})
 	defer node.MethodTiming()
 
-	//node.Debug(errors.Wrap(errors.New("debuging error testing"), utils.GetCallerPos()))
+	//node.Debug(cerrors.Wrap(cerrors.New("debuging error testing"), utils.GetCallerPos()))
 
 	if node.ValidParams(&params) ||
 		find.ID != nil && node.ValidID(*find.ID) ||
@@ -34,7 +34,7 @@ func (r *queryResolver) Chats(ctx context.Context, find model.FindChats, params 
 
 	chats, err := r.Services.Repos.Chats.FindChats(&find, params)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось получить список чатов"), nil
 	}
 

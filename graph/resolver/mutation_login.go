@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -77,7 +77,7 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (m
 			func() {
 				err := r.Services.Repos.Users.DeleteRefreshSession(sessionID)
 				if err != nil {
-					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 				}
 			},
 			expAt,

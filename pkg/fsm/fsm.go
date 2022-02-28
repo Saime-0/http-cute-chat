@@ -6,7 +6,7 @@ type Machine struct {
 
 func NewMachine() (*Machine, error) {
 	//if len(indicators) == 0 {
-	//	return nil, errors.New(NoOneIndicatorNotCreated)
+	//	return nil, cerrors.New(NoOneIndicatorNotCreated)
 	//}
 	return &Machine{
 		Indicators: map[interface{}]*Indicator{},

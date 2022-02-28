@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,13 +34,13 @@ func (r *mutationResolver) CreateChat(ctx context.Context, input model.CreateCha
 
 	chatID, err := r.Services.Repos.Chats.CreateChat(clientID, &input)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось создать чат"), nil
 	}
 
 	_, err = r.Services.Repos.Chats.AddUserToChat(clientID, chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось присоединиться к чату"), nil
 	}
 

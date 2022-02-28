@@ -3,8 +3,8 @@ package piper
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/rules"
@@ -23,7 +23,7 @@ func (n Node) ChatExists(chatID int) (fail bool) {
 
 	exists, err := n.Dataloader.UnitExistsByID(chatID, model.UnitTypeChat)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -42,7 +42,7 @@ func (n Node) UserExists(userID int) (fail bool) {
 
 	exists, err := n.Dataloader.UnitExistsByID(userID, model.UnitTypeUser)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -154,7 +154,7 @@ func (n Node) ValidRoomAllows(chatID int, allows *model.AllowsInput) (fail bool)
 	}
 	valid, err := n.repos.Chats.ValidAllows(chatID, allows)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -282,7 +282,7 @@ func (n Node) DomainIsFree(domain string) (fail bool) {
 
 	free, err := n.repos.Units.DomainIsFree(domain)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -301,7 +301,7 @@ func (n Node) EmailIsFree(email string) (fail bool) {
 
 	free, err := n.repos.Users.EmailIsFree(email)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -320,7 +320,7 @@ func (n Node) InvitesLimit(chatID int) (fail bool) {
 
 	count, err := n.repos.Chats.GetCountLinks(chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -358,7 +358,7 @@ func (n Node) IsMember(userID, chatID int) (fail bool) {
 
 	isMember, err := n.Dataloader.UserIsChatMember(userID, chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -379,7 +379,7 @@ func (n Node) IsNotMember(userID, chatID int) (fail bool) {
 
 	isMember, err := n.Dataloader.UserIsChatMember(userID, chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -398,7 +398,7 @@ func (n Node) RolesLimit(chatID int) (fail bool) {
 
 	count, err := n.repos.Chats.GetCountChatRoles(chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -417,7 +417,7 @@ func (n Node) RoomsLimit(chatID int) (fail bool) {
 
 	count, err := n.repos.Chats.GetCountRooms(chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -437,7 +437,7 @@ func (n Node) RoomExists(roomID int) (fail bool) {
 	//if !n.repos.Rooms.RoomExistsByID(roomID) {
 	exists, err := n.Dataloader.RoomExistsByID(roomID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -470,7 +470,7 @@ func (n Node) HasInvite(chatID int, code string) (fail bool) {
 
 	has, err := n.repos.Chats.HasInvite(chatID, code)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -489,7 +489,7 @@ func (n Node) InviteIsRelevant(code string) (fail bool) {
 
 	relevant, err := n.repos.Chats.InviteIsRelevant(code)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -509,7 +509,7 @@ func (n Node) RoleExists(chatID, roleID int) (fail bool) {
 
 	exists, err := n.repos.Chats.RoleExistsByID(chatID, roleID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -529,7 +529,7 @@ func (n Node) InviteIsExists(code string) (fail bool) {
 
 	exists, err := n.repos.Chats.InviteExistsByCode(code)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -611,7 +611,7 @@ func (n Node) UserExistsByRequisites(input *models.LoginRequisites) (fail bool) 
 
 	exists, err := n.repos.Users.UserExistsByRequisites(input)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -631,7 +631,7 @@ func (n Node) GetUserIDByRequisites(input *models.LoginRequisites, userID *int) 
 
 	_uid, err := n.repos.Users.GetUserIdByRequisites(input)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -648,7 +648,7 @@ func (n Node) IsNotBanned(userID, chatID int) (fail bool) {
 
 	banned, err := n.repos.Chats.UserIsBanned(userID, chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -669,7 +669,7 @@ func (n Node) IsBanned(userID, chatID int) (fail bool) {
 
 	banned, err := n.repos.Chats.UserIsBanned(userID, chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -690,7 +690,7 @@ func (n Node) GetChatIDByRoom(roomID int, chatID *int) (fail bool) {
 
 	_chatID, err := n.repos.Rooms.GetChatIDByRoomID(roomID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, fmt.Sprintf("room(id:%d) does not apply to any chat", roomID))
 		return true
 	}
@@ -707,7 +707,7 @@ func (n Node) GetChatIDByAllow(allowID int, chatID *int) (fail bool) {
 
 	_chatID, err := n.repos.Rooms.GetChatIDByAllowID(allowID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -792,7 +792,7 @@ func (n *Node) GetMessageByID(msgId int, message *model.Message) (fail bool) {
 
 	_message, err := n.Dataloader.Message(msgId)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, fmt.Sprintf("message(id:%d) is not exists", msgId))
 		return true
 	}
@@ -810,7 +810,7 @@ func (n Node) GetChatIDByMember(memberID int, chatID *int) (fail bool) {
 	var err error
 	*chatID, err = n.Dataloader.ChatIDByMemberID(memberID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -832,7 +832,7 @@ func (n Node) GetMemberBy(userID, chatID int, memberID *int) (fail bool) {
 
 	by, err := n.Dataloader.FindMemberBy(userID, chatID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -852,7 +852,7 @@ func (n Node) IsNotMuted(memberID int) (fail bool) {
 
 	muted, err := n.repos.Chats.MemberIsMuted(memberID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -874,13 +874,13 @@ func (n Node) HandleChoice(choiceString string, roomID int, handledChoice *strin
 	var userChoice model.UserChoice
 	err := json.Unmarshal([]byte(choiceString), &userChoice)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "невалидное тело запроса")
 		return true
 	}
 	form, err := n.repos.Rooms.RoomForm(roomID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 		return true
 	}
@@ -892,7 +892,7 @@ func (n Node) HandleChoice(choiceString string, roomID int, handledChoice *strin
 	}
 	choiceBody, err := json.Marshal(choice)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка при обработке запроса")
 		return true
 	}
@@ -985,7 +985,7 @@ func (n Node) GetDefMember(memberID int, defMember *models.DefMember) (fail bool
 
 	_defMember, err := n.repos.Chats.DefMember(memberID)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -1005,7 +1005,7 @@ func (n Node) AllowsNotExists(roomID int, inp *model.AllowsInput) (fail bool) {
 	defer n.MethodTiming()
 	exists, err := n.repos.Rooms.AllowsExists(roomID, inp)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
@@ -1041,13 +1041,13 @@ func (n Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 		}
 		_chatID, err := n.Dataloader.ChatIDByMemberID(intVal)
 		if err != nil {
-			n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			n.SetError(resp.ErrBadRequest, "произошла ошибка во время обработки данных")
 			return true
 		}
 		if _chatID < 1 || _chatID != chatID {
 			println("ValidAllowInput:", err.Error())
-			n.SetError(resp.ErrBadRequest, fmt.Sprintf("member(id:%d) does not apply to chat(%d)", intVal, _chatID))
+			n.SetError(resp.ErrBadRequest, fmt.Sprintf("member(id:%d) does not apply to chat(id:%d)", intVal, _chatID))
 			return true
 		}
 
@@ -1059,7 +1059,7 @@ func (n Node) ValidAllowInput(chatID int, inp *model.AllowInput) (fail bool) {
 		_chatID, err := n.repos.Chats.ChatIDByRoleID(intVal)
 		if err != nil || _chatID != chatID {
 			println("ValidAllowInput:", err.Error())
-			n.SetError(resp.ErrBadRequest, fmt.Sprintf("role(id:%d) does not apply to chat(%d)", intVal, _chatID))
+			n.SetError(resp.ErrBadRequest, fmt.Sprintf("role(id:%d) does not apply to chat(id:%d)", intVal, _chatID))
 			return true
 		}
 
@@ -1083,12 +1083,12 @@ func (n Node) UserHasAccessToChats(userID int, chats *[]int, submembers **[]*mod
 	}
 	members, noAccessTo, err := n.repos.Chats.UserHasAccessToChats(userID, chats)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}
 	if noAccessTo != 0 {
-		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) does not have access to chat(%d)", userID, noAccessTo))
+		n.SetError(resp.ErrBadRequest, fmt.Sprintf("user(id:%d) does not have access to chat(id:%d)", userID, noAccessTo))
 		return true
 	}
 	*submembers = &members
@@ -1132,7 +1132,7 @@ func (n Node) GetRegistrationSession(email, code string, regi **models.RegisterD
 	var err error
 	*regi, err = n.repos.Users.GetRegistrationSession(email, code)
 	if err != nil {
-		n.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		n.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		n.SetError(resp.ErrInternalServerError, "ошибка базы данных")
 		return true
 	}

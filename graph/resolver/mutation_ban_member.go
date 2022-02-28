@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -35,7 +35,7 @@ func (r *mutationResolver) BanMember(ctx context.Context, memberID int) (model.M
 
 	eventReadyMember, err := r.Services.Repos.Chats.BanUserInChat(member.UserID, member.ChatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось забанить пользователя"), nil
 	}
 

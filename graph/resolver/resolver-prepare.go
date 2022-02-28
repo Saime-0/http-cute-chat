@@ -1,8 +1,8 @@
 package resolver
 
 import (
-	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -20,17 +20,17 @@ func (r *Resolver) RegularSchedule(interval int64) (err error) {
 
 		err = r.prepareScheduleInvites(end)
 		if err != nil {
-			r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			panic(err)
 		}
 		err = r.prepareScheduleRegisterSessions(end)
 		if err != nil {
-			r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			panic(err)
 		}
 		err = r.prepareScheduleRefreshSessions(end)
 		if err != nil {
-			r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			panic(err)
 		}
 
@@ -71,7 +71,7 @@ type scheduleInviteMap map[string]*models.ScheduleInvite
 func (r *Resolver) prepareScheduleInvites(before int64) (err error) {
 	invites, err := r.Services.Repos.Prepares.ScheduleInvites(before)
 	if err != nil {
-		return errors.Wrap(err, "не удалось подготовить инвайты")
+		return cerrors.Wrap(err, "не удалось подготовить инвайты")
 	}
 
 	r.Services.Cache.Set(res.CacheScheduleInvites, &scheduleInviteMap{})
@@ -91,7 +91,7 @@ func (r *Resolver) prepareScheduleInvites(before int64) (err error) {
 
 		err = r.CreateScheduledInvite(inv.ChatID, inv.Code, inv.Exp)
 		if err != nil {
-			return errors.Wrap(err, "не удалось подготовить инвайты")
+			return cerrors.Wrap(err, "не удалось подготовить инвайты")
 		}
 	}
 
@@ -109,7 +109,7 @@ func (r *Resolver) prepareScheduleRegisterSessions(before int64) (err error) {
 			// удаляю сессию, тк она уже истекла
 			err := r.Services.Repos.Users.DeleteRegistrationSession(rs.Email)
 			if err != nil {
-				r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			}
 			continue
 		}
@@ -118,7 +118,7 @@ func (r *Resolver) prepareScheduleRegisterSessions(before int64) (err error) {
 				// спланированное удаление
 				err := r.Services.Repos.Users.DeleteRegistrationSession(rs.Email)
 				if err != nil {
-					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 				}
 			},
 			rs.Exp,
@@ -141,7 +141,7 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 			// удаляю сессию, тк она уже истекла
 			err := r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
 			if err != nil {
-				r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			}
 			continue
 		}
@@ -150,7 +150,7 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 				// спланированное удаление
 				err := r.Services.Repos.Users.DeleteRefreshSession(rs.ID)
 				if err != nil {
-					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 				}
 			},
 			rs.Exp,
@@ -165,11 +165,11 @@ func (r *Resolver) prepareScheduleRefreshSessions(before int64) (err error) {
 func (r *Resolver) ForceDropScheduledInvite(code string) error {
 	intfMap, ok := r.Services.Cache.Get(res.CacheScheduleInvites)
 	if !ok {
-		return errors.New("not found scheduled invites map in cache")
+		return cerrors.New("not found scheduled invites map in cache")
 	}
 	invs, ok := intfMap.(*scheduleInviteMap)
 	if !ok {
-		return errors.New("scheduled invites map has invalid type")
+		return cerrors.New("scheduled invites map has invalid type")
 	}
 	inv, ok := (*invs)[code]
 	if ok {
@@ -184,22 +184,22 @@ func (r *Resolver) ForceDropScheduledInvite(code string) error {
 
 func (r *Resolver) CreateScheduledInvite(chatID int, code string, exp *int64) error {
 	if exp == nil {
-		return errors.New("exp cannot be equal to nil")
+		return cerrors.New("exp cannot be equal to nil")
 	}
 	interfacedMap, ok := r.Services.Cache.Get(res.CacheScheduleInvites)
 	if !ok {
-		return errors.New("not found scheduled invites map in cache")
+		return cerrors.New("not found scheduled invites map in cache")
 	}
 	invites, ok := interfacedMap.(*scheduleInviteMap)
 	if !ok {
-		return errors.New("scheduled invites map has invalid type")
+		return cerrors.New("scheduled invites map has invalid type")
 	}
 	task, err := r.Services.Scheduler.AddTask(
 		func() {
 
 			_, err := r.Services.Repos.Chats.DeleteInvite(code)
 			if err != nil {
-				r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+				r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			}
 			r.Subix.NotifyChatMembers(
 				chatID,
@@ -214,8 +214,8 @@ func (r *Resolver) CreateScheduledInvite(chatID int, code string, exp *int64) er
 		*exp,
 	)
 	if err != nil {
-		r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return errors.Wrap(err, "не удалось запланировать задачу")
+		r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return cerrors.Wrap(err, "не удалось запланировать задачу")
 	}
 	(*invites)[code] = &models.ScheduleInvite{
 		Task: task,

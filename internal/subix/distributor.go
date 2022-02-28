@@ -1,8 +1,8 @@
 package subix
 
 import (
-	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/repository"
 )
 
@@ -38,7 +38,7 @@ func (s *Subix) NotifyRoomReaders(room ID, body model.EventResult) error {
 		body,
 	)
 	if err != nil {
-		return errors.Wrap(err, "ивент небыл разослан")
+		return cerrors.Wrap(err, "ивент небыл разослан")
 	}
 	return nil
 }
@@ -64,12 +64,12 @@ func (s *Subix) spam(objects []ID, meth repository.QueryUserGroup, body interfac
 	case *model.NewMessage: // ожидается что в objects будут ID комнат
 		readers, err := s.repo.Subscribers.RoomReaders(objects)
 		if err != nil {
-			return errors.Wrap(err, "не найдены участники комнаты")
+			return cerrors.Wrap(err, "не найдены участники комнаты")
 		}
-		s.writeToMembers(readers, body.(model.EventResult))
+		s.informMembers(readers, body.(model.EventResult))
 		return nil
 	}
 
-	s.writeToChats(objects, body.(model.EventResult))
+	s.informChat(objects, body.(model.EventResult))
 	return nil
 }

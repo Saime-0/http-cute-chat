@@ -1,0 +1,10 @@
+# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
+extend type Mutation {
+	editListenEventCollection(
+		sessionKey: String!,
+		action: EventSubjectAction!
+		targetChats: [ID!]!
+		listenEvents: [EventType!]!
+	): EditListenEventCollectionResult! @goField(forceResolver: true) @isAuth
+}
+

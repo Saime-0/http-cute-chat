@@ -3,7 +3,7 @@ package cdl
 import (
 	"fmt"
 	"github.com/lib/pq"
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 )
 
@@ -53,7 +53,7 @@ func (c *parentCategory) chatIDByMemberID() {
 		pq.Array(memberIDs),
 	)
 	if err != nil {
-		c.Dataloader.healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		c.Dataloader.healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		c.Error = err
 		return
 	}

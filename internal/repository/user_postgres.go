@@ -165,8 +165,12 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 		},
 		Data: &model.UserData{},
 	}
-	err := r.db.QueryRow(
-		`SELECT units.id, units.domain, units.name, units.type, users.email
+	err := r.db.QueryRow(`
+		SELECT coalesce(units.id, 0), 
+		       coalesce(units.domain,''), 
+		       coalesce(units.name, ''), 
+		       coalesce(units.type, 'USER'), 
+		       coalesce(users.email, '')
 		FROM units INNER JOIN users
 		ON units.id = users.id
 		WHERE units.id = $1`,
@@ -178,6 +182,10 @@ func (r *UsersRepo) Me(usersId int) (*model.Me, error) {
 		&me.User.Unit.Type,
 		&me.Data.Email,
 	)
+
+	if me.User.Unit.ID == 0 {
+		return nil, nil
+	}
 
 	return me, err
 }

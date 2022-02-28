@@ -6,9 +6,9 @@ package resolver
 import (
 	"context"
 	"encoding/json"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"github.com/saime-0/http-cute-chat/pkg/kit"
@@ -46,14 +46,14 @@ func (r *mutationResolver) UpdateRoomForm(ctx context.Context, roomID int, form 
 		byteForm, err := json.Marshal(*form)
 		bodyForm = kit.StringPtr(string(byteForm))
 		if err != nil {
-			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			return resp.Error(resp.ErrInternalServerError, "не удалось обработать тело запроса"), nil
 		}
 	}
 
 	err = r.Services.Repos.Rooms.UpdateRoomForm(roomID, bodyForm)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 

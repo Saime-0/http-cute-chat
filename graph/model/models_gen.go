@@ -40,6 +40,10 @@ type CreateRoomResult interface {
 	IsCreateRoomResult()
 }
 
+type EditListenEventCollectionResult interface {
+	IsEditListenEventCollectionResult()
+}
+
 type EventResult interface {
 	IsEventResult()
 }
@@ -86,10 +90,6 @@ type MessagesResult interface {
 
 type MutationResult interface {
 	IsMutationResult()
-}
-
-type NewRoomMessageSubscription interface {
-	IsNewRoomMessageSubscription()
 }
 
 type RefreshTokensResult interface {
@@ -149,39 +149,39 @@ type AdvancedError struct {
 	Error string `json:"error"`
 }
 
-func (AdvancedError) IsMutationResult()             {}
-func (AdvancedError) IsUserResult()                 {}
-func (AdvancedError) IsRoomsResult()                {}
-func (AdvancedError) IsMembersResult()              {}
-func (AdvancedError) IsRolesResult()                {}
-func (AdvancedError) IsInvitesResult()              {}
-func (AdvancedError) IsUsersResult()                {}
-func (AdvancedError) IsChatResult()                 {}
-func (AdvancedError) IsRoleResult()                 {}
-func (AdvancedError) IsMemberResult()               {}
-func (AdvancedError) IsAllowsResult()               {}
-func (AdvancedError) IsJoinByInviteResult()         {}
-func (AdvancedError) IsJoinToChatResult()           {}
-func (AdvancedError) IsLoginResult()                {}
-func (AdvancedError) IsRefreshTokensResult()        {}
-func (AdvancedError) IsRegisterResult()             {}
-func (AdvancedError) IsSendMessageToRoomResult()    {}
-func (AdvancedError) IsCreateInviteResult()         {}
-func (AdvancedError) IsCreateRoomResult()           {}
-func (AdvancedError) IsCreateRoleResult()           {}
-func (AdvancedError) IsCreateChatResult()           {}
-func (AdvancedError) IsChatRolesResult()            {}
-func (AdvancedError) IsChatsResult()                {}
-func (AdvancedError) IsInviteInfoResult()           {}
-func (AdvancedError) IsMeResult()                   {}
-func (AdvancedError) IsMessageResult()              {}
-func (AdvancedError) IsRoomFormResult()             {}
-func (AdvancedError) IsMessagesResult()             {}
-func (AdvancedError) IsRoomResult()                 {}
-func (AdvancedError) IsUnitResult()                 {}
-func (AdvancedError) IsUnitsResult()                {}
-func (AdvancedError) IsUserRoleResult()             {}
-func (AdvancedError) IsNewRoomMessageSubscription() {}
+func (AdvancedError) IsMutationResult()                  {}
+func (AdvancedError) IsUserResult()                      {}
+func (AdvancedError) IsRoomsResult()                     {}
+func (AdvancedError) IsMembersResult()                   {}
+func (AdvancedError) IsRolesResult()                     {}
+func (AdvancedError) IsInvitesResult()                   {}
+func (AdvancedError) IsUsersResult()                     {}
+func (AdvancedError) IsChatResult()                      {}
+func (AdvancedError) IsRoleResult()                      {}
+func (AdvancedError) IsMemberResult()                    {}
+func (AdvancedError) IsAllowsResult()                    {}
+func (AdvancedError) IsJoinByInviteResult()              {}
+func (AdvancedError) IsJoinToChatResult()                {}
+func (AdvancedError) IsLoginResult()                     {}
+func (AdvancedError) IsRefreshTokensResult()             {}
+func (AdvancedError) IsRegisterResult()                  {}
+func (AdvancedError) IsSendMessageToRoomResult()         {}
+func (AdvancedError) IsCreateInviteResult()              {}
+func (AdvancedError) IsCreateRoomResult()                {}
+func (AdvancedError) IsCreateRoleResult()                {}
+func (AdvancedError) IsCreateChatResult()                {}
+func (AdvancedError) IsChatRolesResult()                 {}
+func (AdvancedError) IsChatsResult()                     {}
+func (AdvancedError) IsInviteInfoResult()                {}
+func (AdvancedError) IsMeResult()                        {}
+func (AdvancedError) IsMessageResult()                   {}
+func (AdvancedError) IsRoomFormResult()                  {}
+func (AdvancedError) IsMessagesResult()                  {}
+func (AdvancedError) IsRoomResult()                      {}
+func (AdvancedError) IsUnitResult()                      {}
+func (AdvancedError) IsUnitsResult()                     {}
+func (AdvancedError) IsUserRoleResult()                  {}
+func (AdvancedError) IsEditListenEventCollectionResult() {}
 
 type Allow struct {
 	ID     int         `json:"id"`
@@ -468,6 +468,19 @@ type JoinedToChat struct {
 func (JoinedToChat) IsJoinByInviteResult() {}
 func (JoinedToChat) IsJoinToChatResult()   {}
 
+type ListenCollection struct {
+	SessionKey string          `json:"sessionKey"`
+	Success    string          `json:"success"`
+	Collection []*ListenedChat `json:"collection"`
+}
+
+func (ListenCollection) IsEditListenEventCollectionResult() {}
+
+type ListenedChat struct {
+	ID     int         `json:"id"`
+	Events []EventType `json:"events"`
+}
+
 type LoginInput struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -510,8 +523,7 @@ type Message struct {
 	CreatedAt int64       `json:"createdAt"`
 }
 
-func (Message) IsMessageResult()              {}
-func (Message) IsNewRoomMessageSubscription() {}
+func (Message) IsMessageResult() {}
 
 type Messages struct {
 	Messages []*Message `json:"messages"`
@@ -589,8 +601,7 @@ type StringValueInput struct {
 }
 
 type SubscriptionBody struct {
-	Rev   int         `json:"rev"`
-	Event string      `json:"event"`
+	Event EventType   `json:"event"`
 	Body  EventResult `json:"body"`
 }
 
@@ -945,20 +956,18 @@ func (e DeleteInviteReason) MarshalGQL(w io.Writer) {
 type EventSubjectAction string
 
 const (
-	EventSubjectActionCreate EventSubjectAction = "CREATE"
-	EventSubjectActionUpdate EventSubjectAction = "UPDATE"
+	EventSubjectActionAdd    EventSubjectAction = "ADD"
 	EventSubjectActionDelete EventSubjectAction = "DELETE"
 )
 
 var AllEventSubjectAction = []EventSubjectAction{
-	EventSubjectActionCreate,
-	EventSubjectActionUpdate,
+	EventSubjectActionAdd,
 	EventSubjectActionDelete,
 }
 
 func (e EventSubjectAction) IsValid() bool {
 	switch e {
-	case EventSubjectActionCreate, EventSubjectActionUpdate, EventSubjectActionDelete:
+	case EventSubjectActionAdd, EventSubjectActionDelete:
 		return true
 	}
 	return false
@@ -982,6 +991,81 @@ func (e *EventSubjectAction) UnmarshalGQL(v interface{}) error {
 }
 
 func (e EventSubjectAction) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type EventType string
+
+const (
+	EventTypeAll          EventType = "all"
+	EventTypeNewMessage   EventType = "NewMessage"
+	EventTypeUpdateUser   EventType = "UpdateUser"
+	EventTypeCreateMember EventType = "CreateMember"
+	EventTypeUpdateMember EventType = "UpdateMember"
+	EventTypeDeleteMember EventType = "DeleteMember"
+	EventTypeCreateRole   EventType = "CreateRole"
+	EventTypeUpdateRole   EventType = "UpdateRole"
+	EventTypeDeleteRole   EventType = "DeleteRole"
+	EventTypeUpdateForm   EventType = "UpdateForm"
+	EventTypeCreateAllows EventType = "CreateAllows"
+	EventTypeDeleteAllow  EventType = "DeleteAllow"
+	EventTypeUpdateChat   EventType = "UpdateChat"
+	EventTypeCreateRoom   EventType = "CreateRoom"
+	EventTypeUpdateRoom   EventType = "UpdateRoom"
+	EventTypeDeleteRoom   EventType = "DeleteRoom"
+	EventTypeCreateInvite EventType = "CreateInvite"
+	EventTypeDeleteInvite EventType = "DeleteInvite"
+	EventTypeTokenExpired EventType = "TokenExpired"
+)
+
+var AllEventType = []EventType{
+	EventTypeAll,
+	EventTypeNewMessage,
+	EventTypeUpdateUser,
+	EventTypeCreateMember,
+	EventTypeUpdateMember,
+	EventTypeDeleteMember,
+	EventTypeCreateRole,
+	EventTypeUpdateRole,
+	EventTypeDeleteRole,
+	EventTypeUpdateForm,
+	EventTypeCreateAllows,
+	EventTypeDeleteAllow,
+	EventTypeUpdateChat,
+	EventTypeCreateRoom,
+	EventTypeUpdateRoom,
+	EventTypeDeleteRoom,
+	EventTypeCreateInvite,
+	EventTypeDeleteInvite,
+	EventTypeTokenExpired,
+}
+
+func (e EventType) IsValid() bool {
+	switch e {
+	case EventTypeAll, EventTypeNewMessage, EventTypeUpdateUser, EventTypeCreateMember, EventTypeUpdateMember, EventTypeDeleteMember, EventTypeCreateRole, EventTypeUpdateRole, EventTypeDeleteRole, EventTypeUpdateForm, EventTypeCreateAllows, EventTypeDeleteAllow, EventTypeUpdateChat, EventTypeCreateRoom, EventTypeUpdateRoom, EventTypeDeleteRoom, EventTypeCreateInvite, EventTypeDeleteInvite, EventTypeTokenExpired:
+		return true
+	}
+	return false
+}
+
+func (e EventType) String() string {
+	return string(e)
+}
+
+func (e *EventType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = EventType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid EventType", str)
+	}
+	return nil
+}
+
+func (e EventType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

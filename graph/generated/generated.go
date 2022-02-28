@@ -5,8 +5,8 @@ package generated
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"strconv"
 	"sync"
@@ -38,6 +38,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	Chat() ChatResolver
+	ListenCollection() ListenCollectionResolver
 	Me() MeResolver
 	Member() MemberResolver
 	Message() MessageResolver
@@ -198,6 +199,17 @@ type ComplexityRoot struct {
 		ChadID func(childComplexity int) int
 	}
 
+	ListenCollection struct {
+		Collection func(childComplexity int) int
+		SessionKey func(childComplexity int) int
+		Success    func(childComplexity int) int
+	}
+
+	ListenedChat struct {
+		Events func(childComplexity int) int
+		ID     func(childComplexity int) int
+	}
+
 	Me struct {
 		Chats      func(childComplexity int) int
 		Data       func(childComplexity int) int
@@ -234,35 +246,34 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AddChatToListenCollection      func(childComplexity int, sessionKey string, chatID int) int
-		BanMember                      func(childComplexity int, memberID int) int
-		ConfirmRegistration            func(childComplexity int, email string, code string) int
-		CreateAllows                   func(childComplexity int, roomID int, input model.AllowsInput) int
-		CreateChat                     func(childComplexity int, input model.CreateChatInput) int
-		CreateInvite                   func(childComplexity int, input model.CreateInviteInput) int
-		CreateRole                     func(childComplexity int, input model.CreateRoleInput) int
-		CreateRoom                     func(childComplexity int, input model.CreateRoomInput) int
-		DeleteAllow                    func(childComplexity int, allowID int) int
-		DeleteChatFromListenCollection func(childComplexity int, sessionKey string, chatID int) int
-		DeleteInvite                   func(childComplexity int, chatID int, code string) int
-		DeleteRole                     func(childComplexity int, roleID int) int
-		DeleteRoom                     func(childComplexity int, roomID int) int
-		JoinByInvite                   func(childComplexity int, code string) int
-		JoinToChat                     func(childComplexity int, chatID int) int
-		LeaveFromChat                  func(childComplexity int, chatID int) int
-		Login                          func(childComplexity int, input model.LoginInput) int
-		RefreshTokens                  func(childComplexity int, sessionKey *string, refreshToken string) int
-		Register                       func(childComplexity int, input model.RegisterInput) int
-		SendMessageToRoom              func(childComplexity int, roomID int, input model.CreateMessageInput) int
-		TakeChar                       func(childComplexity int, memberID int) int
-		TakeRole                       func(childComplexity int, memberID int) int
-		UnbanMember                    func(childComplexity int, userID int, chatID int) int
-		UpdateChat                     func(childComplexity int, chatID int, input model.UpdateChatInput) int
-		UpdateMeData                   func(childComplexity int, input model.UpdateMeDataInput) int
-		UpdateMember                   func(childComplexity int, memberID int, input model.UpdateMemberInput) int
-		UpdateRole                     func(childComplexity int, roleID int, input model.UpdateRoleInput) int
-		UpdateRoom                     func(childComplexity int, roomID int, input model.UpdateRoomInput) int
-		UpdateRoomForm                 func(childComplexity int, roomID int, form *model.UpdateFormInput) int
+		BanMember                 func(childComplexity int, memberID int) int
+		ConfirmRegistration       func(childComplexity int, email string, code string) int
+		CreateAllows              func(childComplexity int, roomID int, input model.AllowsInput) int
+		CreateChat                func(childComplexity int, input model.CreateChatInput) int
+		CreateInvite              func(childComplexity int, input model.CreateInviteInput) int
+		CreateRole                func(childComplexity int, input model.CreateRoleInput) int
+		CreateRoom                func(childComplexity int, input model.CreateRoomInput) int
+		DeleteAllow               func(childComplexity int, allowID int) int
+		DeleteInvite              func(childComplexity int, chatID int, code string) int
+		DeleteRole                func(childComplexity int, roleID int) int
+		DeleteRoom                func(childComplexity int, roomID int) int
+		EditListenEventCollection func(childComplexity int, sessionKey string, action model.EventSubjectAction, targetChats []int, listenEvents []model.EventType) int
+		JoinByInvite              func(childComplexity int, code string) int
+		JoinToChat                func(childComplexity int, chatID int) int
+		LeaveFromChat             func(childComplexity int, chatID int) int
+		Login                     func(childComplexity int, input model.LoginInput) int
+		RefreshTokens             func(childComplexity int, sessionKey *string, refreshToken string) int
+		Register                  func(childComplexity int, input model.RegisterInput) int
+		SendMessageToRoom         func(childComplexity int, roomID int, input model.CreateMessageInput) int
+		TakeChar                  func(childComplexity int, memberID int) int
+		TakeRole                  func(childComplexity int, memberID int) int
+		UnbanMember               func(childComplexity int, userID int, chatID int) int
+		UpdateChat                func(childComplexity int, chatID int, input model.UpdateChatInput) int
+		UpdateMeData              func(childComplexity int, input model.UpdateMeDataInput) int
+		UpdateMember              func(childComplexity int, memberID int, input model.UpdateMemberInput) int
+		UpdateRole                func(childComplexity int, roleID int, input model.UpdateRoleInput) int
+		UpdateRoom                func(childComplexity int, roomID int, input model.UpdateRoomInput) int
+		UpdateRoomForm            func(childComplexity int, roomID int, form *model.UpdateFormInput) int
 	}
 
 	NewMessage struct {
@@ -321,13 +332,12 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		NewEvent func(childComplexity int, sessionKey string, listenChatCollection []int) int
+		Subscribe func(childComplexity int, sessionKey string) int
 	}
 
 	SubscriptionBody struct {
 		Body  func(childComplexity int) int
 		Event func(childComplexity int) int
-		Rev   func(childComplexity int) int
 	}
 
 	Successful struct {
@@ -419,6 +429,9 @@ type ChatResolver interface {
 	Banlist(ctx context.Context, obj *model.Chat) (model.UsersResult, error)
 	Me(ctx context.Context, obj *model.Chat) (model.MemberResult, error)
 }
+type ListenCollectionResolver interface {
+	Collection(ctx context.Context, obj *model.ListenCollection) ([]*model.ListenedChat, error)
+}
 type MeResolver interface {
 	Chats(ctx context.Context, obj *model.Me) (*model.Chats, error)
 	OwnedChats(ctx context.Context, obj *model.Me) (*model.Chats, error)
@@ -461,8 +474,7 @@ type MutationResolver interface {
 	UpdateRole(ctx context.Context, roleID int, input model.UpdateRoleInput) (model.MutationResult, error)
 	UpdateRoom(ctx context.Context, roomID int, input model.UpdateRoomInput) (model.MutationResult, error)
 	UpdateRoomForm(ctx context.Context, roomID int, form *model.UpdateFormInput) (model.MutationResult, error)
-	AddChatToListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error)
-	DeleteChatFromListenCollection(ctx context.Context, sessionKey string, chatID int) (model.MutationResult, error)
+	EditListenEventCollection(ctx context.Context, sessionKey string, action model.EventSubjectAction, targetChats []int, listenEvents []model.EventType) (model.EditListenEventCollectionResult, error)
 }
 type QueryResolver interface {
 	ChatRoles(ctx context.Context, chatID int) (model.ChatRolesResult, error)
@@ -485,7 +497,7 @@ type RoomResolver interface {
 	Messages(ctx context.Context, obj *model.Room, find model.FindMessagesInRoom) (model.MessagesResult, error)
 }
 type SubscriptionResolver interface {
-	NewEvent(ctx context.Context, sessionKey string, listenChatCollection []int) (<-chan *model.SubscriptionBody, error)
+	Subscribe(ctx context.Context, sessionKey string) (<-chan *model.SubscriptionBody, error)
 }
 
 type executableSchema struct {
@@ -944,6 +956,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.JoinedToChat.ChadID(childComplexity), true
 
+	case "ListenCollection.collection":
+		if e.complexity.ListenCollection.Collection == nil {
+			break
+		}
+
+		return e.complexity.ListenCollection.Collection(childComplexity), true
+
+	case "ListenCollection.sessionKey":
+		if e.complexity.ListenCollection.SessionKey == nil {
+			break
+		}
+
+		return e.complexity.ListenCollection.SessionKey(childComplexity), true
+
+	case "ListenCollection.success":
+		if e.complexity.ListenCollection.Success == nil {
+			break
+		}
+
+		return e.complexity.ListenCollection.Success(childComplexity), true
+
+	case "ListenedChat.events":
+		if e.complexity.ListenedChat.Events == nil {
+			break
+		}
+
+		return e.complexity.ListenedChat.Events(childComplexity), true
+
+	case "ListenedChat.id":
+		if e.complexity.ListenedChat.ID == nil {
+			break
+		}
+
+		return e.complexity.ListenedChat.ID(childComplexity), true
+
 	case "Me.chats":
 		if e.complexity.Me.Chats == nil {
 			break
@@ -1084,18 +1131,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Messages.Messages(childComplexity), true
 
-	case "Mutation.addChatToListenCollection":
-		if e.complexity.Mutation.AddChatToListenCollection == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_addChatToListenCollection_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.AddChatToListenCollection(childComplexity, args["sessionKey"].(string), args["chatID"].(int)), true
-
 	case "Mutation.banMember":
 		if e.complexity.Mutation.BanMember == nil {
 			break
@@ -1192,18 +1227,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteAllow(childComplexity, args["allowId"].(int)), true
 
-	case "Mutation.deleteChatFromListenCollection":
-		if e.complexity.Mutation.DeleteChatFromListenCollection == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_deleteChatFromListenCollection_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.DeleteChatFromListenCollection(childComplexity, args["sessionKey"].(string), args["chatID"].(int)), true
-
 	case "Mutation.deleteInvite":
 		if e.complexity.Mutation.DeleteInvite == nil {
 			break
@@ -1239,6 +1262,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteRoom(childComplexity, args["roomID"].(int)), true
+
+	case "Mutation.editListenEventCollection":
+		if e.complexity.Mutation.EditListenEventCollection == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_editListenEventCollection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EditListenEventCollection(childComplexity, args["sessionKey"].(string), args["action"].(model.EventSubjectAction), args["targetChats"].([]int), args["listenEvents"].([]model.EventType)), true
 
 	case "Mutation.joinByInvite":
 		if e.complexity.Mutation.JoinByInvite == nil {
@@ -1725,17 +1760,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Rooms.Rooms(childComplexity), true
 
-	case "Subscription.newEvent":
-		if e.complexity.Subscription.NewEvent == nil {
+	case "Subscription.subscribe":
+		if e.complexity.Subscription.Subscribe == nil {
 			break
 		}
 
-		args, err := ec.field_Subscription_newEvent_args(context.TODO(), rawArgs)
+		args, err := ec.field_Subscription_subscribe_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Subscription.NewEvent(childComplexity, args["sessionKey"].(string), args["listenChatCollection"].([]int)), true
+		return e.complexity.Subscription.Subscribe(childComplexity, args["sessionKey"].(string)), true
 
 	case "SubscriptionBody.body":
 		if e.complexity.SubscriptionBody.Body == nil {
@@ -1750,13 +1785,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.SubscriptionBody.Event(childComplexity), true
-
-	case "SubscriptionBody.rev":
-		if e.complexity.SubscriptionBody.Rev == nil {
-			break
-		}
-
-		return e.complexity.SubscriptionBody.Rev(childComplexity), true
 
 	case "Successful.success":
 		if e.complexity.Successful.Success == nil {
@@ -2123,8 +2151,7 @@ enum GroupType {
     MEMBER
 }
 enum EventSubjectAction {
-    CREATE
-    UPDATE
+    ADD
     DELETE
 }
 enum AllowAction {
@@ -2302,6 +2329,17 @@ type Allow {
     action: AllowAction!
     group: AllowGroup!
     value: String!
+}
+
+type ListenCollection {
+    sessionKey: String!
+    success: String!
+    collection: [ListenedChat!]! @goField(forceResolver: true)
+}
+
+type ListenedChat {
+    id: ID!
+    events: [EventType!]!
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/inputs.graphql", Input: `input CreateChatInput {
     domain: String!
@@ -2776,10 +2814,9 @@ union UserRoleResult =
     | AdvancedError
     | Role
 
-# deprecated
-union NewRoomMessageSubscription =
+union EditListenEventCollectionResult =
     | AdvancedError
-    | Message
+    | ListenCollection
 
 union EventResult =
     | NewMessage # только читателям +
@@ -2811,18 +2848,41 @@ union EventResult =
     | TokenExpired
 
 
+enum EventType {
+    all
+
+    NewMessage
+    UpdateUser
+    CreateMember
+    UpdateMember
+    DeleteMember
+    CreateRole
+    UpdateRole
+    DeleteRole
+    UpdateForm
+    CreateAllows
+    DeleteAllow
+    UpdateChat
+    CreateRoom
+    UpdateRoom
+    DeleteRoom
+    CreateInvite
+    DeleteInvite
+    TokenExpired
+}`, BuiltIn: false},
+	{Name: "graph-models/schemas/subscription/mutation_edit_listen_event_collection.graphql", Input: `# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
+extend type Mutation {
+	editListenEventCollection(
+		sessionKey: String!,
+		action: EventSubjectAction!
+		targetChats: [ID!]!
+		listenEvents: [EventType!]!
+	): EditListenEventCollectionResult! @goField(forceResolver: true) @isAuth
+}
+
 `, BuiltIn: false},
-	{Name: "graph-models/schemas/subscription/mutation_add_chat_to_listen_collection.graphql", Input: `# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
-extend type Mutation {
-	addChatToListenCollection(sessionKey: String!, chatID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
-}`, BuiltIn: false},
-	{Name: "graph-models/schemas/subscription/mutation_delete_chat_from_listen_collection.graphql", Input: `# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
-extend type Mutation {
-	deleteChatFromListenCollection(sessionKey: String!, chatID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
-}`, BuiltIn: false},
 	{Name: "graph-models/schemas/subscription/subscription_models.graphql", Input: `type SubscriptionBody {
-	rev: Int!
-	event: String!
+	event: EventType!
 #	action: EventSubjectAction
 	body: EventResult!
 }
@@ -2935,8 +2995,10 @@ type DeleteInvite {
 type TokenExpired {
 	message: String!
 }`, BuiltIn: false},
-	{Name: "graph-models/schemas/subscription/subscription_new_event.graphql", Input: `extend type Subscription {
-	newEvent(sessionKey: String!, listenChatCollection: [Int!]!): SubscriptionBody @goField(forceResolver: true) # @isAuth здесь не работает, проверка происходит в резольвире
+	{Name: "graph-models/schemas/subscription/subscription_subscribe.graphql", Input: `extend type Subscription {
+	subscribe(
+		sessionKey: String!,
+	): SubscriptionBody @goField(forceResolver: true) # @isAuth здесь не работает, проверка происходит в резольвире
 }`, BuiltIn: false},
 	{Name: "graph-models/schemas/subscription.graphql", Input: `type Subscription`, BuiltIn: false},
 	{Name: "graph-models/schemas/useful_result.graphql", Input: `type CreatedRoom {
@@ -2960,30 +3022,6 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
-
-func (ec *executionContext) field_Mutation_addChatToListenCollection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["sessionKey"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionKey"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sessionKey"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["chatID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chatID"))
-		arg1, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["chatID"] = arg1
-	return args, nil
-}
 
 func (ec *executionContext) field_Mutation_banMember_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -3123,30 +3161,6 @@ func (ec *executionContext) field_Mutation_deleteAllow_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_deleteChatFromListenCollection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["sessionKey"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionKey"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["sessionKey"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["chatID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chatID"))
-		arg1, err = ec.unmarshalNID2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["chatID"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_deleteInvite_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -3198,6 +3212,48 @@ func (ec *executionContext) field_Mutation_deleteRoom_args(ctx context.Context, 
 		}
 	}
 	args["roomID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_editListenEventCollection_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["sessionKey"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sessionKey"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["sessionKey"] = arg0
+	var arg1 model.EventSubjectAction
+	if tmp, ok := rawArgs["action"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("action"))
+		arg1, err = ec.unmarshalNEventSubjectAction2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventSubjectAction(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["action"] = arg1
+	var arg2 []int
+	if tmp, ok := rawArgs["targetChats"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetChats"))
+		arg2, err = ec.unmarshalNID2ᚕintᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["targetChats"] = arg2
+	var arg3 []model.EventType
+	if tmp, ok := rawArgs["listenEvents"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("listenEvents"))
+		arg3, err = ec.unmarshalNEventType2ᚕgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventTypeᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["listenEvents"] = arg3
 	return args, nil
 }
 
@@ -3858,7 +3914,7 @@ func (ec *executionContext) field_Room_messages_args(ctx context.Context, rawArg
 	return args, nil
 }
 
-func (ec *executionContext) field_Subscription_newEvent_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Subscription_subscribe_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -3870,15 +3926,6 @@ func (ec *executionContext) field_Subscription_newEvent_args(ctx context.Context
 		}
 	}
 	args["sessionKey"] = arg0
-	var arg1 []int
-	if tmp, ok := rawArgs["listenChatCollection"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("listenChatCollection"))
-		arg1, err = ec.unmarshalNInt2ᚕintᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["listenChatCollection"] = arg1
 	return args, nil
 }
 
@@ -6128,6 +6175,181 @@ func (ec *executionContext) _JoinedToChat_chadId(ctx context.Context, field grap
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListenCollection_sessionKey(ctx context.Context, field graphql.CollectedField, obj *model.ListenCollection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListenCollection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SessionKey, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListenCollection_success(ctx context.Context, field graphql.CollectedField, obj *model.ListenCollection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListenCollection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Success, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListenCollection_collection(ctx context.Context, field graphql.CollectedField, obj *model.ListenCollection) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListenCollection",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ListenCollection().Collection(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ListenedChat)
+	fc.Result = res
+	return ec.marshalNListenedChat2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐListenedChatᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListenedChat_id(ctx context.Context, field graphql.CollectedField, obj *model.ListenedChat) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListenedChat",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _ListenedChat_events(ctx context.Context, field graphql.CollectedField, obj *model.ListenedChat) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "ListenedChat",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Events, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.EventType)
+	fc.Result = res
+	return ec.marshalNEventType2ᚕgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventTypeᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Me_user(ctx context.Context, field graphql.CollectedField, obj *model.Me) (ret graphql.Marshaler) {
@@ -8406,7 +8628,7 @@ func (ec *executionContext) _Mutation_updateRoomForm(ctx context.Context, field 
 	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_addChatToListenCollection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_editListenEventCollection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -8423,7 +8645,7 @@ func (ec *executionContext) _Mutation_addChatToListenCollection(ctx context.Cont
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_addChatToListenCollection_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_editListenEventCollection_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -8432,7 +8654,7 @@ func (ec *executionContext) _Mutation_addChatToListenCollection(ctx context.Cont
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AddChatToListenCollection(rctx, args["sessionKey"].(string), args["chatID"].(int))
+			return ec.resolvers.Mutation().EditListenEventCollection(rctx, args["sessionKey"].(string), args["action"].(model.EventSubjectAction), args["targetChats"].([]int), args["listenEvents"].([]model.EventType))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.IsAuth == nil {
@@ -8448,10 +8670,10 @@ func (ec *executionContext) _Mutation_addChatToListenCollection(ctx context.Cont
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(model.MutationResult); ok {
+		if data, ok := tmp.(model.EditListenEventCollectionResult); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.EditListenEventCollectionResult`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8463,71 +8685,9 @@ func (ec *executionContext) _Mutation_addChatToListenCollection(ctx context.Cont
 		}
 		return graphql.Null
 	}
-	res := resTmp.(model.MutationResult)
+	res := resTmp.(model.EditListenEventCollectionResult)
 	fc.Result = res
-	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Mutation_deleteChatFromListenCollection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteChatFromListenCollection_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		directive0 := func(rctx context.Context) (interface{}, error) {
-			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().DeleteChatFromListenCollection(rctx, args["sessionKey"].(string), args["chatID"].(int))
-		}
-		directive1 := func(ctx context.Context) (interface{}, error) {
-			if ec.directives.IsAuth == nil {
-				return nil, errors.New("directive isAuth is not implemented")
-			}
-			return ec.directives.IsAuth(ctx, nil, directive0)
-		}
-
-		tmp, err := directive1(rctx)
-		if err != nil {
-			return nil, graphql.ErrorOnPath(ctx, err)
-		}
-		if tmp == nil {
-			return nil, nil
-		}
-		if data, ok := tmp.(model.MutationResult); ok {
-			return data, nil
-		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be github.com/saime-0/http-cute-chat/graph/model.MutationResult`, tmp)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(model.MutationResult)
-	fc.Result = res
-	return ec.marshalNMutationResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐMutationResult(ctx, field.Selections, res)
+	return ec.marshalNEditListenEventCollectionResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEditListenEventCollectionResult(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _NewMessage_id(ctx context.Context, field graphql.CollectedField, obj *model.NewMessage) (ret graphql.Marshaler) {
@@ -10001,7 +10161,7 @@ func (ec *executionContext) _Rooms_rooms(ctx context.Context, field graphql.Coll
 	return ec.marshalORoom2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐRoomᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Subscription_newEvent(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+func (ec *executionContext) _Subscription_subscribe(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -10018,7 +10178,7 @@ func (ec *executionContext) _Subscription_newEvent(ctx context.Context, field gr
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Subscription_newEvent_args(ctx, rawArgs)
+	args, err := ec.field_Subscription_subscribe_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return nil
@@ -10026,7 +10186,7 @@ func (ec *executionContext) _Subscription_newEvent(ctx context.Context, field gr
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Subscription().NewEvent(rctx, args["sessionKey"].(string), args["listenChatCollection"].([]int))
+		return ec.resolvers.Subscription().Subscribe(rctx, args["sessionKey"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10048,41 +10208,6 @@ func (ec *executionContext) _Subscription_newEvent(ctx context.Context, field gr
 			w.Write([]byte{'}'})
 		})
 	}
-}
-
-func (ec *executionContext) _SubscriptionBody_rev(ctx context.Context, field graphql.CollectedField, obj *model.SubscriptionBody) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "SubscriptionBody",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Rev, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	fc.Result = res
-	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SubscriptionBody_event(ctx context.Context, field graphql.CollectedField, obj *model.SubscriptionBody) (ret graphql.Marshaler) {
@@ -10115,9 +10240,9 @@ func (ec *executionContext) _SubscriptionBody_event(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(model.EventType)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNEventType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _SubscriptionBody_body(ctx context.Context, field graphql.CollectedField, obj *model.SubscriptionBody) (ret graphql.Marshaler) {
@@ -13637,6 +13762,29 @@ func (ec *executionContext) _CreateRoomResult(ctx context.Context, sel ast.Selec
 	}
 }
 
+func (ec *executionContext) _EditListenEventCollectionResult(ctx context.Context, sel ast.SelectionSet, obj model.EditListenEventCollectionResult) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.AdvancedError:
+		return ec._AdvancedError(ctx, sel, &obj)
+	case *model.AdvancedError:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AdvancedError(ctx, sel, obj)
+	case model.ListenCollection:
+		return ec._ListenCollection(ctx, sel, &obj)
+	case *model.ListenCollection:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ListenCollection(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _EventResult(ctx context.Context, sel ast.SelectionSet, obj model.EventResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -14025,29 +14173,6 @@ func (ec *executionContext) _MutationResult(ctx context.Context, sel ast.Selecti
 	}
 }
 
-func (ec *executionContext) _NewRoomMessageSubscription(ctx context.Context, sel ast.SelectionSet, obj model.NewRoomMessageSubscription) graphql.Marshaler {
-	switch obj := (obj).(type) {
-	case nil:
-		return graphql.Null
-	case model.AdvancedError:
-		return ec._AdvancedError(ctx, sel, &obj)
-	case *model.AdvancedError:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AdvancedError(ctx, sel, obj)
-	case model.Message:
-		return ec._Message(ctx, sel, &obj)
-	case *model.Message:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Message(ctx, sel, obj)
-	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
-	}
-}
-
 func (ec *executionContext) _RefreshTokensResult(ctx context.Context, sel ast.SelectionSet, obj model.RefreshTokensResult) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -14351,7 +14476,7 @@ func (ec *executionContext) _UsersResult(ctx context.Context, sel ast.SelectionS
 
 // region    **************************** object.gotpl ****************************
 
-var advancedErrorImplementors = []string{"AdvancedError", "MutationResult", "UserResult", "RoomsResult", "MembersResult", "RolesResult", "InvitesResult", "UsersResult", "ChatResult", "RoleResult", "MemberResult", "AllowsResult", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "CreateInviteResult", "CreateRoomResult", "CreateRoleResult", "CreateChatResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MessageResult", "RoomFormResult", "MessagesResult", "RoomResult", "UnitResult", "UnitsResult", "UserRoleResult", "NewRoomMessageSubscription"}
+var advancedErrorImplementors = []string{"AdvancedError", "MutationResult", "UserResult", "RoomsResult", "MembersResult", "RolesResult", "InvitesResult", "UsersResult", "ChatResult", "RoleResult", "MemberResult", "AllowsResult", "JoinByInviteResult", "JoinToChatResult", "LoginResult", "RefreshTokensResult", "RegisterResult", "SendMessageToRoomResult", "CreateInviteResult", "CreateRoomResult", "CreateRoleResult", "CreateChatResult", "ChatRolesResult", "ChatsResult", "InviteInfoResult", "MeResult", "MessageResult", "RoomFormResult", "MessagesResult", "RoomResult", "UnitResult", "UnitsResult", "UserRoleResult", "EditListenEventCollectionResult"}
 
 func (ec *executionContext) _AdvancedError(ctx context.Context, sel ast.SelectionSet, obj *model.AdvancedError) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, advancedErrorImplementors)
@@ -15579,6 +15704,108 @@ func (ec *executionContext) _JoinedToChat(ctx context.Context, sel ast.Selection
 	return out
 }
 
+var listenCollectionImplementors = []string{"ListenCollection", "EditListenEventCollectionResult"}
+
+func (ec *executionContext) _ListenCollection(ctx context.Context, sel ast.SelectionSet, obj *model.ListenCollection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, listenCollectionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ListenCollection")
+		case "sessionKey":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ListenCollection_sessionKey(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "success":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ListenCollection_success(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "collection":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ListenCollection_collection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var listenedChatImplementors = []string{"ListenedChat"}
+
+func (ec *executionContext) _ListenedChat(ctx context.Context, sel ast.SelectionSet, obj *model.ListenedChat) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, listenedChatImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ListenedChat")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ListenedChat_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "events":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._ListenedChat_events(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var meImplementors = []string{"Me", "MeResult"}
 
 func (ec *executionContext) _Me(ctx context.Context, sel ast.SelectionSet, obj *model.Me) graphql.Marshaler {
@@ -15793,7 +16020,7 @@ func (ec *executionContext) _Members(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var messageImplementors = []string{"Message", "MessageResult", "NewRoomMessageSubscription"}
+var messageImplementors = []string{"Message", "MessageResult"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *model.Message) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, messageImplementors)
@@ -16225,19 +16452,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "addChatToListenCollection":
+		case "editListenEventCollection":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_addChatToListenCollection(ctx, field)
-			}
-
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "deleteChatFromListenCollection":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_deleteChatFromListenCollection(ctx, field)
+				return ec._Mutation_editListenEventCollection(ctx, field)
 			}
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
@@ -16935,8 +17152,8 @@ func (ec *executionContext) _Subscription(ctx context.Context, sel ast.Selection
 	}
 
 	switch fields[0].Name {
-	case "newEvent":
-		return ec._Subscription_newEvent(ctx, fields[0])
+	case "subscribe":
+		return ec._Subscription_subscribe(ctx, fields[0])
 	default:
 		panic("unknown field " + strconv.Quote(fields[0].Name))
 	}
@@ -16952,16 +17169,6 @@ func (ec *executionContext) _SubscriptionBody(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("SubscriptionBody")
-		case "rev":
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._SubscriptionBody_rev(ctx, field, obj)
-			}
-
-			out.Values[i] = innerFunc(ctx)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
 		case "event":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._SubscriptionBody_event(ctx, field, obj)
@@ -18340,6 +18547,16 @@ func (ec *executionContext) marshalNDeleteInviteReason2githubᚗcomᚋsaimeᚑ0�
 	return v
 }
 
+func (ec *executionContext) marshalNEditListenEventCollectionResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEditListenEventCollectionResult(ctx context.Context, sel ast.SelectionSet, v model.EditListenEventCollectionResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._EditListenEventCollectionResult(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEventResult2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventResult(ctx context.Context, sel ast.SelectionSet, v model.EventResult) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -18348,6 +18565,87 @@ func (ec *executionContext) marshalNEventResult2githubᚗcomᚋsaimeᚑ0ᚋhttp�
 		return graphql.Null
 	}
 	return ec._EventResult(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNEventSubjectAction2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventSubjectAction(ctx context.Context, v interface{}) (model.EventSubjectAction, error) {
+	var res model.EventSubjectAction
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEventSubjectAction2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventSubjectAction(ctx context.Context, sel ast.SelectionSet, v model.EventSubjectAction) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNEventType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventType(ctx context.Context, v interface{}) (model.EventType, error) {
+	var res model.EventType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEventType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventType(ctx context.Context, sel ast.SelectionSet, v model.EventType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNEventType2ᚕgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventTypeᚄ(ctx context.Context, v interface{}) ([]model.EventType, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]model.EventType, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNEventType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventType(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNEventType2ᚕgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []model.EventType) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEventType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐEventType(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNFieldType2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐFieldType(ctx context.Context, v interface{}) (model.FieldType, error) {
@@ -18501,6 +18799,38 @@ func (ec *executionContext) marshalNID2int(ctx context.Context, sel ast.Selectio
 	return res
 }
 
+func (ec *executionContext) unmarshalNID2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]int, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2int(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2int(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -18514,38 +18844,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) unmarshalNInt2ᚕintᚄ(ctx context.Context, v interface{}) ([]int, error) {
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([]int, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNInt2int(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNInt2ᚕintᚄ(ctx context.Context, sel ast.SelectionSet, v []int) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalNInt2int(ctx, sel, v[i])
-	}
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalNInt642int64(ctx context.Context, v interface{}) (int64, error) {
@@ -18611,6 +18909,60 @@ func (ec *executionContext) marshalNJoinToChatResult2githubᚗcomᚋsaimeᚑ0ᚋ
 		return graphql.Null
 	}
 	return ec._JoinToChatResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNListenedChat2ᚕᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐListenedChatᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ListenedChat) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNListenedChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐListenedChat(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNListenedChat2ᚖgithubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐListenedChat(ctx context.Context, sel ast.SelectionSet, v *model.ListenedChat) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._ListenedChat(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋsaimeᚑ0ᚋhttpᚑcuteᚑchatᚋgraphᚋmodelᚐLoginInput(ctx context.Context, v interface{}) (model.LoginInput, error) {

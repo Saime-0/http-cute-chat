@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/BurntSushi/toml"
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"os"
 )
@@ -16,14 +16,14 @@ func NewConfig2(pathToCfgFile string) (*Config2, error) {
 	fromFile := new(FromCfgFile)
 	_, err := toml.DecodeFile(pathToCfgFile, fromFile)
 	if err != nil {
-		return nil, errors.Wrap(err, "не удалось декодировать файл")
+		return nil, cerrors.Wrap(err, "не удалось декодировать файл")
 	}
 
 	if !fromFile.validate() {
-		return nil, errors.New("в файле конфигурации заполнены не все поля")
+		return nil, cerrors.New("в файле конфигурации заполнены не все поля")
 	}
 	if !clog.Exists(clog.LogLevel(*fromFile.Logging.LoggingLevel)) {
-		return nil, errors.New("указан несуществующий уровень лога")
+		return nil, cerrors.New("указан несуществующий уровень лога")
 	}
 
 	fromEnv := &FromEnv{
@@ -37,7 +37,7 @@ func NewConfig2(pathToCfgFile string) (*Config2, error) {
 	}
 
 	if !fromEnv.validate() {
-		return nil, errors.New("не установлены некоторые переменные окружения")
+		return nil, cerrors.New("не установлены некоторые переменные окружения")
 	}
 	return &Config2{
 		FromEnv:     *fromEnv,

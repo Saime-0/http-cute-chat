@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"context"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/healer"
 	"github.com/saime-0/http-cute-chat/internal/piper"
@@ -117,7 +117,7 @@ func (rw *responseWriter) WriteHeader(code int) {
 func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	h, ok := rw.ResponseWriter.(http.Hijacker)
 	if !ok {
-		return nil, nil, errors.New("hijack not supported")
+		return nil, nil, cerrors.New("hijack not supported")
 	}
 	return h.Hijack()
 }

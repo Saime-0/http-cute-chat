@@ -1,0 +1,5 @@
+extend type Subscription {
+	subscribe(
+		sessionKey: String!,
+	): SubscriptionBody @goField(forceResolver: true) # @isAuth здесь не работает, проверка происходит в резольвире
+}

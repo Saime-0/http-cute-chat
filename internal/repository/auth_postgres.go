@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 
 	"github.com/saime-0/http-cute-chat/internal/models"
@@ -79,7 +79,7 @@ func (r *AuthRepo) OverflowDelete(userID, limit int) (err error) {
 		limit,
 	).Err()
 	if err != nil {
-		return errors.Wrap(err, "не удалось удалить лишние сессии")
+		return cerrors.Wrap(err, "не удалось удалить лишние сессии")
 	}
 
 	return

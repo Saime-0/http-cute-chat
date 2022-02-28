@@ -33,8 +33,7 @@ enum GroupType {
     MEMBER
 }
 enum EventSubjectAction {
-    CREATE
-    UPDATE
+    ADD
     DELETE
 }
 enum AllowAction {
@@ -212,4 +211,15 @@ type Allow {
     action: AllowAction!
     group: AllowGroup!
     value: String!
+}
+
+type ListenCollection {
+    sessionKey: String!
+    success: String!
+    collection: [ListenedChat!]! @goField(forceResolver: true)
+}
+
+type ListenedChat {
+    id: ID!
+    events: [EventType!]!
 }

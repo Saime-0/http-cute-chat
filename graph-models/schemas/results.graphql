@@ -140,10 +140,9 @@ union UserRoleResult =
     | AdvancedError
     | Role
 
-# deprecated
-union NewRoomMessageSubscription =
+union EditListenEventCollectionResult =
     | AdvancedError
-    | Message
+    | ListenCollection
 
 union EventResult =
     | NewMessage # только читателям +
@@ -175,3 +174,25 @@ union EventResult =
     | TokenExpired
 
 
+enum EventType {
+    all
+
+    NewMessage
+    UpdateUser
+    CreateMember
+    UpdateMember
+    DeleteMember
+    CreateRole
+    UpdateRole
+    DeleteRole
+    UpdateForm
+    CreateAllows
+    DeleteAllow
+    UpdateChat
+    CreateRoom
+    UpdateRoom
+    DeleteRoom
+    CreateInvite
+    DeleteInvite
+    TokenExpired
+}

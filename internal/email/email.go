@@ -1,7 +1,7 @@
 package email
 
 import (
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/validator"
 	"net/smtp"
 	"strconv"
@@ -17,7 +17,7 @@ type SMTPSender struct {
 
 func NewSMTPSender(author, from, pass, host string, port int) (*SMTPSender, error) {
 	if !validator.ValidateEmail(from) {
-		return nil, errors.New("NewSMTPSender: smtp sender email not valid")
+		return nil, cerrors.New("NewSMTPSender: smtp sender email not valid")
 	}
 	return &SMTPSender{
 		msgAuthor: author,
@@ -30,16 +30,16 @@ func NewSMTPSender(author, from, pass, host string, port int) (*SMTPSender, erro
 
 func (s *SMTPSender) Send(subject string, msgBody string, to ...string) error {
 	if len(to) == 0 {
-		return errors.New("empty to")
+		return cerrors.New("empty to")
 	}
 
 	if subject == "" || msgBody == "" {
-		return errors.New("empty subject/body")
+		return cerrors.New("empty subject/body")
 	}
 
 	for _, rec := range to {
 		if !validator.ValidateEmail(rec) {
-			return errors.New("invalid to email")
+			return cerrors.New("invalid to email")
 		}
 	}
 
@@ -53,7 +53,7 @@ func (s *SMTPSender) Send(subject string, msgBody string, to ...string) error {
 	)
 	err := smtp.SendMail(s.address, auth, s.from, to, msg)
 	if err != nil {
-		return errors.Wrap(err, "failed to sent email via smtp")
+		return cerrors.Wrap(err, "failed to sent email via smtp")
 	}
 
 	return nil

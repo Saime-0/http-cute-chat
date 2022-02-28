@@ -1,7 +1,7 @@
 package scheduler
 
 import (
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"log"
 	"time"
 )
@@ -25,7 +25,7 @@ func (s *Scheduler) RunTask(task **Task) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if task == nil || *task == nil {
-		return errors.New("task not found")
+		return cerrors.New("task not found")
 	}
 	go (*task).taskFunc()
 	*task = *(*task).next
@@ -43,7 +43,7 @@ func (s *Scheduler) runNextTask() {
 
 func (s *Scheduler) AddTask(taskFn execTaskFn, executeAt int64) (newTask *Task, err error) {
 	if executeAt <= time.Now().Unix() {
-		return nil, errors.New("not valid executeAt")
+		return nil, cerrors.New("not valid executeAt")
 	}
 	newTask = &Task{
 		sch:       s,
@@ -73,7 +73,7 @@ func (s *Scheduler) DropTask(task **Task) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if task == nil || *task == nil {
-		return errors.New("task not found")
+		return cerrors.New("task not found")
 	}
 	*task = *(*task).next
 	return nil

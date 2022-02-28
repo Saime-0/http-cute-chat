@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"reflect"
 )
@@ -12,7 +12,7 @@ import (
 func IsAuth(ctx context.Context, obj interface{}, next graphql.Resolver) (res interface{}, err error) {
 
 	if utils.GetAuthDataFromCtx(ctx) == nil {
-		err = errors.New("не аутентифицирован")
+		err = cerrors.New("не аутентифицирован")
 		return obj, err
 	}
 
@@ -30,7 +30,7 @@ func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (re
 	for i := 0; i < v.NumField(); i++ {
 		if !v.Field(i).IsNil() {
 			if valueFound {
-				return obj, errors.New("only one field of the input union should have a value")
+				return obj, cerrors.New("only one field of the input union should have a value")
 			}
 
 			valueFound = true
@@ -38,7 +38,7 @@ func InputUnion(ctx context.Context, obj interface{}, next graphql.Resolver) (re
 	}
 
 	if !valueFound {
-		return obj, errors.New("one of the input union fields must have a value")
+		return obj, cerrors.New("one of the input union fields must have a value")
 	}
 
 	return next(ctx)
@@ -70,6 +70,6 @@ func InputLeastOne(ctx context.Context, obj interface{}, next graphql.Resolver) 
 		}
 	}
 
-	return obj, errors.New("one of the input fields must have the value")
+	return obj, cerrors.New("one of the input fields must have the value")
 
 }

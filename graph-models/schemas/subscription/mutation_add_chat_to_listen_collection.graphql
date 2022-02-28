@@ -1,4 +1,0 @@
-# ДОПОЛНЯТ МУТАЦИИ НО ЗАВЯЗАНО НА ПОДПИСКЕ!!
-extend type Mutation {
-	addChatToListenCollection(sessionKey: String!, chatID: ID!): MutationResult! @goField(forceResolver: true) @isAuth
-}

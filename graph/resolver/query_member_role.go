@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
 	"go.mongodb.org/mongo-driver/bson"
@@ -33,7 +33,7 @@ func (r *queryResolver) MemberRole(ctx context.Context, memberID int) (model.Use
 	}
 	role, err := r.Dataloader.MemberRole(memberID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 

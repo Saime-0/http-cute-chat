@@ -1,6 +1,6 @@
 package clog
 
-import "github.com/pkg/errors"
+import "github.com/saime-0/http-cute-chat/internal/cerrors"
 
 type LogLevel uint8
 
@@ -15,7 +15,7 @@ const (
 	Debug                     // debug-level messages
 )
 
-var LogLevelNotExists = errors.New("the required level does not exist")
+var LogLevelNotExists = cerrors.New("the required level does not exist")
 var lvlNames = []string{
 	"emergency",
 	"alert",

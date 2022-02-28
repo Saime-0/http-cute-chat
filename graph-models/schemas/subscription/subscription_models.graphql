@@ -1,6 +1,5 @@
 type SubscriptionBody {
-	rev: Int!
-	event: String!
+	event: EventType!
 #	action: EventSubjectAction
 	body: EventResult!
 }

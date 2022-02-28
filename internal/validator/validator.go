@@ -1,8 +1,8 @@
 package validator
 
 import (
-	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/rules"
 	"regexp"
@@ -91,15 +91,15 @@ func ValidateAllowsInput(allows *model.AllowsInput) (valid bool) {
 
 func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 	if len(form.Fields) > rules.MaxFormFields {
-		return false, errors.New("превышен лимит полей")
+		return false, cerrors.New("превышен лимит полей")
 	}
 	for _, field := range form.Fields {
 		// todo valid name
 		if !ValidateName(field.Key) {
-			return false, errors.New("невалидное значение ключа")
+			return false, cerrors.New("невалидное значение ключа")
 		}
 		if len(field.Items) > rules.MaxFielditems {
-			return false, errors.New("exceeded the limit of items")
+			return false, cerrors.New("exceeded the limit of items")
 		}
 		// unique key name
 		count := 0
@@ -109,10 +109,10 @@ func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 			}
 		}
 		if count > 1 {
-			return false, errors.New("повторяющиеся значения ключей")
+			return false, cerrors.New("повторяющиеся значения ключей")
 		}
 		if field.Length != nil && *field.Length < 1 {
-			return false, errors.New("длина не может быть меньше 1")
+			return false, cerrors.New("длина не может быть меньше 1")
 		}
 
 		// handling fields type
@@ -123,14 +123,14 @@ func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 		case model.FieldTypeDate:
 			for _, v := range field.Items {
 				if _, err := strconv.ParseInt(v, 10, 64); err != nil {
-					return false, errors.New("it is not possible to convert a item value to int64")
+					return false, cerrors.New("it is not possible to convert a item value to int64")
 				}
 			}
 
 		case model.FieldTypeEmail:
 			for _, v := range field.Items {
 				if !ValidateEmail(v) {
-					return false, errors.New("item is not email")
+					return false, cerrors.New("item is not email")
 
 				}
 			}
@@ -138,7 +138,7 @@ func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 		case model.FieldTypeLink:
 			for _, v := range field.Items {
 				if !ValidateLink(v) {
-					return false, errors.New("item is not link")
+					return false, cerrors.New("item is not link")
 
 				}
 			}
@@ -146,7 +146,7 @@ func ValidateRoomForm(form *model.UpdateFormInput) (valid bool, err error) {
 		case model.FieldTypeNumeric:
 			for _, v := range field.Items {
 				if _, err := strconv.Atoi(v); err != nil {
-					return false, errors.New("item is not numeric type")
+					return false, cerrors.New("item is not numeric type")
 
 				}
 			}

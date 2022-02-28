@@ -2,7 +2,7 @@ package healer
 
 import (
 	"context"
-	"github.com/pkg/errors"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -28,7 +28,7 @@ func (h *Healer) PrepareLogging(cfg *config.Config2) (err error) {
 
 	client, err := mongo.Connect(context.Background(), clientOptions)
 	if err != nil {
-		return errors.Wrap(err, CouldNotConnectToDb)
+		return cerrors.Wrap(err, CouldNotConnectToDb)
 	}
 
 	db := client.Database(*cfg.Logging.LoggingDBName)
@@ -40,7 +40,7 @@ func (h *Healer) PrepareLogging(cfg *config.Config2) (err error) {
 	h.db = db
 	h.client = client
 	if err := h.PingDB(); err != nil {
-		return errors.Wrap(err, "неудачное подключение mongodb")
+		return cerrors.Wrap(err, "неудачное подключение mongodb")
 	}
 
 	return nil

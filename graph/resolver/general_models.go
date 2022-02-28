@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/generated"
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -35,7 +35,7 @@ func (r *chatResolver) Owner(ctx context.Context, obj *model.Chat) (model.UserRe
 
 	user, err := r.Services.Repos.Chats.Owner(chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -62,7 +62,7 @@ func (r *chatResolver) Rooms(ctx context.Context, obj *model.Chat) (model.RoomsR
 
 	rooms, err := r.Dataloader.Rooms(chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "ошибка при попытке получить данные"), nil
 	}
 
@@ -114,7 +114,7 @@ func (r *chatResolver) Roles(ctx context.Context, obj *model.Chat) (model.RolesR
 	}
 	roles, err := r.Services.Repos.Chats.Roles(chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -142,7 +142,7 @@ func (r *chatResolver) Invites(ctx context.Context, obj *model.Chat) (model.Invi
 
 	invites, err := r.Services.Repos.Chats.Invites(chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -170,7 +170,7 @@ func (r *chatResolver) Banlist(ctx context.Context, obj *model.Chat) (model.User
 
 	users, err := r.Services.Repos.Chats.Banlist(chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -197,11 +197,16 @@ func (r *chatResolver) Me(ctx context.Context, obj *model.Chat) (model.MemberRes
 
 	member, err := r.Services.Repos.Chats.MemberBy(clientID, chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
 	return member, nil
+}
+
+func (r *listenCollectionResolver) Collection(ctx context.Context, obj *model.ListenCollection) ([]*model.ListenedChat, error) {
+	collection := r.Subix.ClientCollection(obj.SessionKey)
+	return collection, nil
 }
 
 func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, error) {
@@ -215,8 +220,8 @@ func (r *meResolver) Chats(ctx context.Context, obj *model.Me) (*model.Chats, er
 
 	chats, err := r.Services.Repos.Users.Chats(clientID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return chats, nil
@@ -233,8 +238,8 @@ func (r *meResolver) OwnedChats(ctx context.Context, obj *model.Me) (*model.Chat
 
 	chats, err := r.Services.Repos.Users.OwnedChats(clientID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return chats, nil
@@ -253,8 +258,8 @@ func (r *memberResolver) Chat(ctx context.Context, obj *model.Member) (*model.Ch
 
 	chat, err := r.Services.Repos.Chats.Chat(chatID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return chat, nil
@@ -273,8 +278,8 @@ func (r *memberResolver) Role(ctx context.Context, obj *model.Member) (model.Rol
 
 	role, err := r.Dataloader.MemberRole(memberID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return role, nil
@@ -294,8 +299,8 @@ func (r *messageResolver) Room(ctx context.Context, obj *model.Message) (*model.
 	//room, err := r.Services.Repos.Rooms.Room(roomID)
 	room, err := r.Dataloader.Room(roomID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 	return room, nil
 }
@@ -316,8 +321,8 @@ func (r *messageResolver) ReplyTo(ctx context.Context, obj *model.Message) (*mod
 	//message, err := r.Services.Repos.Messages.Message(obj.ReplyTo.ID)
 	message, err := r.Dataloader.Message(obj.ReplyTo.ID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return message, nil
@@ -340,8 +345,8 @@ func (r *messageResolver) User(ctx context.Context, obj *model.Message) (*model.
 
 	user, err := r.Dataloader.User(userID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
-		return nil, errors.New("произошла ошибка во время обработки данных") // todo resp.Error
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
+		return nil, cerrors.New("произошла ошибка во время обработки данных") // todo resp.Error
 	}
 
 	return user, nil
@@ -389,7 +394,7 @@ func (r *roomResolver) Form(ctx context.Context, obj *model.Room) (model.RoomFor
 	}
 	form, err := r.Services.Repos.Rooms.RoomForm(roomID)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -437,7 +442,7 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 	}
 	room, err := r.Services.Repos.Messages.MessagesFromRoom(roomID, chatID, &find)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrBadRequest, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -446,6 +451,11 @@ func (r *roomResolver) Messages(ctx context.Context, obj *model.Room, find model
 
 // Chat returns generated.ChatResolver implementation.
 func (r *Resolver) Chat() generated.ChatResolver { return &chatResolver{r} }
+
+// ListenCollection returns generated.ListenCollectionResolver implementation.
+func (r *Resolver) ListenCollection() generated.ListenCollectionResolver {
+	return &listenCollectionResolver{r}
+}
 
 // Me returns generated.MeResolver implementation.
 func (r *Resolver) Me() generated.MeResolver { return &meResolver{r} }
@@ -460,6 +470,7 @@ func (r *Resolver) Message() generated.MessageResolver { return &messageResolver
 func (r *Resolver) Room() generated.RoomResolver { return &roomResolver{r} }
 
 type chatResolver struct{ *Resolver }
+type listenCollectionResolver struct{ *Resolver }
 type meResolver struct{ *Resolver }
 type memberResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }

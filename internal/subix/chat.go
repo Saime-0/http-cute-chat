@@ -10,10 +10,10 @@ type Chat struct {
 type Members map[ID]*Member
 
 type Member struct {
-	ID      int
-	ChatID  int
-	UserID  int
-	clients Clients
+	ID                int
+	ChatID            int
+	UserID            int
+	clientsWithEvents ClientsWithEvents
 }
 
 func (s *Subix) CreateChatIfNotExists(chatID int) *Chat {
@@ -34,10 +34,10 @@ func (s *Subix) CreateMemberIfNotExists(memberID, chatID, userID int) *Member {
 		chat := s.CreateChatIfNotExists(chatID)
 		chat.members[memberID] = member
 		member = &Member{
-			ID:      memberID,
-			ChatID:  chatID,
-			UserID:  userID,
-			clients: Clients{},
+			ID:                memberID,
+			ChatID:            chatID,
+			UserID:            userID,
+			clientsWithEvents: make(ClientsWithEvents),
 		}
 
 		s.members[memberID] = member
@@ -59,8 +59,8 @@ func (s *Subix) deleteChat(chatID int) {
 func (s *Subix) DeleteMember(memberID int) {
 	member, ok := s.members[memberID]
 	if ok { // если вдруг не удается найти то просто скипаем
-		delete(s.members, memberID) // удлаение из глобальной мапы
-		member.clients = nil        // на всякий случай заnullяем мапу
+		delete(s.members, memberID)    // удлаение из глобальной мапы
+		member.clientsWithEvents = nil // на всякий случай заnullяем мапу
 
 		user, ok := s.users[member.UserID]
 		if ok {

@@ -2,6 +2,7 @@ build:
 	go build -v .\server.go
 
 go:
+	go vet ./...
 	go build -v .\server.go
 	./server.exe
 

@@ -1,8 +1,8 @@
 package healer
 
 import (
-	"github.com/pkg/errors"
 	"github.com/saime-0/http-cute-chat/internal/cache"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/clog"
 	"github.com/saime-0/http-cute-chat/internal/config"
 	"github.com/saime-0/http-cute-chat/internal/res"
@@ -29,7 +29,7 @@ type Healer struct {
 func NewHealer(cfg *config.Config2, sched *scheduler.Scheduler, cache *cache.Cache) (*Healer, error) {
 	machine, err := fsm.NewMachine()
 	if err != nil {
-		return nil, errors.Wrap(err, res.FailedToCreateHealer)
+		return nil, cerrors.Wrap(err, res.FailedToCreateHealer)
 	}
 	h := &Healer{
 		stateMachine: machine,
@@ -39,10 +39,10 @@ func NewHealer(cfg *config.Config2, sched *scheduler.Scheduler, cache *cache.Cac
 	}
 
 	if err := h.prepareHealer(); err != nil {
-		return nil, errors.Wrap(err, res.FailedToPrepareHealer)
+		return nil, cerrors.Wrap(err, res.FailedToPrepareHealer)
 	}
 	if err := h.PrepareLogging(cfg); err != nil {
-		return nil, errors.Wrap(err, "не удалось настроить логирование")
+		return nil, cerrors.Wrap(err, "не удалось настроить логирование")
 	}
 	return h, nil
 }

@@ -5,10 +5,10 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"time"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/models"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
@@ -49,7 +49,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		expAt,
 	)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 
@@ -59,7 +59,7 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 		input.Email,
 	)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "не удалось отправить код подтверждения на указанную почту"), nil
 	}
 
@@ -68,13 +68,13 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 			func() {
 				err := r.Services.Repos.Users.DeleteRegistrationSession(input.Email)
 				if err != nil {
-					r.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+					r.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 				}
 			},
 			expAt,
 		)
 		if err != nil {
-			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 			//panic(err)
 		}
 	}

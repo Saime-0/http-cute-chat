@@ -5,9 +5,9 @@ package resolver
 
 import (
 	"context"
-	"github.com/pkg/errors"
 
 	"github.com/saime-0/http-cute-chat/graph/model"
+	"github.com/saime-0/http-cute-chat/internal/cerrors"
 	"github.com/saime-0/http-cute-chat/internal/res"
 	"github.com/saime-0/http-cute-chat/internal/resp"
 	"github.com/saime-0/http-cute-chat/internal/utils"
@@ -35,7 +35,7 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 
 	eventReadyInvite, err := r.Services.Repos.Chats.CreateInvite(&input)
 	if err != nil {
-		node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+		node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		return resp.Error(resp.ErrInternalServerError, "произошла ошибка во время обработки данных"), nil
 	}
 	go r.Subix.NotifyChatMembers(
@@ -46,7 +46,7 @@ func (r *mutationResolver) CreateInvite(ctx context.Context, input model.CreateI
 	if runAt, ok := r.Services.Cache.Get(res.CacheNextRunRegularScheduleAt); eventReadyInvite.ExpiresAt != nil && ok && *eventReadyInvite.ExpiresAt < runAt.(int64) {
 		err := r.CreateScheduledInvite(input.ChatID, eventReadyInvite.Code, eventReadyInvite.ExpiresAt)
 		if err != nil {
-			node.Healer.Alert(errors.Wrap(err, utils.GetCallerPos()))
+			node.Healer.Alert(cerrors.Wrap(err, utils.GetCallerPos()))
 		}
 	}
 
